@@ -1,0 +1,321 @@
+.heroContainer {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 80px; /* Offset for the fixed Nav bar if needed. If nav is transparent, might not need this. Let's make it 0 for a true full-screen hero. */
+}
+
+.heroContainer {
+  margin-top: 0; /* Remove margin so it's full bleed behind nav or right below it */
+}
+
+.heroImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.heroOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.2); /* Slight dark overlay to make white text pop */
+}
+
+.heroTitleLarge {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 5.5rem;
+  font-weight: 300;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.heroSubtitleContainer {
+  position: absolute;
+  bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heroTitleSmall {
+  font-family: "Montserrat", "Helvetica Neue", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  color: #fff;
+  text-transform: uppercase;
+  margin: 0 0 15px 0;
+}
+
+.heroLine {
+  width: 40px;
+  height: 1px;
+  background-color: #fff;
+}
+
+.pageContainer {
+  padding: 0 80px 80px 80px;
+  max-width: 1920px;
+  margin: 0 auto;
+  background-color: #fff;
+  position: relative;
+}
+
+.header {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 150px 0 60px 0;
+}
+
+.mainTitle {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 4.8rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: #000;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 1.6rem;
+  line-height: 1.35;
+  color: #111;
+}
+
+.timelineContainer {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 60px; /* Reduced gap from 100px */
+}
+
+/* The vertical center line */
+.timelineContainer::before {
+  content: '';
+  position: absolute;
+  top: 180px; /* Starts around the middle of the first blog content */
+  bottom: 220px; /* Ends around the middle of the last blog content */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background-color: #111; /* Dark line */
+  z-index: 0;
+}
+
+.timelineRow {
+  display: flex;
+  width: 100%;
+  margin-bottom: 80px; /* Shorter gap between posts */
+  position: relative;
+  z-index: 1;
+}
+
+/* Normal: Image Left, Text Right */
+.rowNormal {
+  flex-direction: row;
+}
+
+/* Reverse: Text Left, Image Right */
+.rowReverse {
+  flex-direction: row-reverse;
+}
+
+.imageColumn {
+  width: 50%;
+  padding: 0;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 16 / 9; /* Force horizontal layout */
+  object-fit: cover;
+  display: block;
+}
+
+.pinBadge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.textColumn {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0; /* Vertical padding */
+  box-sizing: border-box;
+}
+
+/* For Normal Row (Image Left, Text Right), Text should be aligned to the RIGHT edge (far from center) */
+.rowNormal .textColumn {
+  align-items: flex-end;
+  padding-left: 3vw; /* Space from center line */
+}
+
+/* For Reverse Row (Text Left, Image Right), Text should be aligned to the LEFT edge (far from center) */
+.rowReverse .textColumn {
+  align-items: flex-start;
+  padding-right: 3vw; /* Space from center line */
+}
+
+.textContent {
+  width: 100%;
+  max-width: 680px;
+}
+
+.textRightAligned {
+  text-align: right;
+}
+
+.textLeftAligned {
+  text-align: left;
+}
+
+.month {
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #000;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.year {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 3.5rem;
+  font-weight: 400;
+  color: #000;
+  margin-bottom: 15px;
+  line-height: 1;
+}
+
+.title {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 4.5rem;
+  font-weight: 300;
+  color: #000;
+  margin-bottom: 25px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.description {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 1.6rem; /* Increased from 1.35rem to match BrandStory paragraph size */
+  line-height: 1.35; /* Adjusted to match BrandStory paragraph line-height */
+  color: #111;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+  .pageContainer {
+    padding: 0 20px 80px 20px;
+  }
+
+  .header {
+    padding: 100px 0 40px 0;
+  }
+
+  .timelineContainer {
+    margin-top: 40px;
+  }
+
+  .timelineContainer::before {
+    left: 20px;
+  }
+
+  .timelineRow {
+    flex-direction: column !important;
+    margin-bottom: 80px;
+  }
+
+  .imageColumn, .textColumn {
+    width: 100%;
+    padding: 0 0 0 40px !important;
+  }
+
+  .textColumn {
+    align-items: flex-start !important;
+    padding-top: 30px !important;
+  }
+
+  .textContent {
+    text-align: left !important;
+    max-width: 100%;
+  }
+
+  .mainTitle {
+    font-size: 3.2rem;
+  }
+
+  .subtitle {
+    font-size: 1.3rem;
+  }
+
+  .title {
+    font-size: 3rem;
+  }
+
+  .year {
+    font-size: 3rem;
+  }
+
+  .description {
+    font-size: 1.3rem; /* Matches BrandStory mobile paragraph size */
+    line-height: 1.25; /* Adjusted to match BrandStory mobile paragraph line-height */
+  }
+
+  .heroTitleLarge {
+    font-size: 2.5rem;
+    padding: 0 20px;
+    line-height: 1.2;
+  }
+  
+  .heroContainer {
+    height: 70vh;
+    min-height: 400px;
+  }
+}

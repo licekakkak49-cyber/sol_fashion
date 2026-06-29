@@ -1,0 +1,70 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 300px 24px 100px;
+  text-align: center;
+  font-family: var(--font-primary, "Georgia", serif);
+  color: #000;
+}
+
+.heading {
+  font-size: 4.8rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  font-family: var(--font-primary, "Georgia", serif);
+}
+
+.paragraph {
+  font-size: 1.6rem;
+  line-height: 1.35;
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  color: #111;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.link {
+  display: inline-block;
+  margin-top: 2rem;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #000;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.link:hover {
+  opacity: 0.6;
+}
+
+.line {
+  width: 60px;
+  height: 1px;
+  background-color: #000;
+  margin: 1.5rem auto 0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 180px 20px 60px;
+  }
+  
+  .heading {
+    font-size: 3.2rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .paragraph {
+    font-size: 1.3rem;
+    line-height: 1.25;
+    margin-bottom: 0.7rem;
+  }
+}

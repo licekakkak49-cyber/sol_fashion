@@ -1,0 +1,130 @@
+.gridContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  margin-top: 100px; /* Spacing from previous section */
+  margin-bottom: 100px;
+  background-color: #ffffff;
+  position: relative;
+}
+
+/* Connecting Line */
+.gridContainer::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -100px; /* Extend down to next section */
+  width: 1px;
+  height: 100px;
+  background-color: #666;
+}
+
+.imageColumn {
+  width: 100%;
+  height: 100vh;
+  min-height: 800px;
+  overflow: hidden;
+  padding: 40px 0 40px 80px; /* Padding on the left this time */
+  box-sizing: border-box;
+  display: flex;
+}
+
+.imageCover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.textColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px 40px;
+  box-sizing: border-box;
+  background-color: #ffffff;
+}
+
+.contentWrapper {
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eyebrow {
+  font-family: var(--font-montserrat, sans-serif);
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
+  color: #666;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.heading {
+  font-family: var(--font-primary, "Georgia", serif);
+  font-size: 4rem;
+  font-weight: 300;
+  color: #000;
+  margin: 0 0 40px 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.subtext {
+  font-family: var(--font-secondary, "Helvetica Neue", sans-serif);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #333;
+  margin: 0 0 60px 0;
+  font-weight: 300;
+}
+
+.footerLinkWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.link {
+  font-family: var(--font-montserrat, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  color: #000;
+  text-decoration: none;
+  text-transform: uppercase;
+  position: relative;
+  transition: opacity 0.3s ease;
+}
+
+.link:hover {
+  opacity: 0.6;
+}
+
+.line {
+  width: 1px;
+  height: 60px;
+  background-color: #000;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .gridContainer {
+    grid-template-columns: 1fr;
+  }
+  
+  .imageColumn {
+    padding: 20px;
+    height: 60vh;
+    min-height: 400px;
+    order: -1; /* Image always on top for mobile */
+  }
+
+  .gridContainer::after {
+    display: none;
+  }
+}

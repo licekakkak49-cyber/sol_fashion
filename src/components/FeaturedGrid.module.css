@@ -4,8 +4,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 100%;
-  padding-top: 200px; /* Adjusted to create 300px total gap from BrandStory (100px bottom + 200px top) */
-  margin-bottom: 120px; /* Spacious separation from the next section */
+  padding-top: 40px;
+  margin-bottom: 120px;
 }
 
 @media (max-width: 768px) {
@@ -28,7 +28,7 @@
   height: 100vh;
   min-height: 800px;
   overflow: hidden;
-  padding: 40px 80px 40px 0;
+  padding: 0;
   box-sizing: border-box;
   display: flex;
 }
@@ -36,7 +36,7 @@
 .logoContainer {
   position: relative;
   width: 100%;
-  height: 150px; /* Fixed height to completely prevent vertical layout shift */
+  height: 300px; /* Increased height to accommodate larger logos */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,9 +57,9 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 320px; /* Bolder size for desktop */
+  width: 400px; /* Much larger size */
   height: auto;
-  max-height: 120px;
+  max-height: 160px;
   object-fit: contain;
   filter: brightness(0); /* Clean black logo branding style */
   opacity: 0;
@@ -89,18 +89,18 @@
     height: 60vh;
   }
   .logoContainer {
-    height: 120px;
+    height: 200px;
   }
   .brandLogoImage {
-    width: 240px;
-    max-height: 90px;
+    width: 280px;
+    max-height: 100px;
   }
 }
 
 @media (max-width: 768px) {
   .gridContainer {
     grid-template-columns: 1fr;
-    padding-top: 120px; /* Adjusted to create 180px total gap on mobile (60px bottom + 120px top) */
+    padding-top: 20px;
     margin-bottom: 60px;
   }
   .textColumn {
@@ -109,16 +109,16 @@
     height: 160px;
   }
   .logoContainer {
-    height: 100px;
+    height: 160px;
   }
   .imageColumn {
     order: 1;
     height: 50vh;
     min-height: 350px;
-    padding: 20px;
+    padding: 0;
   }
   .brandLogoImage {
-    width: 180px;
-    max-height: 70px;
+    width: 200px;
+    max-height: 80px;
   }
 }

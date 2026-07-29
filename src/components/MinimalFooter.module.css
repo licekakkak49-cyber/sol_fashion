@@ -1,0 +1,87 @@
+.footer {
+  display: grid;
+  grid-template-columns: 2.5fr 3.5fr 4fr;
+  gap: 40px;
+  padding: 80px 40px;
+  background-color: #fff;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 12px;
+  font-weight: 400;
+  color: #000;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.column a {
+  color: #000;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.column a:hover {
+  opacity: 0.6;
+}
+
+.newsletterColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.newsletterTitle {
+  font-weight: 400;
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #000;
+  padding-bottom: 8px;
+}
+
+.emailInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 12px;
+  background: transparent;
+  color: #000;
+}
+
+.emailInput::placeholder {
+  color: #666;
+}
+
+.submitBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: #000;
+  transition: transform 0.2s ease;
+}
+
+.submitBtn:hover {
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .footer {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 40px 20px;
+  }
+  
+  .newsletterColumn {
+    margin-left: 0;
+    max-width: 100%;
+  }
+}

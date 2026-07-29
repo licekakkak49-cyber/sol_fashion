@@ -1,0 +1,414 @@
+.page {
+  min-height: 100vh;
+  background-color: #FFFFFF;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  color: #000;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.layout {
+  display: flex;
+  padding-top: 60px; /* Space for nav */
+}
+
+/* Left Column */
+.leftColumn {
+  flex: 1; /* Takes up remaining space */
+  display: flex;
+  flex-direction: column;
+}
+
+.imageWrapper {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image {
+  width: 60%;
+  max-width: 600px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Right Column */
+.rightColumn {
+  width: 460px; /* Fixed width */
+  flex-shrink: 0;
+  position: relative;
+  padding-right: 40px;
+}
+
+.stickyContent {
+  position: sticky;
+  top: 200px;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: 40px;
+  padding-bottom: 40px;
+}
+
+/* Promo Banner */
+.promoBanner {
+  position: fixed;
+  top: 76px;
+  right: 40px;
+  width: 340px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  padding: 12px 32px 12px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+  line-height: 1.4;
+  z-index: 100;
+}
+
+.closeBanner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #999;
+}
+
+/* Header */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0 0 8px 0;
+}
+
+.price {
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.status {
+  color: #666;
+}
+
+.bookmarkBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #000;
+}
+
+/* Swatches */
+.colorSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.swatches {
+  display: flex;
+  gap: 12px;
+}
+
+.swatchWrapper {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 0 4px 0;
+  position: relative;
+}
+
+.swatchWrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.activeSwatch::after {
+  background-color: #000;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #fff;
+  box-shadow: 0 0 0 1px #e0e0e0;
+}
+
+.colorLabel {
+  color: #000;
+}
+
+/* Action Button */
+.actionBtn {
+  width: 100%;
+  background-color: transparent;
+  color: #111;
+  border: 1px solid #111;
+  padding: 14px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  margin-bottom: 40px;
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.lineCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  transition: all 0.3s ease-in-out;
+}
+
+.actionBtn:hover {
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.actionBtn:hover .lineCircle {
+  background: #fff;
+  color: #cf8291;
+}
+
+/* Accordions */
+.accordions {
+  display: flex;
+  flex-direction: column;
+}
+
+.accordionItem {
+  /* No borders per user request */
+}
+
+.accordionHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #000;
+  letter-spacing: 0.02em;
+}
+
+.accordionContentWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.expandedContent {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.accordionContent {
+  overflow: hidden;
+}
+
+.accordionContentInner {
+  line-height: 1.6;
+  color: #333;
+  padding-bottom: 24px;
+}
+
+/* CSS Animated Toggle Icon (+ to -) */
+.toggleIcon {
+  position: relative;
+  width: 12px;
+  height: 12px;
+}
+
+.toggleLine {
+  position: absolute;
+  background-color: #000;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  transform: translateY(-50%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggleLineVertical {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.expanded .toggleLineVertical {
+  transform: translateY(-50%) rotate(0deg); /* Rotates to overlap horizontal line */
+}
+
+/* Unit Toggle */
+.unitToggle {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.unitBtn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 4px 0;
+  color: #999;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.activeUnit {
+  color: #000;
+  border-bottom-color: #000;
+}
+
+/* Size Container Layout */
+.sizeContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.sizeList {
+  flex: 1;
+}
+
+.sizeList p {
+  margin: 0 0 4px 0;
+  color: #000;
+}
+
+/* Sliders Area */
+.fitSliders {
+  flex: 1;
+}
+
+.fitLabel {
+  margin: 0 0 12px 0;
+  color: #000;
+}
+
+.sliderGroup {
+  margin-bottom: 24px;
+}
+
+.sliderLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #666;
+  letter-spacing: 0.02em;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 1px;
+  background: #000;
+  outline: none;
+  border-radius: 0;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #000;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #000;
+  cursor: pointer;
+  border: none;
+}
+
+/* Similar Frames */
+.similarFrames {
+  padding: 80px 40px;
+  background-color: #FFFFFF;
+}
+
+.similarFramesTitle {
+  font-size: 16px;
+  font-weight: 400;
+  margin-bottom: 80px;
+  letter-spacing: 0.05em;
+}
+
+.similarFramesList {
+  display: flex;
+  overflow-x: auto;
+  gap: 16px;
+  padding-bottom: 24px;
+  scrollbar-width: none;
+}
+
+.similarFramesList::-webkit-scrollbar {
+  display: none;
+}
+
+.similarFrameCard {
+  flex: 0 0 23%;
+  min-width: 260px;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+  
+  .leftColumn, .rightColumn {
+    flex: 1;
+    width: 100%;
+  }
+  
+  .rightColumn {
+    padding: 0 20px;
+  }
+  
+  .stickyContent {
+    position: static;
+    margin: 0;
+    max-width: 100%;
+  }
+  
+  .imageWrapper {
+    height: 60vh;
+  }
+}

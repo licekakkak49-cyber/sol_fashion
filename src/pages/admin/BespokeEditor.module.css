@@ -1,0 +1,100 @@
+.moduleContainer {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.moduleHeader {
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.moduleTypeBadge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #111;
+  background: #eee;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.canvas {
+  padding: 40px;
+  background: #f3f4f6; /* slight grey to see the white boundaries */
+}
+
+/* Editing overlays */
+.editableText {
+  cursor: text;
+  transition: background 0.2s;
+  padding: 4px;
+  margin-left: -4px; /* offset padding */
+  border-radius: 4px;
+}
+
+.editableText:hover, .editableText:focus {
+  background: rgba(0,0,0,0.03);
+  outline: none;
+}
+
+.editableText:empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+}
+
+.visibilityToggle {
+  position: absolute;
+  top: 50%;
+  right: -60px;
+  transform: translateY(-50%);
+  background: #111;
+  color: #fff;
+  border: none;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 100px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+div:hover > .visibilityToggle {
+  opacity: 1;
+}
+
+/* Image upload box */
+.imageUploadBox {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  background: #f9fafb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.imageUploadBox:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.imagePlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-family: var(--font-sans, "Inter", sans-serif);
+}

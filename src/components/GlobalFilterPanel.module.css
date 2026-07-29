@@ -1,0 +1,252 @@
+.panel {
+  position: absolute;
+  top: -20px; /* Overlay the options bar */
+  left: -40px;
+  right: -40px;
+  width: calc(100% + 80px); /* Match page padding */
+  background-color: #FFFFFF;
+  border: none;
+  border-bottom: 1px solid #e5e5e5;
+  z-index: 50;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.panelOpen {
+  max-height: 800px; /* arbitrary large value for smooth open */
+  opacity: 1;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 40px 0 40px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.filterTitle {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 16px;
+  font-weight: 500;
+  color: #000;
+  display: flex;
+  align-items: flex-start;
+}
+
+.filterTitle sup {
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.tagContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filterTag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 11px;
+  font-weight: 400;
+  color: #fff;
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.filterTag svg {
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.filterTag:hover svg {
+  transform: scale(1.2);
+  opacity: 0.8;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  transition: opacity 0.2s;
+}
+
+.closeBtn:hover {
+  opacity: 0.6;
+}
+
+.content {
+  padding: 40px;
+  display: flex;
+  justify-content: flex-start;
+  gap: clamp(20px, 4vw, 100px);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.columnTitle {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 24px;
+  color: #000;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(60px, auto));
+  column-gap: 24px;
+  row-gap: 20px;
+}
+
+.optionsGridDynamic {
+  grid-template-columns: repeat(5, minmax(60px, auto));
+}
+
+.optionsGridOneCol {
+  grid-template-columns: 1fr;
+}
+
+/* Checkbox and Radio styling */
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 11px;
+  color: #111;
+  user-select: none;
+}
+
+.optionLabel input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.customBox {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #555;
+  background-color: transparent;
+  transition: all 0.2s;
+}
+
+/* Square for checkboxes */
+.optionLabel input[type="checkbox"] ~ .customBox {
+  border-radius: 2px;
+}
+
+/* Circle for radios */
+.optionLabel input[type="radio"] ~ .customBox {
+  border-radius: 50%;
+}
+
+/* Checked state */
+.optionLabel input:checked ~ .customBox {
+  border-color: #000;
+}
+
+/* Custom checkmark using SVG/pseudo element */
+.optionLabel input[type="checkbox"]:checked ~ .customBox::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #000;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+/* Custom radio dot */
+.optionLabel input[type="radio"]:checked ~ .customBox::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  background-color: #000;
+  border-radius: 50%;
+}
+
+.optionLabel:hover .customBox {
+  border-color: #000;
+}
+
+.divider {
+  width: 1px;
+  background-color: #c0c0c0;
+  height: auto;
+  margin: 0 -20px;
+}
+
+/* Mobile responsive */
+@media (max-width: 1600px) {
+  .optionsGridDynamic {
+    grid-template-columns: repeat(4, minmax(60px, auto));
+  }
+}
+
+@media (max-width: 1440px) {
+  .optionsGridDynamic {
+    grid-template-columns: repeat(3, minmax(60px, auto));
+  }
+}
+
+@media (max-width: 1024px) {
+  .content {
+    flex-wrap: wrap;
+    gap: 40px;
+    padding: 30px 20px;
+  }
+  .optionsGrid, .optionsGridDynamic {
+    grid-template-columns: repeat(2, minmax(60px, auto));
+  }
+  .divider {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .optionsGrid, .optionsGridDynamic {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    left: -20px;
+    right: -20px;
+    width: calc(100% + 40px);
+  }
+}

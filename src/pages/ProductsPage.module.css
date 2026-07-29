@@ -1,0 +1,195 @@
+.page {
+  min-height: 100vh;
+  background-color: #FFFFFF;
+  padding: 110px 40px 60px 40px;
+}
+
+/* Options Bar (Pills & Filter) */
+.optionsBarWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.optionsBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 80px;
+}
+
+.pillContainer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pillBtn {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 12px;
+  font-weight: 400;
+  color: #777;
+  background-color: transparent;
+  border: 0.5px solid #d1d5db;
+  border-radius: 30px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pillBtn:hover {
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.pillActive {
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.activeFilterPill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  border-color: transparent;
+  padding-right: 12px;
+}
+
+.activeFilterPill:hover {
+  background: linear-gradient(135deg, #cf8291 0%, #b86978 100%);
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 12px;
+  font-weight: 400;
+  color: #000;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.filterBtn sup {
+  font-size: 9px;
+  margin-left: 2px;
+}
+
+.filterBtn:hover {
+  opacity: 0.6;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 240px auto;
+}
+
+.title {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  margin: 0 0 16px 0;
+  color: #000;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 14px;
+  font-weight: 400;
+  color: #111;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Product Grid */
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 40px;
+  row-gap: 240px;
+}
+
+@media (max-width: 1024px) {
+  .productGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 100px 20px 40px 20px;
+  }
+  .optionsBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .productGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.loadMoreContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 80px;
+  margin-bottom: 60px;
+}
+
+.loadMoreBtn {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 12px;
+  font-weight: 400;
+  color: #000;
+  background-color: transparent;
+  border: 1px solid #000;
+  border-radius: 0;
+  padding: 12px 40px;
+  min-width: 160px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loadMoreBtn:hover {
+  background-color: #000;
+  color: #fff;
+}
+
+.viewAllLink {
+  position: relative;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 11px;
+  font-weight: 400;
+  color: #000;
+  text-decoration: none;
+}
+
+.viewAllLink::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 1px;
+  background-color: #000;
+  transform: scaleX(1);
+  transform-origin: right;
+  transition: transform 0.3s ease-out;
+}
+
+.viewAllLink:hover::after {
+  transform: scaleX(0);
+}

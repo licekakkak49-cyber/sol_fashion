@@ -1,0 +1,203 @@
+/* Pinterest / Modern SaaS Solid Layout */
+
+.adminLayoutWrapper {
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff; /* Pure white for unified look */
+  display: flex;
+  overflow: hidden;
+  font-family: var(--font-sans, "Inter", sans-serif);
+}
+
+/* Integrated Dock with Border */
+.dock {
+  width: 80px;
+  background-color: transparent;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  gap: 16px;
+  height: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+.dockLogo {
+  color: #111;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px; /* Squircle style */
+  transition: all 0.2s ease;
+}
+
+.dockLogo:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.navLink {
+  color: #777;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: #111;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.navLinkActive {
+  color: #111;
+  background-color: transparent;
+}
+
+.navLinkActive:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Tooltip on hover for Dock items */
+.navLink::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  margin-left: 12px;
+  background: #111;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  transform: translateX(-5px);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.navLink:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Spacer for pushing settings to bottom */
+.spacer {
+  flex-grow: 1;
+}
+
+/* Main Content Area */
+.mainContent {
+  flex: 1;
+  height: 100%;
+  background-color: transparent;
+  padding: 40px 48px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling for main area */
+.mainContent::-webkit-scrollbar {
+  width: 8px;
+}
+.mainContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mainContent::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+.mainContent::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
+
+/* Common UI Elements */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.pageSubtitle {
+  color: #666;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.btnPrimary {
+  padding: 10px 20px;
+  background-color: #111;
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnPrimary:hover {
+  background-color: #333;
+  transform: translateY(-1px);
+}
+
+/* Masonry/Pinterest Grid for Cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* Pinterest Style Pure White Card with Subtle Definition */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0, 0, 0, 0.08); /* Faint border prevents white-on-white blending */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); /* Micro-shadow for slight depth */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Slight lift on hover, no bounce */
+}
+
+/* Removed hover bounce effect */
+
+/* Dark Contrast Card - (Might not be used in Pinterest style, but kept for compatibility) */
+.cardDark {
+  background: #111;
+  color: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #222;
+}

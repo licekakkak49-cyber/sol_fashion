@@ -4,7 +4,16 @@ import styles from './StoreSection.module.css';
 const StoreSection = () => {
   return (
     <div className={styles.gridContainer}>
-      {/* Left Column: Curation & Expertise Brand Text */}
+      {/* Left Column: Premium Boutique Atelier Image */}
+      <div className={styles.imageColumn}>
+        <img 
+          src="https://images.unsplash.com/photo-1664437235473-65aaf8912d20?w=1600&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8THV4dXJ5JTIwb3B0aWNpYW4lMjBjb25zdWx0YXRpb258ZW58MHx8MHx8fDA%3D" 
+          alt="Luxury Optician Consultation" 
+          className={styles.imageCover} 
+        />
+      </div>
+
+      {/* Right Column: Curation & Expertise Brand Text */}
       <div className={styles.textColumn}>
         <div className={styles.contentWrapper}>
           <h2 className={styles.heading}>CRAFTED FOR YOUR JOURNEY</h2>
@@ -18,17 +27,7 @@ const StoreSection = () => {
           <a href="/atelier" className={styles.link}>
             FIND YOUR PERFECT MATCH
           </a>
-          <div className={styles.line}></div>
         </div>
-      </div>
-
-      {/* Right Column: Premium Boutique Atelier Image */}
-      <div className={styles.imageColumn}>
-        <img 
-          src="https://images.unsplash.com/photo-1664437235473-65aaf8912d20?w=1600&auto=format&fit=crop&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8THV4dXJ5JTIwb3B0aWNpYW4lMjBjb25zdWx0YXRpb258ZW58MHx8MHx8fDA%3D" 
-          alt="Luxury Optician Consultation" 
-          className={styles.imageCover} 
-        />
       </div>
     </div>
   );

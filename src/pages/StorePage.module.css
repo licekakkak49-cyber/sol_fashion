@@ -1,0 +1,209 @@
+.page {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  padding-top: 80px; /* Account for Nav */
+  box-sizing: border-box;
+  background-color: #fff;
+  align-items: flex-start; /* For sticky child */
+}
+
+/* Map Section (Left) */
+.mapContainer {
+  flex: 6; /* 60% width */
+  height: calc(100vh - 80px);
+  position: sticky;
+  top: 80px;
+  background-color: #f5f5f5;
+}
+
+.mapIframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  /* Apply a grayscale/silver filter to match the reference */
+  filter: grayscale(100%) contrast(1.1) brightness(1.05);
+}
+
+/* Store Details Section (Right) */
+.detailsContainer {
+  flex: 4; /* 40% width */
+  padding: 40px;
+  box-sizing: border-box;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  background-color: #fafafa;
+}
+
+.storeList {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Right Header Controls */
+.controlsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 40px;
+}
+
+.controlsLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  margin-right: 24px;
+}
+
+.dropdownGroup {
+  display: flex;
+  gap: 16px;
+}
+
+.dropdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdownLabel {
+  font-size: 10px;
+  color: #666;
+}
+
+.dropdownSelect {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #e5e5e5;
+  font-size: 12px;
+  color: #000;
+  cursor: pointer;
+}
+
+.currentLocationBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-size: 10px;
+  color: #000;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #000;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 4px;
+}
+
+/* Store Card */
+.storeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  border: none;
+  cursor: pointer;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  background-color: transparent;
+}
+
+.storeCard:hover {
+  background-color: #f9f9f9;
+}
+
+.storeCardActive {
+  background-color: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.storeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.storeName {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.storeDistance {
+  font-size: 10px;
+  color: #666;
+}
+
+.storeStatus {
+  font-size: 11px;
+  color: #666;
+  margin: 0;
+}
+
+.storeAddress {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+
+.services {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.servicePill {
+  font-size: 10px;
+  color: #333;
+  background-color: #f5f5f5;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.storeImage {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .page {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .mapContainer {
+    flex: none;
+    height: 50vh;
+    width: 100%;
+  }
+  .detailsContainer {
+    flex: none;
+    height: auto;
+    width: 100%;
+    padding: 24px;
+    overflow-y: visible;
+  }
+  .dropdownGroup {
+    flex-direction: column;
+  }
+}

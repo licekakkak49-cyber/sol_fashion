@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Pause, Play } from 'lucide-react';
 import styles from './HeroSection.module.css';
 
 const HeroSection = () => {
@@ -16,14 +17,14 @@ const HeroSection = () => {
   ];
 
   const rightImages = [
-    "https://plus.unsplash.com/premium_photo-1672322565907-932e7554b1cc?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1696240033664-ed34314724af?w=1920&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1728871228369-0cbc3a23bec4?w=1920&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1512130017599-6e7db038ea4f?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    { src: "https://ttfdcqpzaxnxduvlhtgi.supabase.co/storage/v1/object/public/WAYD-gallery/Screenshot%202569-07-12%20at%2014.29.15.png", position: "0% 0%", transform: "scale(1.35) translate(0%, 8%)" },
+    { src: "https://ttfdcqpzaxnxduvlhtgi.supabase.co/storage/v1/object/public/WAYD-gallery/AMQ_MOSAICO_MENU_480x800px.jpg", position: "center 15%" },
+    { src: "https://images.unsplash.com/photo-1696240033664-ed34314724af?w=1920&auto=format&fit=crop&q=80", position: "center" }
   ];
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [scrollY, setScrollY] = useState(0);
 
   // Auto cycle images every 5 seconds
   useEffect(() => {
@@ -33,6 +34,15 @@ const HeroSection = () => {
     }, 5000);
     return () => clearInterval(timer);
   }, [rightImages.length, isPlaying]);
+
+  // Track scroll for fading out center text
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleNext = () => {
     setCurrentIdx((prev) => (prev + 1) % rightImages.length);
@@ -46,6 +56,10 @@ const HeroSection = () => {
     e.stopPropagation();
     setIsPlaying(!isPlaying);
   };
+
+  // Calculate opacity based on scroll (starts fading out at 0, fully transparent by 120px)
+  const overlayOpacity = Math.max(1 - scrollY / 120, 0);
+  const overlayTransform = `translate(-50%, calc(-50% - ${scrollY * 1.2}px))`;
 
   return (
     <section className={styles.hero}>
@@ -71,9 +85,13 @@ const HeroSection = () => {
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           >
             <img 
-              src={rightImages[currentIdx]} 
+              src={rightImages[currentIdx].src} 
               alt="Eyewear Model" 
               className={styles.rightImage} 
+              style={{ 
+                objectPosition: rightImages[currentIdx].position,
+                transform: rightImages[currentIdx].transform || (rightImages[currentIdx].scale ? `scale(${rightImages[currentIdx].scale})` : 'none')
+              }}
             />
             {/* The Black Reveal Curtain */}
             <motion.div
@@ -81,12 +99,12 @@ const HeroSection = () => {
               animate={{ 
                 scaleY: 0, 
                 transformOrigin: 'bottom',
-                transition: { duration: 0.4, ease: [0.645, 0.045, 0.355, 1.000], delay: 0.15 }
+                transition: { duration: 0.35, ease: [0.645, 0.045, 0.355, 1.000], delay: 0.12 }
               }}
               exit={{ 
                 scaleY: 1, 
                 transformOrigin: 'bottom',
-                transition: { duration: 0.4, ease: [0.645, 0.045, 0.355, 1.000] }
+                transition: { duration: 0.35, ease: [0.645, 0.045, 0.355, 1.000] }
               }}
               style={{
                 position: 'absolute',
@@ -101,47 +119,28 @@ const HeroSection = () => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Play/Pause Glassmorphic Button */}
+        {/* Play/Pause Minimal Button */}
         <button 
-          className={styles.glassPlayBtn} 
+          className={styles.minimalPlayBtn} 
           onClick={togglePlay}
           aria-label={isPlaying ? "Pause auto play" : "Start auto play"}
         >
-          {isPlaying ? (
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-              <rect x="14" y="4" width="4" height="16" rx="1"></rect>
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M8 5v14l11-7z"></path>
-            </svg>
-          )}
+          {isPlaying ? <Pause size={24} strokeWidth={1} /> : <Play size={24} strokeWidth={1} />}
         </button>
       </div>
 
-      {/* Center Text Overlay (Optional, based on reference image) */}
-      <div className={styles.overlayText}>
+      {/* Center Text Overlay */}
+      <div 
+        className={styles.overlayText} 
+        style={{ 
+          opacity: overlayOpacity, 
+          transform: overlayTransform,
+          pointerEvents: overlayOpacity > 0 ? 'auto' : 'none'
+        }}
+      >
         <h2>MOREYES</h2>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className={styles.bottomNav}>
-        <button className={styles.navArrow} onClick={handlePrev}>
-          <svg viewBox="0 0 24 24" width="110" height="110" stroke="currentColor" strokeWidth="0.2" fill="none">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <div className={styles.navTextContainer}>
-          <span className={styles.navText}>NEW ARRIVALS</span>
-          <div className={styles.navLine}></div>
-        </div>
-        <button className={styles.navArrow} onClick={handleNext}>
-          <svg viewBox="0 0 24 24" width="110" height="110" stroke="currentColor" strokeWidth="0.2" fill="none">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-      </div>
     </section>
   );
 };

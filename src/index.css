@@ -7,6 +7,13 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Jacopo Mediaeval';
+  src: url('./assets/fonts/Jacopo-Mediaeval-NF-W01 Rg.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --color-bg: #ffffff;
   --color-text: #000000;
@@ -15,6 +22,7 @@
   --font-sans: 'Inter', sans-serif;
   --font-work-sans: 'Work Sans', sans-serif;
   --font-montserrat: 'Montserrat', sans-serif;
+  --font-jacopo: 'Jacopo Mediaeval', serif;
   --z-nav: 100;
 }
 
@@ -30,7 +38,8 @@ body {
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: 200vh; /* Make body scrollable to see glassmorphism */
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 a {

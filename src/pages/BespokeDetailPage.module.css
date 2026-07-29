@@ -1,0 +1,283 @@
+.pageContainer {
+  padding: 90px 60px 80px 60px; /* Reduced top padding to move closer to nav */
+  width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  background-color: #fff;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  margin-top: -90px; /* Offset the .pageContainer padding-top */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.heroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.moduleFullImage {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.moduleFullImage img {
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.heroDescription {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+  color: #111;
+  max-width: 600px;
+  margin-top: 80px;
+  margin-bottom: 80px;
+}
+
+.row {
+  display: flex;
+  width: 100%;
+  margin-bottom: 20px; /* Reduced to bring rows much closer */
+  position: relative;
+  z-index: 1;
+}
+
+/* Normal: Image Left, Text Right */
+.rowNormal {
+  flex-direction: row;
+}
+
+/* Reverse: Text Left, Image Right */
+.rowReverse {
+  flex-direction: row-reverse;
+}
+
+.imageColumn {
+  width: 50%; /* Exactly 50% */
+  padding: 0;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 16 / 9; /* Force horizontal layout */
+  object-fit: cover;
+  display: block;
+}
+
+.textColumn {
+  width: 50%; /* Exactly 50% */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Top and bottom alignment */
+  padding: 40px 0 0 0; /* Padding only on top, bottom stays flush */
+  box-sizing: border-box;
+}
+
+/* Image Left, Text Right */
+.rowNormal .textColumn {
+  padding-left: 40px; 
+  padding-right: 0;
+  text-align: left;
+}
+
+/* Text Left, Image Right */
+.rowReverse .textColumn {
+  padding-right: 40px; 
+  padding-left: 0;
+  text-align: left; /* All text is left aligned! */
+}
+
+.title {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 14px; /* Decreased back to 14px */
+  font-weight: 400; /* Set font-weight to 400 for entire page consistency */
+  color: #000;
+  margin: 0; /* Remove bottom margin to sit at the very top */
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.description {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #111;
+  margin: 0; /* Sit at the very bottom */
+  max-width: 600px;
+}
+
+/* Related Products */
+.relatedSection {
+  margin-top: 120px;
+}
+
+.showcaseGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 80px 40px; /* row-gap column-gap */
+  margin-bottom: 80px;
+}
+
+.showcaseItem {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 calc(25% - 30px); /* Exactly 1/4th minus gaps */
+  max-width: calc(25% - 30px);
+}
+
+.showcaseHeader {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  text-align: center; /* Centered brand name */
+}
+
+.showcaseBrand {
+  font-family: var(--font-sans, "Inter", sans-serif);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: #000;
+  text-transform: uppercase;
+}
+
+.showcaseImageContainer {
+  position: relative;
+  width: 100%;
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.showcaseImage {
+  width: 75%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+  .pageContainer {
+    padding: 100px 24px 60px 24px;
+  }
+
+  .heroSection {
+    margin-top: -100px;
+  }
+
+  .row {
+    flex-direction: column !important;
+    margin-bottom: 20px;
+  }
+
+  .imageColumn, .textColumn {
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  .textColumn {
+    align-items: flex-start !important;
+    padding-top: 30px !important;
+  }
+
+  .textContent {
+    text-align: left !important;
+    max-width: 100%;
+  }
+
+  .title {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .showcaseGrid {
+    gap: 40px 16px;
+  }
+
+  .showcaseItem {
+    flex: 0 0 calc(50% - 8px); /* 2 items per row minus 1 gap */
+    max-width: calc(50% - 8px);
+  }
+
+  .description {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+.chatBtnContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 60px 0;
+}
+
+.chatWithStylistBtn {
+  width: 100%;
+  max-width: 400px;
+  background-color: transparent;
+  color: #111;
+  border: 1px solid #111;
+  padding: 14px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans, "Inter", sans-serif);
+}
+
+.lineCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  transition: all 0.3s ease-in-out;
+}
+
+.chatWithStylistBtn:hover {
+  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.chatWithStylistBtn:hover .lineCircle {
+  background: #fff;
+  color: #cf8291;
+}

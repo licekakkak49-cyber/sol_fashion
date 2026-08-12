@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, Menu, X } from 'lucide-react';
+import { Search, User, Menu, X, MessageSquare, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
@@ -183,63 +183,121 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
             transition={{ duration: 0.4, ease: [0.645, 0.045, 0.355, 1.000] }}
             className={styles.menuOverlay}
           >
-            <button className={styles.closeMenuBtn} onClick={toggleMenu}>
-              <X size={32} strokeWidth={1} />
-            </button>
-            <div className={styles.menuContainer}>
-              <div className={styles.menuLeft}>
-                <ul className={styles.mainMenuList}>
-                  {Object.keys(menuData).map((item) => (
-                    <li key={item}>
-                      <button
-                        className={`${styles.mainMenuBtn} ${activeMenu === item ? styles.active : ''}`}
-                        onMouseEnter={() => setActiveMenu(item)}
-                      >
-                        {item}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className={styles.menuDivider}></div>
+            {isMobile ? (
+              <div className={styles.mobileMenuContainer}>
+                {/* Mobile Header: Logo and Close */}
+                <div className={styles.mobileMenuHeader}>
+                  <Link to="/" className={styles.mobileMenuLogo} onClick={toggleMenu}>
+                    SOL
+                  </Link>
+                  <button className={styles.mobileCloseBtn} onClick={toggleMenu}>
+                    <X size={28} strokeWidth={1} />
+                  </button>
+                </div>
 
-              <div className={styles.menuRight}>
-                <AnimatePresence mode="wait">
-                  {activeMenu && (
-                    <motion.ul 
-                      key={activeMenu}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      transition={{ duration: 0.3 }}
-                      className={styles.subMenuList}
-                    >
-                      {menuData[activeMenu].map((subItem) => {
-                        const isBrand = activeMenu === 'BRAND';
-                        const name = isBrand ? subItem.name : subItem;
-                        let link;
-                        if (isBrand) {
-                          link = `/brand/${subItem.slug}`;
-                        } else if (activeMenu === 'PRECISION LENSES') {
-                          link = `/lenses/${subItem.slug}`;
-                        } else {
-                          link = `#${name.toLowerCase().replace(/\s+/g, '-')}`;
-                        }
-                        
-                        return (
-                          <li key={isBrand ? subItem.id : name}>
-                            <a href={link} className={styles.subMenuLink} onClick={toggleMenu}>
-                              {name}
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </motion.ul>
-                  )}
-                </AnimatePresence>
+                {/* Mobile Search */}
+                <div className={styles.mobileSearchContainer}>
+                  <Search size={18} strokeWidth={1} className={styles.mobileSearchIcon} />
+                  <input type="text" placeholder="Search here..." className={styles.mobileSearchInput} />
+                </div>
+
+                {/* Mobile Main Links */}
+                <ul className={styles.mobileMenuLinks}>
+                  <li><Link to="/products" onClick={toggleMenu}>New In</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>Bags</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>Women</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>Men</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>The Valérie Bag</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>Gifts</Link></li>
+                  <li><Link to="/explore" onClick={toggleMenu}>Explore</Link></li>
+                </ul>
+
+                {/* Mobile Footer Links */}
+                <div className={styles.mobileMenuFooter}>
+                  <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openCart(); }}>
+                    <span className={styles.cartDotSmall}></span>
+                    Shopping cart
+                  </button>
+                  <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); onOpenLogin(); }}>
+                    <User size={16} strokeWidth={1} className={styles.mobileFooterIcon} />
+                    Account
+                  </button>
+                  <button className={styles.mobileFooterBtn}>
+                    <MessageSquare size={16} strokeWidth={1} className={styles.mobileFooterIcon} />
+                    Customer Care
+                  </button>
+                  <div className={styles.mobileFooterBottomLinks}>
+                    <button className={styles.mobileFooterBtnLine}>
+                      <span className={styles.underlineText}>Country : Thailand (USD)</span>
+                    </button>
+                    <button className={styles.mobileFooterBtnLine}>
+                      <span className={styles.underlineText}>Language : english</span>
+                      <ChevronDown size={14} strokeWidth={1} className={styles.chevronIcon} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <button className={styles.closeMenuBtn} onClick={toggleMenu}>
+                  <X size={32} strokeWidth={1} />
+                </button>
+                <div className={styles.menuContainer}>
+                  <div className={styles.menuLeft}>
+                    <ul className={styles.mainMenuList}>
+                      {Object.keys(menuData).map((item) => (
+                        <li key={item}>
+                          <button
+                            className={`${styles.mainMenuBtn} ${activeMenu === item ? styles.active : ''}`}
+                            onMouseEnter={() => setActiveMenu(item)}
+                          >
+                            {item}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className={styles.menuDivider}></div>
+
+                  <div className={styles.menuRight}>
+                    <AnimatePresence mode="wait">
+                      {activeMenu && (
+                        <motion.ul 
+                          key={activeMenu}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          transition={{ duration: 0.3 }}
+                          className={styles.subMenuList}
+                        >
+                          {menuData[activeMenu].map((subItem) => {
+                            const isBrand = activeMenu === 'BRAND';
+                            const name = isBrand ? subItem.name : subItem;
+                            let link;
+                            if (isBrand) {
+                              link = `/brand/${subItem.slug}`;
+                            } else if (activeMenu === 'PRECISION LENSES') {
+                              link = `/lenses/${subItem.slug}`;
+                            } else {
+                              link = `#${name.toLowerCase().replace(/\s+/g, '-')}`;
+                            }
+                            
+                            return (
+                              <li key={isBrand ? subItem.id : name}>
+                                <a href={link} className={styles.subMenuLink} onClick={toggleMenu}>
+                                  {name}
+                                </a>
+                              </li>
+                            );
+                          })}
+                        </motion.ul>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -187,8 +187,9 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
               <div className={styles.mobileMenuContainer}>
                 {/* Mobile Header: Logo and Close */}
                 <div className={styles.mobileMenuHeader}>
-                  <Link to="/" className={styles.mobileMenuLogo} onClick={toggleMenu}>
-                    SOL
+                  <Link to="/" className={styles.logoContainer} onClick={toggleMenu}>
+                    <span className={styles.textLogo}>SOL</span>
+                    <span className={styles.tagline}>Let your Sol shine</span>
                   </Link>
                   <button className={styles.mobileCloseBtn} onClick={toggleMenu}>
                     <X size={28} strokeWidth={1} />
@@ -214,14 +215,14 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                 <div className={styles.mobileMenuFooter}>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openCart(); }}>
                     <span className={styles.cartDotSmall}></span>
-                    Shopping cart
+                    Cart
                   </button>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); onOpenLogin(); }}>
                     <User size={16} strokeWidth={1} className={styles.mobileFooterIcon} />
                     Account
                   </button>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openWishlist(); }}>
-                    <HeartIcon size={16} color="currentColor" strokeWidth={1} className={styles.mobileFooterIcon} />
+                    <HeartIcon size={16} color="currentColor" strokeWidth={1} className={styles.mobileFooterIconWishlist} />
                     Wishlist
                   </button>
                   <div className={styles.mobileFooterBottomLinks}>

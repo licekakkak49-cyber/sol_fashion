@@ -545,6 +545,8 @@
 
 .mobileMenuLinks li {
   border-bottom: 1px solid #eee;
+  margin: 0 -20px;
+  padding: 0 20px;
 }
 
 .mobileMenuLinks li a {
@@ -560,8 +562,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-top: 30px;
-  border-top: 1px solid #eee;
   margin-top: 20px;
 }
 
@@ -580,6 +580,10 @@
 
 .mobileFooterIcon {
   margin-right: 16px;
+}
+
+.mobileFooterIconWishlist {
+  margin-right: 24px;
 }
 
 .cartDotSmall {

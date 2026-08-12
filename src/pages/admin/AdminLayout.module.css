@@ -201,3 +201,45 @@
   flex-direction: column;
   border: 1px solid #222;
 }
+
+/* WYSIWYG Grid (Copied from Frontend) */
+.productGridContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.macroRow {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.block, .blockPlaceholder {
+  flex: 1; /* Each block takes 50% width on desktop */
+}
+
+.block {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 6px;
+  align-content: start;
+}
+
+.wideBlock {
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px 6px;
+  align-content: start;
+}
+
+.standardCard {
+  grid-column: span 1;
+}
+
+.largeCard {
+  grid-column: span 2;
+  grid-row: span 2;
+}

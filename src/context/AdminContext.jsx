@@ -5,20 +5,86 @@ const AdminContext = createContext();
 
 export const useAdmin = () => useContext(AdminContext);
 
+const MOCK_PRODUCTS = [
+  { id: '1', name: 'The Triangle bikini top', price: '225 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw66f02643/26ETOW00914AW000963HD_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '2', name: 'The small Soli Ibiza Resort basket', price: '595 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw757c19ae/26HBAW00044AC01C272DE_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '3', name: 'The Mimosa sunglasses', price: '445 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dwdfc242c5/26HEYU00072AMAC001810_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '4', name: 'The Voile skirt', price: '625 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw68248fca/26ESKW00677AK00322520_30.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '5', name: 'Le Maillot bikini', price: '250 USD', isLarge: true, layoutSize: 'large', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw040b3344/MAILLOT-TRIANGLE-PRINT-DOTS-NAVY.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '6', name: 'The Les Mules', price: '725 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw5b68dd32/26EACW00756BW00329142_19.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '7', name: 'The Le Bisou Bag', price: '850 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw9767c278/26EBAU00417BW00513150_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '8', name: 'The La Robe Dress', price: '920 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw4763ed24/26EOPW00050AW00096850_18.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '9', name: 'The La Jupe Skirt', price: '540 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw912aa6f4/25ESKW00084BW00565850_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '10', name: 'The Triangle bikini top (2)', price: '225 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw66f02643/26ETOW00914AW000963HD_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '11', name: 'The small Soli Ibiza Resort basket (2)', price: '595 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw757c19ae/26HBAW00044AC01C272DE_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '12', name: 'The Mimosa sunglasses (2)', price: '445 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dwdfc242c5/26HEYU00072AMAC001810_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '13', name: 'The Voile skirt (2)', price: '625 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw68248fca/26ESKW00677AK00322520_30.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '14', name: 'Le Maillot bikini (2)', price: '250 USD', isLarge: true, layoutSize: 'large', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw040b3344/MAILLOT-TRIANGLE-PRINT-DOTS-NAVY.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '15', name: 'The Les Mules (2)', price: '725 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw5b68dd32/26EACW00756BW00329142_19.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '16', name: 'The Le Bisou Bag (2)', price: '850 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw9767c278/26EBAU00417BW00513150_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '17', name: 'The La Robe Dress (2)', price: '920 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw4763ed24/26EOPW00050AW00096850_18.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  { id: '18', name: 'The La Jupe Skirt (2)', price: '540 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw912aa6f4/25ESKW00084BW00565850_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+];
+
 export const AdminProvider = ({ children }) => {
   const [brands, setBrands] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('sol_products');
+    let parsed = saved ? JSON.parse(saved) : MOCK_PRODUCTS;
+    
+    // Auto-inject the new items if they don't exist yet
+    if (!parsed.find(p => p.id === '10')) {
+      const existingIds = parsed.map(p => p.id);
+      const newMocks = MOCK_PRODUCTS.filter(p => !existingIds.includes(p.id));
+      parsed = [...parsed, ...newMocks];
+    }
+
+    // Auto-inject demo tags for product 1 and 2
+    parsed = parsed.map(p => {
+      if (p.id === '1') return { ...p, tags: ['NEW'] };
+      
+      const newP = { ...p };
+      
+      if (p.id === '2') {
+        newP.tags = ['NEW'];
+        newP.colors = ['#8b5a2b', '#000000', '#d4af37', '#f5f5dc', '#ffc0cb'];
+        newP.selectedColor = '#f5f5dc';
+        newP.extraColorsCount = 2;
+      }
+      
+      // Randomly inject colors into some other products
+      if (['4', '7'].includes(p.id)) {
+        newP.colors = ['#000000', '#ffffff'];
+        newP.selectedColor = '#000000';
+      }
+      
+      if (p.id === '5') {
+        newP.colors = ['#ff0000', '#00ff00', '#0000ff'];
+        newP.selectedColor = '#ff0000';
+        newP.extraColorsCount = 1;
+      }
+
+      if (['8', '11'].includes(p.id)) {
+        newP.colors = ['#e8e2d6'];
+        newP.selectedColor = '#e8e2d6';
+      }
+      
+      return newP;
+    });
+    
+    return parsed;
+  });
   const [contentArticles, setContentArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Basic Admin Auth State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    return localStorage.getItem('moreyes_admin_auth') === 'true';
+    return localStorage.getItem('sol_admin_auth') === 'true';
   });
 
   const loginAdmin = (email, password) => {
-    if (email === 'moreyes.official@gmail.com' && password === 'Moreyes-Vision-2026!') {
-      localStorage.setItem('moreyes_admin_auth', 'true');
+    if (email === 'admin@solfashion.com' && password === 'Sol-Fashion-2026!') {
+      localStorage.setItem('sol_admin_auth', 'true');
       setIsAdminAuthenticated(true);
       return true;
     }
@@ -26,7 +92,7 @@ export const AdminProvider = ({ children }) => {
   };
 
   const logoutAdmin = () => {
-    localStorage.removeItem('moreyes_admin_auth');
+    localStorage.removeItem('sol_admin_auth');
     setIsAdminAuthenticated(false);
   };
 
@@ -42,22 +108,13 @@ export const AdminProvider = ({ children }) => {
         })));
       }
 
-      // 2. Fetch Products
+      // 2. Fetch Products (BYPASSED - Using LocalStorage instead)
+      /* 
       const { data: productsData } = await supabase.from('products').select('*').order('upload_date', { ascending: false });
       if (productsData) {
-        setProducts(productsData.map(p => ({
-          ...p,
-          brandId: p.brand_id,
-          isPolarized: p.is_polarized,
-          image: p.image_url,
-          frameColor: p.frame_color,
-          lensColor: p.lens_color,
-          uploadDate: p.upload_date,
-          sizeLens: p.size_lens,
-          sizeBridge: p.size_bridge,
-          sizeTemple: p.size_temple
-        })));
+        ...
       }
+      */
 
       // 3. Fetch Articles & Modules
       const { data: articlesData } = await supabase.from('content_articles').select(`
@@ -93,6 +150,10 @@ export const AdminProvider = ({ children }) => {
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('sol_products', JSON.stringify(products));
+  }, [products]);
 
   const addBrand = async (brand) => {
     const newId = Date.now().toString();
@@ -172,73 +233,33 @@ export const AdminProvider = ({ children }) => {
 
   const addProduct = async (product) => {
     const newId = Date.now().toString();
-    const dbProduct = {
+    const newProduct = {
+      ...product,
       id: newId,
-      name: product.name,
-      brand_id: product.brandId,
-      price: product.price,
-      sku: product.sku,
-      stock: product.stock,
-      gender: product.gender,
-      is_polarized: product.isPolarized,
-      frame_color: product.frameColor,
-      lens_color: product.lensColor,
-      material: product.material,
-      shape: product.shape,
-      size_lens: product.sizeLens,
-      size_bridge: product.sizeBridge,
-      size_temple: product.sizeTemple,
-      status: product.status,
-      image_url: product.image,
-      images: product.images || [],
-      description: product.description,
-      highlight: product.highlight
+      uploadDate: new Date().toISOString()
     };
-
-    const { error } = await supabase.from('products').insert([dbProduct]);
-    if (!error) {
-      setProducts([{ ...product, id: newId, uploadDate: new Date().toISOString() }, ...products]);
-    } else {
-      console.error("Add Product Error:", error);
-    }
+    // Update local state, useEffect will sync to localStorage
+    setProducts([...products, newProduct]);
   };
 
   const updateProduct = async (id, updatedData) => {
-    const dbProduct = {
-      name: updatedData.name,
-      brand_id: updatedData.brandId,
-      price: updatedData.price,
-      sku: updatedData.sku,
-      stock: updatedData.stock,
-      gender: updatedData.gender,
-      is_polarized: updatedData.isPolarized,
-      frame_color: updatedData.frameColor,
-      lens_color: updatedData.lensColor,
-      material: updatedData.material,
-      shape: updatedData.shape,
-      size_lens: updatedData.sizeLens,
-      size_bridge: updatedData.sizeBridge,
-      size_temple: updatedData.sizeTemple,
-      status: updatedData.status,
-      image_url: updatedData.image,
-      images: updatedData.images || [],
-      description: updatedData.description,
-      highlight: updatedData.highlight
-    };
-    // Clean up undefined properties
-    Object.keys(dbProduct).forEach(key => dbProduct[key] === undefined && delete dbProduct[key]);
-
-    const { error } = await supabase.from('products').update(dbProduct).eq('id', id);
-    if (!error) {
-      setProducts(products.map(p => p.id === id ? { ...p, ...updatedData } : p));
-    } else {
-      console.error("Update Product Error:", error);
-    }
+    setProducts(products.map(p => p.id === id ? { ...p, ...updatedData } : p));
   };
 
   const deleteProduct = async (id) => {
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (!error) setProducts(products.filter(p => p.id !== id));
+    setProducts(products.filter(p => p.id !== id));
+  };
+
+  const changeProductOrder = (id, newIndex) => {
+    const currentIndex = products.findIndex(p => p.id === id);
+    if (currentIndex === -1 || currentIndex === newIndex) return false;
+
+    const newProducts = [...products];
+    const [movedProduct] = newProducts.splice(currentIndex, 1);
+    newProducts.splice(newIndex, 0, movedProduct);
+
+    setProducts(newProducts);
+    return true;
   };
 
   const addContentArticle = async (article) => {
@@ -366,6 +387,7 @@ export const AdminProvider = ({ children }) => {
     addProduct,
     updateProduct,
     deleteProduct,
+    changeProductOrder,
     addContentArticle,
     updateContentArticle,
     deleteContentArticle,

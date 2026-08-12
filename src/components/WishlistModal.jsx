@@ -1,10 +1,23 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
+import { useCart } from '../context/CartContext';
 import styles from './WishlistModal.module.css';
 
 const WishlistModal = () => {
   const { isWishlistOpen, closeWishlist, wishlistItems, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  
+  const [selectedSizes, setSelectedSizes] = useState({});
+  const [sizeErrors, setSizeErrors] = useState({});
+  const [addingToCart, setAddingToCart] = useState({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(addingToCart).forEach(clearTimeout);
+    };
+  }, [addingToCart]);
 
   // Prevent scrolling on body when modal is open
   useEffect(() => {
@@ -18,13 +31,61 @@ const WishlistModal = () => {
     };
   }, [isWishlistOpen]);
 
+  // Mock sizes based on product name
+  const getItemSizes = (itemName) => {
+    const lower = itemName.toLowerCase();
+    if (lower.includes('dress') || lower.includes('top') || lower.includes('skirt') || lower.includes('bikini')) {
+      return ['34', '36', '38', '40'];
+    }
+    return null; 
+  };
+
+  const handleSizeChange = (itemId, size) => {
+    setSelectedSizes(prev => ({ ...prev, [itemId]: size }));
+    setSizeErrors(prev => ({ ...prev, [itemId]: false })); 
+  };
+
+  const handleAddToCart = (item) => {
+    const sizes = getItemSizes(item.name);
+    if (sizes && !selectedSizes[item.id]) {
+      setSizeErrors(prev => ({ ...prev, [item.id]: true }));
+      return;
+    }
+    
+    // Add item to cart context
+    addToCart(item, selectedSizes[item.id]);
+
+    // Start timeout for auto-remove
+    const timeoutId = setTimeout(() => {
+      toggleWishlist(item);
+      setAddingToCart(prev => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+    }, 3000);
+    
+    setAddingToCart(prev => ({ ...prev, [item.id]: timeoutId }));
+  };
+
+  const handleCancelAdd = (itemId) => {
+    if (addingToCart[itemId]) {
+      clearTimeout(addingToCart[itemId]);
+      setAddingToCart(prev => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
+    }
+  };
+
   if (!isWishlistOpen) return null;
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.header}>
         <h2 className={styles.title}>
-          WISHLIST{wishlistItems.length > 0 && <sup>{wishlistItems.length}</sup>}
+          Wishlist{wishlistItems.length > 0 && <sup>{wishlistItems.length}</sup>}
         </h2>
         <button className={styles.closeBtn} onClick={closeWishlist} aria-label="Close Wishlist">
           <X size={24} strokeWidth={1} />
@@ -40,47 +101,71 @@ const WishlistModal = () => {
           <div className={styles.grid}>
             {wishlistItems.map((item) => (
               <div key={item.id} className={styles.item}>
-                <div className={styles.imageContainer}>
-                  <img src={item.image} alt={item.name} className={styles.image} />
-                </div>
-                <div className={styles.details}>
-                  <div className={styles.info}>
-                    <p className={styles.name}>{item.name}</p>
-                    <p className={styles.color}>Silver / Clear</p>
-                    <p className={styles.price}>
-                      {item.price} {item.status && <span>- {item.status}</span>}
+                {addingToCart[item.id] ? (
+                  <div className={styles.addedSuccessBlock}>
+                    <p className={styles.successMessage}>
+                      Added to your <Link to="/cart" className={styles.cartLink} onClick={closeWishlist}>cart</Link>
                     </p>
+                    <button className={styles.textBtn} onClick={() => handleCancelAdd(item.id)}>Cancel</button>
                   </div>
-                  <button 
-                    className={styles.bookmarkBtn} 
-                    onClick={() => toggleWishlist(item)}
-                    aria-label="Remove from Wishlist"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinecap="square" strokeLinejoin="miter">
-                      <path d="M19 21l-7-5-7 5V3h14v18z" />
-                    </svg>
-                  </button>
-                </div>
+                ) : (
+                  <>
+                    <div className={styles.imageContainer}>
+                      <img src={item.image} alt={item.name} className={styles.image} />
+                    </div>
+                    
+                    <div className={styles.itemContent}>
+                      <div className={styles.itemInfo}>
+                        <p className={styles.name}>{item.name}</p>
+                        <p className={styles.color}>Black</p> {/* Mocking color for reference */}
+                      </div>
+                      
+                      {getItemSizes(item.name) && (
+                        <div className={`${styles.sizeWrapper} ${sizeErrors[item.id] ? styles.sizeError : ''}`}>
+                          <select 
+                            className={styles.sizeDropdown}
+                            value={selectedSizes[item.id] || ''}
+                            onChange={(e) => handleSizeChange(item.id, e.target.value)}
+                          >
+                            <option value="" disabled hidden>Size ⌄</option>
+                            {getItemSizes(item.name).map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className={styles.itemFooter}>
+                        <p className={styles.price}>
+                          {item.price} {item.status && <span>- {item.status}</span>}
+                        </p>
+                        <div className={styles.itemActions}>
+                          <button className={styles.textBtn} onClick={() => handleAddToCart(item)}>Add to cart</button>
+                          <button className={styles.textBtn} onClick={() => toggleWishlist(item)}>Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
           
           <div className={styles.footer}>
             <button 
-              className={styles.chatWithStylistBtn}
+              className={styles.mainActionBtn}
               onClick={() => {
-                const itemList = wishlistItems.map(item => `- ${item.name} (${item.price})`).join('\n');
-                const message = `สวัสดีค่ะ สนใจแว่นตามรายการนี้ค่ะ:\n${itemList}`;
-                window.open(`https://line.me/R/oaMessage/@moreyes/?text=${encodeURIComponent(message)}`, '_blank');
+                // Add all valid items to cart
+                wishlistItems.forEach(item => {
+                  const size = selectedSizes[item.id] || "M"; // Default to M or require validation
+                  addToCart(item, size);
+                });
+                closeWishlist();
               }}
             >
-              <div className={styles.lineCircle}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.967C23.156 14.375 24 12.459 24 10.314" />
-                </svg>
-              </div>
-              CHAT WITH STYLIST
+              ADD ALL TO CART
             </button>
+            <button className={styles.shareLink}>Share my wishlist</button>
           </div>
         </>
       )}

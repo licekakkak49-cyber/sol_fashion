@@ -4,303 +4,302 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.15); /* Lighter tint for a brighter look */
+  background-color: rgba(0, 0, 0, 0.4);
   z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .drawer {
   position: fixed;
   top: 0;
   right: 0;
-  width: 650px;
+  width: 50vw;
   max-width: 100vw;
   height: 100vh;
-  background-color: #fff;
-  z-index: 2001;
-  padding: 80px 100px;
+  background-color: #fff; /* Match cart background */
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 20px rgba(0,0,0,0.05);
+  position: relative;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+  z-index: 2001;
   overflow-y: auto;
 }
 
-.closeBtn {
-  position: absolute;
-  top: 40px;
-  right: 40px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #000;
-  padding: 5px;
-  transition: opacity 0.2s;
-  outline: none;
+.innerContent {
+  width: 100%;
+  max-width: 85%; /* Match cart layout */
+  margin: 0 auto;
 }
 
-.closeBtn:hover {
-  opacity: 0.5;
-}
-
-.content {
-  margin-top: 60px;
+.header {
   display: flex;
-  flex-direction: column;
-  padding-bottom: 60px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
 }
 
 .title {
-  font-family: var(--font-sans, "Inter", sans-serif);
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #111;
+  padding: 5px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: -5px; /* Offset padding */
+}
+
+.closeBtn:hover {
+  transform: rotate(90deg);
+}
+
+.scrollArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 15vh; /* Pushes content down about 15% from the top */
+}
+
+.greeting {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 20px 0 60px 0;
+  color: #111;
+  letter-spacing: 0.03em;
+}
+
+.instruction {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #666;
   margin: 0 0 40px 0;
+  color: #111;
+  letter-spacing: 0.03em;
 }
 
 .tabs {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   margin-bottom: 40px;
 }
 
 .tab {
   background: none;
   border: none;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 12px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
   font-weight: 400;
-  color: #000;
+  color: #111;
   cursor: pointer;
-  padding: 0 0 2px 0;
+  padding: 0 0 4px 0;
   transition: opacity 0.2s;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
   position: relative;
+  letter-spacing: 0.03em;
 }
 
 .tab::after {
   content: '';
   position: absolute;
   left: 0;
-  bottom: -2px;
+  bottom: 0;
   width: 100%;
   height: 1px;
-  background-color: #000;
+  background-color: currentColor;
   transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s ease-out;
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tab:hover::after, .activeTab::after {
+/* Hover on inactive tab: grows from left, shrinks to right on leave */
+.tab:not(.activeTab):hover::after {
   transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Active tab default: solid line, origin right for its own hover effect */
+.activeTab::after {
+  transform: scaleX(1);
+  transform-origin: right;
+}
+
+/* Hover on active tab: shrinks to right, grows from right on leave */
+.activeTab:hover::after {
+  transform: scaleX(0);
+  transform-origin: right;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 12px;
 }
 
 .inputGroup {
   width: 100%;
+  margin-bottom: 28px;
+}
+
+.passwordInputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  padding: 5px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.eyeBtn:hover {
+  color: #111;
 }
 
 .input {
   width: 100%;
   border: none;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
   background: transparent;
-  padding: 10px 0 5px 0;
-  font-family: var(--font-sans, "Inter", sans-serif);
+  padding: 10px 0;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #000;
+  color: #111;
   outline: none;
   transition: border-color 0.2s;
+  letter-spacing: 0.03em;
 }
 
 .input::placeholder {
-  color: #666;
+  color: #555;
 }
 
 .input:focus {
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid #111;
 }
 
 .forgotPassword {
-  font-family: var(--font-sans, "Inter", sans-serif);
+  display: block;
+  text-align: right;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: #000;
-  text-decoration: none;
-  margin-top: 10px;
+  color: #555;
+  text-decoration: underline;
+  margin-top: 12px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
 }
 
 .forgotPassword:hover {
-  text-decoration: underline;
+  color: #111;
 }
 
 .loginBtn {
   width: 100%;
-  padding: 15px;
-  background: transparent;
-  border: 1px solid #000;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 12px;
+  background-color: #111;
+  color: #fff;
+  border: 1px solid #111; /* Keep border to avoid size jumping */
+  padding: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
   font-weight: 400;
-  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  margin-top: 10px;
-  transition: all 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .loginBtn:hover {
-  background: #000;
-  color: #fff;
+  background-color: #fff;
+  color: #111;
 }
 
-.divider {
+.createBtn {
+  width: 100%;
+  background-color: transparent;
+  color: #111;
+  border: 1px solid #111;
+  padding: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.createBtn:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.socialSection {
+  margin-top: 16px;
   display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 30px 0;
-  color: #666;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 40px;
 }
 
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #eee;
-}
-
-.divider span {
-  padding: 0 15px;
+.socialText {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #555;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-align: center; /* Center the text perfectly */
 }
 
 .googleBtn {
+  width: 100%;
+  background-color: transparent;
+  border: 1px solid #111;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 15px;
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid #ccc;
-  font-family: var(--font-sans, "Inter", sans-serif);
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: #000;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #111;
 }
 
 .googleBtn:hover {
-  background-color: #f5f5f5;
-}
-
-.wishlistSection {
-  margin-top: 60px;
-}
-
-.wishlistHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 70px;
-}
-
-.wishlistHeader h3 {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 11px;
-  font-weight: 400;
-  margin: 0;
-}
-
-.wishlistHeader h3 sup {
-  font-size: 8px;
-  margin-left: 2px;
-}
-
-.moreBtn {
-  background: none;
-  border: none;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
-  font-weight: 400;
-  color: #000;
-  cursor: pointer;
-  padding: 0;
-}
-
-.moreBtn:hover {
-  text-decoration: underline;
-}
-
-.wishlistGrid {
-  display: flex;
-  gap: 15px;
-}
-
-.wishlistItem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.wishlistItem img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: contain;
-  background-color: transparent;
-  margin-bottom: 8px;
-}
-
-.wishlistName {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
-  font-weight: 400;
-  margin: 0 0 2px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.wishlistPrice {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
-  font-weight: 400;
-  color: #666;
-  margin: 0;
+  background-color: #111;
+  color: #fff;
 }
 
 @media (max-width: 768px) {
   .drawer {
-    width: 100vw;
-    padding: 60px 40px;
-  }
-  
-  .closeBtn {
-    top: 30px;
-    right: 30px;
-  }
-}
-
-@media (max-width: 480px) {
-  .drawer {
-    padding: 40px 20px;
-  }
-  
-  .closeBtn {
-    top: 20px;
-    right: 20px;
-  }
-  
-  .content {
-    margin-top: 40px;
+    width: 100%;
   }
 }

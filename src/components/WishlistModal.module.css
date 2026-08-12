@@ -21,11 +21,10 @@
 }
 
 .title {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 14px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
   font-weight: 400;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .title sup {
@@ -42,12 +41,12 @@
   border: none;
   cursor: pointer;
   padding: 10px;
-  color: #000;
-  transition: opacity 0.2s ease;
+  color: #111;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .closeBtn:hover {
-  opacity: 0.6;
+  transform: translateY(-50%) rotate(90deg);
 }
 
 .emptyState {
@@ -55,7 +54,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: var(--font-sans, "Inter", sans-serif);
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   color: #666;
   font-weight: 400;
@@ -64,7 +63,7 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 40px;
+  gap: 20px;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
@@ -73,6 +72,7 @@
 .item {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .imageContainer {
@@ -94,119 +94,203 @@
 .separator {
   height: 1px;
   width: 40px;
-  border-bottom: 1px dashed #ccc;
+  border-bottom: 1px solid #111;
   margin-bottom: 15px;
 }
 
-.details {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.info {
+.itemContent {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  flex: 1;
+}
+
+.itemInfo {
+  margin-bottom: 24px;
 }
 
 .name {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 12px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
   font-weight: 400;
+  letter-spacing: 0.05em;
   margin: 0;
 }
 
 .color {
-  font-family: var(--font-sans, "Inter", sans-serif);
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
   color: #666;
-  margin: 0;
   font-weight: 400;
+  letter-spacing: 0.05em;
+  margin: 16px 0 0 0;
 }
 
 .price {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 11px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
   color: #000;
-  margin: 0;
   font-weight: 400;
+  letter-spacing: 0.05em;
+  margin: 0;
 }
 
-.bookmarkBtn {
+.sizeWrapper {
+  margin-bottom: 24px;
+  position: relative;
+  width: fit-content;
+}
+
+.sizeDropdown {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+.sizeError .sizeDropdown {
+  color: red;
+}
+
+.itemFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: auto;
+}
+
+.itemActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.textBtn {
+  position: relative;
   background: none;
   border: none;
-  cursor: pointer;
-  color: #000;
-  padding: 0;
-}
-
-.actionBtn {
-  align-self: flex-start;
-  margin-top: 15px;
-  padding: 6px 12px;
-  background-color: #eee;
-  border: none;
-  border-radius: 4px;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
+  padding: 0 0 2px 0;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
   font-weight: 400;
   cursor: pointer;
-  transition: background-color 0.2s;
+  color: #111;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
 }
 
-.actionBtn:hover {
-  background-color: #ddd;
+.textBtn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.textBtn:hover {
+  color: #000;
+}
+
+.textBtn:hover::after {
+  transform-origin: left;
+  transform: scaleX(1);
 }
 
 .footer {
   margin-top: 60px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   width: 100%;
 }
 
-.chatWithStylistBtn {
+.footerTotals {
+  display: flex;
+  justify-content: space-between;
   width: 100%;
   max-width: 400px;
-  background-color: transparent;
-  color: #111;
-  border: 1px solid #111;
-  padding: 14px;
-  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  color: #666;
+}
+
+.shareLink {
+  background: none;
+  border: none;
+  text-decoration: underline;
+  margin-top: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
   cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.3s ease-in-out;
+  color: #666;
+}
+
+.shareLink:hover {
+  color: #111;
+}
+
+.mainActionBtn {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px;
+  background-color: #111;
+  color: #fff;
+  border: none;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  cursor: pointer;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   gap: 12px;
-  font-weight: 500;
-  font-family: var(--font-sans, "Inter", sans-serif);
+  transition: opacity 0.2s ease;
+  text-transform: uppercase;
 }
 
-.lineCircle {
+.mainActionBtn:hover {
+  opacity: 0.8;
+}
+
+.addedSuccessBlock {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
-  color: #fff;
-  transition: all 0.3s ease-in-out;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 10px;
 }
 
-.chatWithStylistBtn:hover {
-  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
-  color: #fff;
-  border-color: transparent;
+.successMessage {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #111;
+  margin: 0;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+  padding-right: 16px;
 }
 
-.chatWithStylistBtn:hover .lineCircle {
-  background: #fff;
-  color: #cf8291;
+.cartLink {
+  color: #111;
+  text-decoration: underline;
+}
+
+.cartLink:hover {
+  opacity: 0.6;
 }
 
 @media (max-width: 1024px) {

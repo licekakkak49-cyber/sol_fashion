@@ -32,7 +32,7 @@ const WishlistPopup = () => {
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
         >
           <button className={styles.closeBtn} onClick={closeWishlistPopup} aria-label="Close Popup">
-            <X size={14} strokeWidth={1} />
+            <X size={20} strokeWidth={1.2} />
           </button>
 
           {lastAddedItem && (
@@ -41,7 +41,7 @@ const WishlistPopup = () => {
             </p>
           )}
           
-          <h3 className={styles.title}>WISHLIST{wishlistItems.length > 0 && <sup>{wishlistItems.length}</sup>}</h3>
+          <h3 className={styles.title}>Wishlist{wishlistItems.length > 0 && <sup>{wishlistItems.length}</sup>}</h3>
           
           <div className={styles.itemsList}>
             {wishlistItems.slice(-3).reverse().map(item => (

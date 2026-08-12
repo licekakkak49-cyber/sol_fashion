@@ -68,7 +68,7 @@ const MultiPillSelector = ({ label, options, selectedValues, onChange }) => (
 );
 
 const ManageProductsPage = () => {
-  const { products, brands, addProduct, updateProduct, deleteProduct } = useAdmin();
+  const { products, brands, addProduct, updateProduct, deleteProduct, changeProductOrder } = useAdmin();
   
   // Filtering and Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,13 +207,13 @@ const ManageProductsPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const validProducts = Array.isArray(products) ? products.filter(Boolean) : [];
+
   // Filter Logic
   const filteredProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
+    if (!validProducts.length) return [];
     
-    return products.filter(p => {
-      if (!p) return false; // Guard against null/undefined product entries
-
+    const filtered = validProducts.filter(p => {
       // 1. Tab Filter
       const stockNum = parseInt(p.stock) || 0;
       if (activeTab === 'In Stock' && stockNum === 0) return false;
@@ -256,13 +256,92 @@ const ManageProductsPage = () => {
       }
       return 0;
     });
-  }, [products, activeTab, filterBrand, filterGender, filterHighlight, searchQuery, sortBy]);
+  }, [validProducts, searchQuery, activeTab, filterBrand, filterGender, filterHighlight, sortBy]);
+
+  const macroRows = useMemo(() => {
+    const rows = [];
+    let currentBlock = [];
+    let currentCapacity = 4;
+    let currentBlocksInRow = [];
+    let currentRowType = null; // 'standard' or 'wide'
+
+    const pushCurrentBlock = () => {
+      if (currentBlock.length > 0) {
+        currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
+        currentBlock = [];
+        currentCapacity = 4;
+      }
+      
+      const maxBlocks = currentRowType === 'wide' ? 1 : 2;
+      
+      if (currentBlocksInRow.length === maxBlocks) {
+        rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
+        currentBlocksInRow = [];
+        currentRowType = null;
+      }
+    };
+
+    filteredProducts.forEach(product => {
+      const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+      const productType = layoutSize === 'wide' ? 'wide' : 'standard';
+      const requiredCapacity = layoutSize === 'large' ? 4 : 1;
+      
+      if (currentRowType !== null && currentRowType !== productType) {
+        pushCurrentBlock();
+        if (currentBlocksInRow.length > 0) {
+          rows.push({ type: currentRowType, blocks: currentBlocksInRow });
+          currentBlocksInRow = [];
+        }
+      }
+      
+      currentRowType = productType;
+      
+      if (requiredCapacity > currentCapacity && currentBlock.length > 0) {
+        pushCurrentBlock();
+      }
+
+      currentBlock.push(product);
+      currentCapacity -= requiredCapacity;
+
+      if (currentCapacity === 0) {
+        pushCurrentBlock();
+      }
+    });
+
+    if (currentBlock.length > 0) {
+      currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
+    }
+    if (currentBlocksInRow.length > 0) {
+      rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
+    }
+
+    return rows;
+  }, [filteredProducts]);
 
   // Derived counts for tabs
-  const validProducts = Array.isArray(products) ? products.filter(Boolean) : [];
   const inStockCount = validProducts.filter(p => parseInt(p.stock || 0) > 0).length;
   const lowStockCount = validProducts.filter(p => parseInt(p.stock || 0) > 0 && parseInt(p.stock || 0) <= 5).length;
   const outOfStockCount = validProducts.filter(p => !p.stock || parseInt(p.stock || 0) === 0).length;
+
+  const handleMoveLeft = (product) => {
+    const idx = products.findIndex(p => p.id === product.id);
+    if (idx > 0) changeProductOrder(product.id, idx - 1);
+  };
+
+  const handleMoveRight = (product) => {
+    const idx = products.findIndex(p => p.id === product.id);
+    if (idx < products.length - 1) changeProductOrder(product.id, idx + 1);
+  };
+
+  const handleToggleSize = (product) => {
+    const currentSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+    const sizes = ['small', 'large', 'wide'];
+    const nextSize = sizes[(sizes.indexOf(currentSize) + 1) % sizes.length];
+    updateProduct(product.id, { 
+      layoutSize: nextSize, 
+      isLarge: nextSize === 'large' // Keep for backwards compatibility with older components
+    });
+  };
 
   const inputStyle = {
     width: '100%', 
@@ -532,8 +611,8 @@ const ManageProductsPage = () => {
         ))}
       </div>
 
-      {/* Product Grid */}
-      <div className={styles.grid}>
+      {/* WYSIWYG Product Grid */}
+      <div className={styles.productGridContainer}>
         {filteredProducts.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', padding: '64px', textAlign: 'center', color: '#888' }}>
             <Package size={48} strokeWidth={1} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
@@ -541,103 +620,54 @@ const ManageProductsPage = () => {
             <p style={{ margin: 0, fontSize: '14px' }}>Try adjusting your search or filters to find what you're looking for.</p>
           </div>
         ) : (
-          filteredProducts.map(product => (
-            <div key={product.id} className={styles.card} style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ height: '160px', background: '#f6f7f9', borderRadius: '12px', margin: '12px 12px 0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <img src={product.image} alt={product.name} style={{ width: '70%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
-                
-                {/* Stock Indicator (Dot + Text, no background) */}
-                <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '6px', flexDirection: 'column' }}>
-                  <span style={{ 
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    color: '#111',
-                    fontSize: '10px', fontWeight: 700, textTransform: 'uppercase'
-                  }}>
-                    <span style={{ 
-                      display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
-                      background: (!product.stock || parseInt(product.stock) === 0) ? '#999' : (product.stock && parseInt(product.stock) <= 5 && parseInt(product.stock) > 0) ? '#ffcc00' : '#10b981'
-                    }}></span>
-                    {(!product.stock || parseInt(product.stock) === 0) ? 'Out of Stock' : `${product.stock} in stock`}
-                  </span>
+          macroRows.map((row, rowIndex) => (
+            <div key={`row-${rowIndex}`} className={styles.macroRow}>
+              {row.blocks.map((block, blockIndex) => (
+                <div key={`block-${rowIndex}-${blockIndex}`} className={row.type === 'wide' ? styles.wideBlock : styles.block}>
+                  {block.items.map((product) => {
+                    const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+                    const isLarge = layoutSize === 'large';
+                    
+                    return (
+                    <div 
+                      key={product.id} 
+                      className={`${styles.card} ${isLarge ? styles.largeCard : styles.standardCard}`} 
+                      style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+                    >
+                      <div style={{ aspectRatio: isLarge ? 'auto' : '3/4', height: isLarge ? '100%' : 'auto', flex: isLarge ? 1 : 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                        <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        
+                        {/* Editor Controls Overlay */}
+                        <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                          <button onClick={() => handleMoveLeft(product)} style={{ background: '#111', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>&larr;</button>
+                          <button onClick={() => handleMoveRight(product)} style={{ background: '#111', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>&rarr;</button>
+                          <button onClick={() => handleToggleSize(product)} style={{ background: layoutSize === 'wide' ? '#10b981' : (isLarge ? '#007aff' : '#111'), color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>
+                            {layoutSize === 'wide' ? '1x4 (Wide)' : (isLarge ? '2x2 (Large)' : '1x1 (Small)')}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 400, fontFamily: 'var(--font-sans, "Futura PT", "Helvetica Neue", Arial, sans-serif)', color: 'rgb(30, 30, 30)' }}>{product.name}</h4>
+                          <span style={{ fontSize: '13px', fontWeight: 400, fontFamily: 'var(--font-sans, "Futura PT", "Helvetica Neue", Arial, sans-serif)', color: '#8E9196', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                            {product.price}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '12px' }}>
+                          <button onClick={() => handleEdit(product)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: '0', fontSize: '11px', fontWeight: 500, textDecoration: 'underline' }}>
+                            Edit
+                          </button>
+                          <button onClick={() => deleteProduct(product.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0', fontSize: '11px', fontWeight: 500, textDecoration: 'underline' }}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )})}
                 </div>
-
-                {/* Highlights (Original Pink/Red squares) */}
-                {Array.isArray(product.highlight) && product.highlight.length > 0 && (
-                  <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
-                    {product.highlight.map(h => (
-                      <span key={h} style={{ 
-                        background: h === 'New Arrival' ? '#e4a5b1' : '#dc2626', 
-                        color: '#fff', 
-                        border: 'none',
-                        padding: '4px 10px', 
-                        borderRadius: '4px', 
-                        fontSize: '9px', 
-                        fontWeight: 700, 
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}>
-                        {h}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {/* Fallback for old string data highlight */}
-                {typeof product.highlight === 'string' && product.highlight !== 'None' && (
-                  <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
-                    <span style={{ 
-                      background: product.highlight === 'New Arrival' ? '#e4a5b1' : '#dc2626', 
-                      color: '#fff', 
-                      border: 'none',
-                      padding: '4px 10px', 
-                      borderRadius: '4px', 
-                      fontSize: '9px', 
-                      fontWeight: 700, 
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}>
-                      {product.highlight}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 500, color: '#111' }}>{product.name}</h4>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#111' }}>
-                    {(product.price || '').toString().includes('฿') ? product.price : `฿${parseInt(product.price || 0).toLocaleString()}`}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{getBrandName(product.brandId)}</p>
-                    {product.uploadDate && <p style={{ margin: 0, fontSize: '10px', color: '#bbb' }}>Added: {new Date(product.uploadDate).toLocaleDateString()}</p>}
-                  </div>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>SKU: {product.sku || 'N/A'}</p>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '10px', padding: '4px 8px', background: '#111', border: 'none', borderRadius: '100px', color: '#fff', fontWeight: 500 }}>{product.frameColor}</span>
-                    <span style={{ fontSize: '10px', padding: '4px 8px', background: '#111', border: 'none', borderRadius: '100px', color: '#fff', fontWeight: 500 }}>{product.shape}</span>
-                    {product.isPolarized === 'Yes' && (
-                      <span style={{ fontSize: '10px', padding: '4px 8px', background: '#111', border: 'none', borderRadius: '100px', color: '#fff', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#007aff' }}></span>
-                        Polarized
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => handleEdit(product)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#888', padding: '4px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} title="Edit">
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => deleteProduct(product.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#888', padding: '4px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} title="Delete">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              ))}
+              {row.type === 'standard' && row.blocks.length === 1 && <div className={styles.blockPlaceholder}></div>}
             </div>
           ))
         )}

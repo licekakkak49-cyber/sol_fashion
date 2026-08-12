@@ -1,0 +1,26 @@
+.banner {
+  width: 100vw;
+  /* If the image should maintain aspect ratio, we can let the image dictate height.
+     Or we can fix the height and use object-fit: cover.
+     The user said "คล้าย hero คือจะซ้ายขวาชิดขอบจอเลย" (similar to hero, touching left/right edges).
+     I will let the image dictate the height, but fill the width. */
+  display: flex;
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 100vh; /* Don't exceed screen height so it doesn't get ridiculously tall */
+}
+
+@media (max-width: 768px) {
+  .banner {
+    height: 85vh;
+  }
+  .image {
+    height: 100%;
+    object-fit: cover;
+  }
+}

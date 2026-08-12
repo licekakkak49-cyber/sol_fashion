@@ -6,14 +6,14 @@ import { useAdmin } from '../context/AdminContext';
 import styles from './ProductsPage.module.css';
 
 const CATEGORIES = [
-  'View all', 'Viggie Collection', 'Bestselling', '2024 Collection', 
-  'BOLD Collection', 'Blue Light Lenses', 'Tinted Lenses', 'Gifts'
+  'View all', 'New In', 'SOL Fall 2026', 
+  'Bags', 'Dresses', 'Tops', 'Bottoms', 'Accessories'
 ];
 
 const ProductsPage = () => {
   const { products, loading } = useAdmin();
   const [activeCategory, setActiveCategory] = useState('View all');
-  const [visibleCount, setVisibleCount] = useState(16);
+  const [visibleCount, setVisibleCount] = useState(8);
   
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
@@ -23,6 +23,7 @@ const ProductsPage = () => {
     shape: []
   });
   const [sortBy, setSortBy] = useState('Newest');
+
 
   const filteredProducts = useMemo(() => {
     return (products || []).filter(product => {
@@ -37,6 +38,67 @@ const ProductsPage = () => {
       return true;
     });
   }, [selectedFilters, products]);
+
+  const macroRows = useMemo(() => {
+    const rows = [];
+    let currentBlock = [];
+    let currentCapacity = 4;
+    let currentBlocksInRow = []; // Up to 2 blocks per Macro Row (Standard), or 1 block (Wide)
+    let currentRowType = null; // 'standard' or 'wide'
+
+    const pushCurrentBlock = () => {
+      if (currentBlock.length > 0) {
+        currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
+        currentBlock = [];
+        currentCapacity = 4;
+      }
+      
+      const maxBlocks = currentRowType === 'wide' ? 1 : 2;
+      
+      if (currentBlocksInRow.length === maxBlocks) {
+        rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
+        currentBlocksInRow = [];
+        currentRowType = null;
+      }
+    };
+
+    filteredProducts.forEach(product => {
+      // Map legacy isLarge to layoutSize
+      const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+      const productType = layoutSize === 'wide' ? 'wide' : 'standard';
+      const requiredCapacity = layoutSize === 'large' ? 4 : 1;
+      
+      if (currentRowType !== null && currentRowType !== productType) {
+        pushCurrentBlock();
+        if (currentBlocksInRow.length > 0) {
+          rows.push({ type: currentRowType, blocks: currentBlocksInRow });
+          currentBlocksInRow = [];
+        }
+      }
+      
+      currentRowType = productType;
+      
+      if (requiredCapacity > currentCapacity && currentBlock.length > 0) {
+        pushCurrentBlock();
+      }
+
+      currentBlock.push(product);
+      currentCapacity -= requiredCapacity;
+
+      if (currentCapacity === 0) {
+        pushCurrentBlock();
+      }
+    });
+
+    if (currentBlock.length > 0) {
+      currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
+    }
+    if (currentBlocksInRow.length > 0) {
+      rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
+    }
+
+    return rows;
+  }, [filteredProducts]);
 
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + 16, filteredProducts.length));
@@ -62,6 +124,20 @@ const ProductsPage = () => {
     }));
   };
 
+  const getCategoryCount = (cat) => {
+    if (cat === 'View all') return products?.length || 0;
+    const mockCounts = {
+      'New In': 24,
+      'SOL Fall 2026': 42,
+      'Bags': 18,
+      'Dresses': 12,
+      'Tops': 20,
+      'Bottoms': 15,
+      'Accessories': 32
+    };
+    return mockCounts[cat] || 0;
+  };
+
   return (
     <div className={styles.page}>
       {/* Options Bar */}
@@ -75,6 +151,9 @@ const ProductsPage = () => {
                 onClick={() => setActiveCategory(cat)}
               >
                 {cat}
+                {activeCategory === cat && (
+                  <sup className={styles.categoryCount}>{getCategoryCount(cat)}</sup>
+                )}
               </button>
             ))}
           </div>
@@ -83,7 +162,7 @@ const ProductsPage = () => {
             className={styles.filterBtn} 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
-            FILTER 
+            Filter 
             {isFilterOpen ? <X size={20} strokeWidth={1.5} /> : <SlidersHorizontal size={20} strokeWidth={1.5} />}
           </button>
         </div>
@@ -101,52 +180,59 @@ const ProductsPage = () => {
         />
       </div>
 
-      {/* Header */}
-      <div className={styles.header}>
-        <h1 className={styles.title}>ALL GLASSES</h1>
-        <p className={styles.subtitle}>
-          Experience optical selections that convey a modern aesthetic feel.
-        </p>
+
+      {/* Product Grid based on Bin-Packing Algorithm */}
+      <div className={styles.productGridContainer}>
+        {macroRows.map((row, rowIndex) => (
+          <div key={`row-${rowIndex}`} className={styles.macroRow}>
+            {row.blocks.map((block, blockIndex) => {
+              const isLargeBlock = block.items.length === 1 && (block.items[0].layoutSize === 'large' || block.items[0].isLarge);
+              const blockClass = row.type === 'wide' ? styles.wideBlock : (isLargeBlock ? styles.largeBlock : styles.block);
+              return (
+                <div key={`block-${rowIndex}-${blockIndex}`} className={blockClass}>
+                  {block.items.map((product) => {
+                  const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+                  return (
+                    <div 
+                      key={product.id} 
+                      className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
+                    >
+                      <ProductCard 
+                        id={product.id}
+                        image={product.image}
+                        name={product.name}
+                        price={product.price}
+                        tags={product.tags}
+                        colors={product.colors}
+                        selectedColor={product.selectedColor}
+                        extraColorsCount={product.extraColorsCount}
+                        isLarge={layoutSize === 'large'}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+            })}
+            {row.type === 'standard' && row.blocks.length === 1 && <div className={styles.blockPlaceholder}></div>}
+          </div>
+        ))}
       </div>
 
-      {/* Product Grid */}
-      <div className={styles.productGrid}>
-          {loading ? (
-            <div style={{ gridColumn: '1 / -1', padding: '64px', textAlign: 'center', color: '#888' }}>
-              Loading products...
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div style={{ gridColumn: '1 / -1', padding: '64px', textAlign: 'center', color: '#888' }}>
-              No products match your filters.
-            </div>
-          ) : (
-            filteredProducts.slice(0, visibleCount).map((product) => {
-              const formattedPrice = (product.price || '').toString().includes('฿') 
-                ? product.price 
-                : `฿ ${(parseInt(product.price || 0)).toLocaleString()}.00`;
-                
-              return (
-                <ProductCard 
-                  key={product.id} 
-                  id={product.id}
-                  image={product.image}
-                  name={product.name}
-                  price={formattedPrice}
-                  status={product.status === 'In Stock' ? null : product.status}
-                />
-              );
-            })
-          )}</div>
-
-      {/* Load More */}
-      {visibleCount < filteredProducts.length && (
-        <div className={styles.loadMoreContainer}>
-          <button className={styles.loadMoreBtn} onClick={handleLoadMore}>
-            Load more
-          </button>
-          <a href="#" className={styles.viewAllLink}>View all products</a>
+      {/* Bottom Section */}
+      <div className={styles.bottomSection}>
+        {visibleCount < filteredProducts.length && (
+          <div className={styles.loadMoreContainer}>
+            <button className={styles.loadMoreBtn} onClick={handleLoadMore}>
+              VIEW MORE
+            </button>
+          </div>
+        )}
+        <div className={styles.breadcrumbs}>
+          <span>Homepage — Women — </span>
+          <span className={styles.currentBreadcrumb}>Beachwear</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };

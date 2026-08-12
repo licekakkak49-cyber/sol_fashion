@@ -1,51 +1,107 @@
 .page {
   min-height: 100vh;
   background-color: #FFFFFF;
-  padding: 110px 40px 60px 40px;
+  padding: 80px 24px 30px 24px;
 }
 
 /* Options Bar (Pills & Filter) */
 .optionsBarWrapper {
-  position: relative;
+  position: sticky;
+  top: 80px;
+  z-index: 30;
+  background-color: #FFFFFF;
+  padding-top: 30px;
+  padding-bottom: 32px;
   width: 100%;
+  transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Patch the gap between Nav and OptionsBar during rapid scroll transitions */
+.optionsBarWrapper::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background-color: #FFFFFF;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:global(body.nav-hidden) .optionsBarWrapper {
+  top: 0;
 }
 
 .optionsBar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 80px;
 }
 
 .pillContainer {
   display: flex;
-  gap: 10px;
+  gap: 20px;
   flex-wrap: wrap;
 }
 
 .pillBtn {
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  font-size: 12px;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
   font-weight: 400;
-  color: #777;
+  color: rgb(102, 102, 102);
   background-color: transparent;
-  border: 0.5px solid #d1d5db;
-  border-radius: 30px;
-  padding: 8px 16px;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.pillBtn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pillBtn:hover {
-  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
-  color: #fff;
-  border-color: transparent;
+  color: rgb(30, 30, 30);
+}
+
+.pillBtn:hover::after {
+  transform-origin: left;
+  transform: scaleX(1);
 }
 
 .pillActive {
-  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
-  color: #fff;
-  border-color: transparent;
+  color: rgb(30, 30, 30);
+}
+
+.pillBtn.pillActive::after {
+  transform: scaleX(1);
+  transform-origin: right;
+}
+
+.pillBtn.pillActive:hover::after {
+  transform: scaleX(0);
+  transform-origin: right;
+}
+
+.categoryCount {
+  font-size: 10px;
+  margin-left: 2px;
+  vertical-align: super;
+  font-weight: 500;
+  color: rgb(30, 30, 30);
 }
 
 .activeFilterPill {
@@ -66,9 +122,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  font-size: 12px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
   font-weight: 400;
+  letter-spacing: 0.03em;
   color: #000;
   background: transparent;
   border: none;
@@ -93,7 +150,7 @@
 }
 
 .title {
-  font-family: var(--font-sans, "Inter", sans-serif);
+  font-family: 'Futura PT', Futura, sans-serif;
   font-size: 24px;
   font-weight: 400;
   letter-spacing: 0.15em;
@@ -103,7 +160,7 @@
 }
 
 .subtitle {
-  font-family: var(--font-sans, "Inter", sans-serif);
+  font-family: 'Futura PT', Futura, sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #111;
@@ -112,18 +169,59 @@
 }
 
 /* Product Grid */
-.productGrid {
+.productGridContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.macroRow {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.block, .blockPlaceholder, .largeBlock {
+  flex: 1 1 0; /* Each block takes exactly 50% width on desktop and shrinks equally */
+  min-width: 0; /* Prevents content from forcing block wider than 50% */
+}
+
+.block {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  column-gap: 40px;
-  row-gap: 240px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  align-content: start; /* Prevent rows from stretching unnecessarily */
+}
+
+.largeBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.wideBlock {
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+
+.standardCard {
+  grid-column: span 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.largeCard {
+  grid-column: span 2;
+  grid-row: span 2;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 1024px) {
-  .productGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
+  /* No specific overrides needed for 1024px, the macroRow will just squeeze */
 }
 
 @media (max-width: 768px) {
@@ -135,61 +233,71 @@
     align-items: flex-start;
     gap: 20px;
   }
-  .productGrid {
-    grid-template-columns: 1fr;
+  .macroRow {
+    flex-direction: column;
   }
+  .block {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wideBlock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bottomSection {
+  display: flex;
+  flex-direction: column;
+  margin-top: 80px;
+  margin-bottom: 0;
 }
 
 .loadMoreContainer {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  margin-top: 80px;
-  margin-bottom: 60px;
+  justify-content: center;
+  margin-bottom: 80px;
 }
 
 .loadMoreBtn {
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  font-size: 12px;
-  font-weight: 400;
-  color: #000;
-  background-color: transparent;
-  border: 1px solid #000;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: #fff;
+  background-color: #222;
+  border: none;
   border-radius: 0;
-  padding: 12px 40px;
-  min-width: 160px;
+  padding: 16px 140px;
+  min-width: 320px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
+  text-transform: uppercase;
 }
 
 .loadMoreBtn:hover {
-  background-color: #000;
-  color: #fff;
+  opacity: 0.8;
 }
 
-.viewAllLink {
-  position: relative;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  font-size: 11px;
+.breadcrumbs {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
   font-weight: 400;
-  color: #000;
-  text-decoration: none;
+  letter-spacing: 0.03em;
+  color: #111;
+  text-align: left;
 }
 
-.viewAllLink::after {
+.currentBreadcrumb {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
+}
+
+.currentBreadcrumb::after {
   content: '';
   position: absolute;
-  left: 0;
-  bottom: -4px;
   width: 100%;
   height: 1px;
-  background-color: #000;
-  transform: scaleX(1);
-  transform-origin: right;
-  transition: transform 0.3s ease-out;
-}
-
-.viewAllLink:hover::after {
-  transform: scaleX(0);
+  bottom: 0;
+  left: 0;
+  background-color: #111;
 }

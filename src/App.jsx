@@ -15,6 +15,7 @@ import StoryPage from './pages/StoryPage';
 import AccountPage from './pages/AccountPage';
 import WishlistModal from './components/WishlistModal';
 import WishlistPopup from './components/WishlistPopup';
+import CartSidebar from './components/CartSidebar';
 import LoginDrawer from './components/LoginDrawer';
 import StorePage from './pages/StorePage';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -88,8 +89,9 @@ function App() {
         </Routes>
       </main>
       {isMinimalFooterPage ? <MinimalFooter /> : <Footer />}
-      <WishlistPopup />
       <WishlistModal />
+      <WishlistPopup />
+      <CartSidebar />
       <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </>
   );

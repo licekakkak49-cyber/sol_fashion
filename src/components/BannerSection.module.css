@@ -1,5 +1,5 @@
 .banner {
-  width: 100vw;
+  width: 100%;
   /* If the image should maintain aspect ratio, we can let the image dictate height.
      Or we can fix the height and use object-fit: cover.
      The user said "คล้าย hero คือจะซ้ายขวาชิดขอบจอเลย" (similar to hero, touching left/right edges).

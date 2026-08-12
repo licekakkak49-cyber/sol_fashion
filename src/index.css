@@ -39,6 +39,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-primary);
   background-color: var(--color-bg);
@@ -46,6 +51,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+#root {
+  max-width: 100%;
   overflow-x: hidden;
 }
 

@@ -205,10 +205,8 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                 <ul className={styles.mobileMenuLinks}>
                   <li><Link to="/products" onClick={toggleMenu}>New In</Link></li>
                   <li><Link to="/products" onClick={toggleMenu}>Bags</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>Women</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>Men</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>The Valérie Bag</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>Gifts</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>Ready-to-Wear</Link></li>
+                  <li><Link to="/products" onClick={toggleMenu}>Accessories</Link></li>
                   <li><Link to="/explore" onClick={toggleMenu}>Explore</Link></li>
                 </ul>
 
@@ -222,17 +220,13 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                     <User size={16} strokeWidth={1} className={styles.mobileFooterIcon} />
                     Account
                   </button>
-                  <button className={styles.mobileFooterBtn}>
-                    <MessageSquare size={16} strokeWidth={1} className={styles.mobileFooterIcon} />
-                    Customer Care
+                  <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openWishlist(); }}>
+                    <HeartIcon size={16} color="currentColor" strokeWidth={1} className={styles.mobileFooterIcon} />
+                    Wishlist
                   </button>
                   <div className={styles.mobileFooterBottomLinks}>
                     <button className={styles.mobileFooterBtnLine}>
-                      <span className={styles.underlineText}>Country : Thailand (USD)</span>
-                    </button>
-                    <button className={styles.mobileFooterBtnLine}>
-                      <span className={styles.underlineText}>Language : english</span>
-                      <ChevronDown size={14} strokeWidth={1} className={styles.chevronIcon} />
+                      <span className={styles.underlineText}>Thailand (THB) / English</span>
                     </button>
                   </div>
                 </div>

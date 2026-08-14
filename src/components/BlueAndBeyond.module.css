@@ -66,7 +66,7 @@
   font-family: var(--font-primary, "Georgia", serif);
   font-size: 4rem;
   font-weight: 300;
-  color: #000;
+  color: rgb(30, 30, 30);
   margin: 0 0 40px 0;
   line-height: 1.1;
   text-transform: uppercase;
@@ -94,7 +94,7 @@
   font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.25em;
-  color: #000;
+  color: rgb(30, 30, 30);
   text-decoration: none;
   text-transform: uppercase;
   position: relative;
@@ -108,7 +108,7 @@
 .line {
   width: 1px;
   height: 60px;
-  background-color: #000;
+  background-color: rgb(30, 30, 30);
 }
 
 /* Mobile Responsive */
@@ -118,7 +118,7 @@
   }
   
   .imageColumn {
-    padding: 20px;
+    padding: 16px;
     height: 60vh;
     min-height: 400px;
     order: -1; /* Image always on top for mobile */

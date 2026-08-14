@@ -74,7 +74,7 @@
   font-size: 24px;
   font-weight: 400;
   letter-spacing: 0.1em;
-  color: #000;
+  color: rgb(30, 30, 30);
   margin-bottom: 20px;
   text-transform: uppercase;
 }
@@ -201,7 +201,7 @@
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.15em;
-  color: #000;
+  color: rgb(30, 30, 30);
   margin-bottom: 10px;
   text-transform: uppercase;
 }
@@ -212,7 +212,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 4.5rem;
   font-weight: 400;
-  color: #000;
+  color: rgb(30, 30, 30);
   margin-bottom: 25px;
   text-transform: uppercase;
   line-height: 1.1;
@@ -229,7 +229,7 @@
 /* Mobile Responsiveness */
 @media (max-width: 900px) {
   .pageContainer {
-    padding: 0 24px 80px 24px;
+    padding: 0 20px 80px 20px;
   }
 
   .header {
@@ -290,7 +290,7 @@
 
   .heroTitleLarge {
     font-size: 2.5rem;
-    padding: 0 20px;
+    padding: 0 16px;
     line-height: 1.2;
   }
   

@@ -158,13 +158,20 @@ const ProductsPage = () => {
             ))}
           </div>
           
-          <button 
-            className={styles.filterBtn} 
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-          >
-            Filter 
-            {isFilterOpen ? <X size={20} strokeWidth={1.5} /> : <SlidersHorizontal size={20} strokeWidth={1.5} />}
-          </button>
+          <div className={styles.rightOptions}>
+            <button 
+              className={styles.textOptionBtn} 
+              onClick={() => setIsFilterOpen(true)}
+            >
+              Sort By
+            </button>
+            <button 
+              className={styles.textOptionBtn} 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+            >
+              Filters
+            </button>
+          </div>
         </div>
 
         {/* Global Filter Panel drops down from here */}

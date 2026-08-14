@@ -23,7 +23,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 13px;
   font-weight: 400;
-  color: #000;
+  color: rgb(30, 30, 30);
   background: none;
   border: none;
   padding: 0;
@@ -33,7 +33,7 @@
 
 .filterLine {
   height: 1px;
-  background-color: #000;
+  background-color: rgb(30, 30, 30);
   margin-bottom: 2px;
 }
 
@@ -48,7 +48,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 12px;
   font-weight: 400;
-  color: #000;
+  color: rgb(30, 30, 30);
   background: none;
   border: none;
   padding: 0;
@@ -64,7 +64,7 @@
   bottom: -2px;
   width: 100%;
   height: 1px;
-  background-color: #000;
+  background-color: rgb(30, 30, 30);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease-out;
@@ -177,7 +177,7 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 15px 20px;
+    padding: 15px 16px;
   }
   .storyCard {
     width: 80vw;

@@ -23,7 +23,7 @@
 
 :root {
   --color-bg: #ffffff;
-  --color-text: #000000;
+  --color-text: rgb(30, 30, 30);
   --color-border: rgba(0, 0, 0, 0.1);
   --font-primary: 'Nicolas Jenson', serif;
   --font-sans: 'Inter', sans-serif;
@@ -41,7 +41,7 @@
 
 html, body {
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -55,7 +55,7 @@ body {
 
 #root {
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 a {

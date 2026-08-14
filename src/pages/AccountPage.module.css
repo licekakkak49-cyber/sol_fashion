@@ -15,7 +15,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 11px;
   font-weight: 500;
-  color: #000;
+  color: rgb(30, 30, 30);
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -27,7 +27,7 @@
 .mainContent {
   max-width: 900px;
   margin: 0 auto;
-  padding: 60px 20px;
+  padding: 60px 16px;
 }
 
 .greeting {
@@ -68,7 +68,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 10px;
   font-weight: 500;
-  color: #000;
+  color: rgb(30, 30, 30);
   cursor: pointer;
   padding: 0;
 }
@@ -154,7 +154,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 11px;
   font-weight: 500;
-  color: #000;
+  color: rgb(30, 30, 30);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -162,7 +162,7 @@
 .editBtn:hover {
   background: #000;
   color: #fff;
-  border-color: #000;
+  border-color: rgb(30, 30, 30);
 }
 
 .emptyMessage {
@@ -180,7 +180,7 @@
 
 @media (max-width: 480px) {
   .header {
-    padding: 20px;
+    padding: 16px;
   }
   
   .wishlistItem {

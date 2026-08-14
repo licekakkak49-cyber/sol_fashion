@@ -261,7 +261,7 @@
 }
 
 .checkoutBtn:hover {
-  background-color: #000;
+  background-color: rgb(30, 30, 30);
 }
 
 .applePayBtn {
@@ -343,7 +343,7 @@
     width: 100%;
   }
   .header, .scrollArea, .footer {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }

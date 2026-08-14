@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
 import styles from './ProductCard.module.css';
 
-const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, fill = "none" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="miter">
+const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, fill = "none", className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="miter" className={className}>
     <path d="M12 21.5l-8.5-8.5a5.5 5.5 0 0 1 0-7.78 5.5 5.5 0 0 1 7.78 0L12 6.5l.72-.72a5.5 5.5 0 0 1 7.78 0 5.5 5.5 0 0 1 0 7.78l-8.5 8.5z" />
   </svg>
 );
@@ -78,7 +78,7 @@ const ProductCard = ({ id, image, name, price, tags = [], colors = [], selectedC
             </div>
             {!hideBookmark && (
               <button className={styles.bookmarkBtn} aria-label="Save product" onClick={handleBookmarkClick}>
-                <HeartIcon size={18} strokeWidth={1} fill={isSaved ? "currentColor" : "none"} />
+                <HeartIcon size={18} strokeWidth={1} fill={isSaved ? "currentColor" : "none"} className={styles.heartIconSvg} />
               </button>
             )}
           </div>

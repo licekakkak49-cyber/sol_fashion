@@ -20,7 +20,7 @@
 .moreLink {
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   font-size: 13px;
-  color: #000;
+  color: rgb(30, 30, 30);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -54,7 +54,10 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 20px 20px 40px 20px;
+    padding: 20px 16px 40px 16px;
+  }
+  .slider {
+    gap: 4px;
   }
   .cardWrapper {
     flex: 0 0 calc(100% / 2.5);

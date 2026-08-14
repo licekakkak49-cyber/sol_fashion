@@ -6,10 +6,10 @@
 .container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 120px 24px;
+  padding: 120px 20px;
   text-align: center;
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-  color: #000;
+  color: rgb(30, 30, 30);
 }
 
 .heading {
@@ -51,7 +51,7 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 80px 20px;
+    padding: 80px 16px;
   }
   
   .heading {

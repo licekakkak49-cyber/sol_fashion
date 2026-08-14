@@ -113,7 +113,7 @@
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 14px; /* Decreased back to 14px */
   font-weight: 400; /* Set font-weight to 400 for entire page consistency */
-  color: #000;
+  color: rgb(30, 30, 30);
   margin: 0; /* Remove bottom margin to sit at the very top */
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -161,7 +161,7 @@
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.1em;
-  color: #000;
+  color: rgb(30, 30, 30);
   text-transform: uppercase;
 }
 
@@ -185,7 +185,7 @@
 /* Mobile Responsiveness */
 @media (max-width: 900px) {
   .pageContainer {
-    padding: 100px 24px 60px 24px;
+    padding: 100px 20px 60px 20px;
   }
 
   .heroSection {

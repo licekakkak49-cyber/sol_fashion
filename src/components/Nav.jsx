@@ -13,8 +13,8 @@ const LineIcon = ({ size = 24, color = "currentColor" }) => (
   </svg>
 );
 
-const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="miter">
+const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="miter" className={className}>
     <path d="M12 21.5l-8.5-8.5a5.5 5.5 0 0 1 0-7.78 5.5 5.5 0 0 1 7.78 0L12 6.5l.72-.72a5.5 5.5 0 0 1 7.78 0 5.5 5.5 0 0 1 0 7.78l-8.5 8.5z" />
   </svg>
 );
@@ -110,13 +110,14 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
   };
 
   const dropdownHeight = (activeDropdown === 'brands' || activeDropdown === 'lenses') ? 500 : 0;
-  const navHeight = 80 + dropdownHeight;
+  const baseNavHeight = isMobile ? 66 : 80;
+  const navHeight = baseNavHeight + dropdownHeight;
 
   // Mobile specific: solid white background when scrolling up
   const forceSolidWhite = isMobile && scrollDirection === 'up' && scrolled;
 
   const isTransparent = forceSolidWhite ? false : isHomePage;
-  const isHidden = isMobile ? (scrollDirection === 'down' && scrolled) : (!isHomePage && scrollDirection === 'down');
+  const isHidden = !isHomePage && (scrollDirection === 'down' && scrolled);
   const useWhiteText = forceSolidWhite ? false : (isHomePage && !isPastHero && !isMenuOpen && !activeDropdown);
 
   return (
@@ -214,7 +215,11 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                 {/* Mobile Footer Links */}
                 <div className={styles.mobileMenuFooter}>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openCart(); }}>
-                    <span className={styles.cartDotSmall}></span>
+                    {cartItems.length > 0 ? (
+                      <span className={styles.mobileCartCount}>{cartItems.length}</span>
+                    ) : (
+                      <span className={styles.cartDotSmall}></span>
+                    )}
                     Cart
                   </button>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); onOpenLogin(); }}>
@@ -222,7 +227,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                     Account
                   </button>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openWishlist(); }}>
-                    <HeartIcon size={16} color="currentColor" strokeWidth={1} className={styles.mobileFooterIconWishlist} />
+                    <HeartIcon size={16} color="currentColor" strokeWidth={1} className={styles.mobileFooterIcon} />
                     Wishlist
                   </button>
                   <div className={styles.mobileFooterBottomLinks}>

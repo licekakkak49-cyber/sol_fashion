@@ -32,7 +32,7 @@
   font-size: 13px;
   font-weight: 400;
   margin: 0 0 15px 0;
-  color: #000;
+  color: rgb(30, 30, 30);
 }
 
 .title {
@@ -102,9 +102,9 @@
 }
 
 .viewBtn:hover {
-  background-color: #000;
+  background-color: rgb(30, 30, 30);
   color: #fff;
-  border-color: #000;
+  border-color: rgb(30, 30, 30);
 }
 
 @media (max-width: 480px) {

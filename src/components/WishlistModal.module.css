@@ -128,7 +128,7 @@
 .price {
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
-  color: #000;
+  color: rgb(30, 30, 30);
   font-weight: 400;
   letter-spacing: 0.05em;
   margin: 0;
@@ -199,7 +199,7 @@
 }
 
 .textBtn:hover {
-  color: #000;
+  color: rgb(30, 30, 30);
 }
 
 .textBtn:hover::after {
@@ -301,7 +301,7 @@
 
 @media (max-width: 768px) {
   .modalOverlay {
-    padding: 20px;
+    padding: 16px;
   }
   .grid {
     grid-template-columns: 1fr;

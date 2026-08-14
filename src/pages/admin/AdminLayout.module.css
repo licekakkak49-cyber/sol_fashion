@@ -25,7 +25,7 @@
 }
 
 .dockLogo {
-  color: #111;
+  color: rgb(30, 30, 30);
   margin-bottom: 32px;
   display: flex;
   justify-content: center;
@@ -54,12 +54,12 @@
 }
 
 .navLink:hover {
-  color: #111;
+  color: rgb(30, 30, 30);
   background-color: rgba(0, 0, 0, 0.04);
 }
 
 .navLinkActive {
-  color: #111;
+  color: rgb(30, 30, 30);
   background-color: transparent;
 }
 
@@ -73,7 +73,7 @@
   position: absolute;
   left: 100%;
   margin-left: 12px;
-  background: #111;
+  background: rgb(30, 30, 30);
   color: #fff;
   padding: 6px 12px;
   border-radius: 6px;
@@ -135,7 +135,7 @@
 .pageTitle {
   font-size: 28px;
   font-weight: 600;
-  color: #111;
+  color: rgb(30, 30, 30);
   margin: 0;
   letter-spacing: -0.5px;
 }
@@ -148,7 +148,7 @@
 
 .btnPrimary {
   padding: 10px 16px;
-  background-color: #111;
+  background-color: rgb(30, 30, 30);
   color: #fff;
   border: none;
   border-radius: 100px;
@@ -193,7 +193,7 @@
 
 /* Dark Contrast Card - (Might not be used in Pinterest style, but kept for compatibility) */
 .cardDark {
-  background: #111;
+  background: rgb(30, 30, 30);
   color: #fff;
   border-radius: 16px;
   padding: 16px;

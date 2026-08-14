@@ -168,7 +168,7 @@
   font-family: 'Futura PT', Futura, sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: #111;
+  color: rgb(30, 30, 30);
   line-height: 1.6;
   margin: 0;
 }
@@ -231,7 +231,7 @@
 
 @media (max-width: 768px) {
   .page {
-    padding: 100px 16px 40px 16px;
+    padding: 100px 16px 24px 16px;
   }
   .optionsBarWrapper {
     margin-left: -16px;
@@ -290,18 +290,20 @@
   font-weight: 600;
   letter-spacing: 0.15em;
   color: #fff;
-  background-color: #222;
-  border: none;
+  background-color: rgb(30, 30, 30);
+  border: 1px solid rgb(30, 30, 30);
   border-radius: 0;
   padding: 16px 140px;
   min-width: 320px;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
   text-transform: uppercase;
 }
 
 .loadMoreBtn:hover {
-  opacity: 0.8;
+  background-color: #fff;
+  color: rgb(30, 30, 30);
+  border-color: rgb(30, 30, 30);
 }
 
 .breadcrumbs {
@@ -309,7 +311,7 @@
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.03em;
-  color: #111;
+  color: rgb(30, 30, 30);
   text-align: left;
 }
 
@@ -326,7 +328,7 @@
   height: 1px;
   bottom: 0;
   left: 0;
-  background-color: #111;
+  background-color: rgb(30, 30, 30);
 }
 
 @media (max-width: 768px) {
@@ -349,5 +351,20 @@
   }
   .pillContainer::-webkit-scrollbar {
     display: none;
+  }
+  .bottomSection {
+    margin-top: 64px;
+  }
+  .loadMoreContainer {
+    margin-bottom: 64px;
+    width: 100%;
+  }
+  .loadMoreBtn {
+    width: 100%;
+    min-width: 100%;
+    padding: 16px 0;
+  }
+  .breadcrumbs {
+    font-size: 13px;
   }
 }

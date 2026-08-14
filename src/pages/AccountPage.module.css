@@ -160,7 +160,7 @@
 }
 
 .editBtn:hover {
-  background: #000;
+  background: rgb(30, 30, 30);
   color: #fff;
   border-color: rgb(30, 30, 30);
 }

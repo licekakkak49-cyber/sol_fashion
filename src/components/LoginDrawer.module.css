@@ -51,7 +51,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #111;
+  color: rgb(30, 30, 30);
   padding: 5px;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -76,7 +76,7 @@
   font-size: 14px;
   font-weight: 400;
   margin: 20px 0 60px 0;
-  color: #111;
+  color: rgb(30, 30, 30);
   letter-spacing: 0.03em;
 }
 
@@ -85,7 +85,7 @@
   font-size: 12px;
   font-weight: 400;
   margin: 0 0 40px 0;
-  color: #111;
+  color: rgb(30, 30, 30);
   letter-spacing: 0.03em;
 }
 
@@ -101,7 +101,7 @@
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
   font-weight: 400;
-  color: #111;
+  color: rgb(30, 30, 30);
   cursor: pointer;
   padding: 0 0 4px 0;
   transition: opacity 0.2s;
@@ -173,7 +173,7 @@
 }
 
 .eyeBtn:hover {
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .input {
@@ -185,7 +185,7 @@
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #111;
+  color: rgb(30, 30, 30);
   outline: none;
   transition: border-color 0.2s;
   letter-spacing: 0.03em;
@@ -196,7 +196,7 @@
 }
 
 .input:focus {
-  border-bottom: 1px solid #111;
+  border-bottom: 1px solid rgb(30, 30, 30);
 }
 
 .forgotPassword {
@@ -214,14 +214,14 @@
 }
 
 .forgotPassword:hover {
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .loginBtn {
   width: 100%;
-  background-color: #111;
+  background-color: rgb(30, 30, 30);
   color: #fff;
-  border: 1px solid #111; /* Keep border to avoid size jumping */
+  border: 1px solid rgb(30, 30, 30); /* Keep border to avoid size jumping */
   padding: 16px;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
@@ -234,14 +234,14 @@
 
 .loginBtn:hover {
   background-color: #fff;
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .createBtn {
   width: 100%;
   background-color: transparent;
-  color: #111;
-  border: 1px solid #111;
+  color: rgb(30, 30, 30);
+  border: 1px solid rgb(30, 30, 30);
   padding: 16px;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
@@ -277,7 +277,7 @@
 .googleBtn {
   width: 100%;
   background-color: transparent;
-  border: 1px solid #111;
+  border: 1px solid rgb(30, 30, 30);
   padding: 16px;
   display: flex;
   align-items: center;
@@ -290,11 +290,11 @@
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .googleBtn:hover {
-  background-color: #111;
+  background-color: rgb(30, 30, 30);
   color: #fff;
 }
 

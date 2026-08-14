@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, User, Menu, X, MessageSquare, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useAdmin } from '../context/AdminContext';
 import { useCart } from '../context/CartContext';
@@ -26,6 +26,10 @@ const STATIC_MENU_DATA = {
 };
 
 const Nav = ({ isHomePage = false, onOpenLogin }) => {
+  const location = useLocation();
+  const isProductDetailPage = location.pathname.startsWith('/product/');
+  const isMobileProductDetailPage = isProductDetailPage && window.innerWidth <= 768; // Initialize based on current width, but we use isMobile state later
+  
   const [scrolled, setScrolled] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -114,16 +118,18 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
   const navHeight = baseNavHeight + dropdownHeight;
 
   // Mobile specific: solid white background when scrolling up
-  const forceSolidWhite = isMobile && scrollDirection === 'up' && scrolled;
+  const forceSolidWhite = isMobile && scrollDirection === 'up' && scrolled && !isProductDetailPage;
 
-  const isTransparent = forceSolidWhite ? false : isHomePage;
-  const isHidden = !isHomePage && (scrollDirection === 'down' && scrolled);
+  const isMobilePDP = isMobile && isProductDetailPage;
+  const isTransparent = forceSolidWhite ? false : (isHomePage || isMobilePDP);
+  const isHidden = !isHomePage && !isMobilePDP && (scrollDirection === 'down' && scrolled);
   const useWhiteText = forceSolidWhite ? false : (isHomePage && !isPastHero && !isMenuOpen && !activeDropdown);
+  const showScrolledBackground = (!isHomePage && !isMobilePDP) && (scrolled || activeDropdown);
 
   return (
     <>
       <nav 
-        className={`${styles.nav} ${!isHomePage && (scrolled || activeDropdown) ? styles.scrolled : ''} ${isHomePage ? styles.homeNav : ''} ${showLogo || activeDropdown ? styles.showLogo : ''} ${isHidden ? styles.hidden : ''} ${isTransparent ? styles.transparent : ''} ${useWhiteText ? styles.whiteText : ''}`}
+        className={`${styles.nav} ${showScrolledBackground ? styles.scrolled : ''} ${isHomePage ? styles.homeNav : ''} ${showLogo || activeDropdown ? styles.showLogo : ''} ${isHidden ? styles.hidden : ''} ${isTransparent ? styles.transparent : ''} ${useWhiteText ? styles.whiteText : ''}`}
         style={{ height: `${navHeight}px` }}
       >
 

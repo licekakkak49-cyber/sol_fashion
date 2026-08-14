@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .textContainer {
@@ -29,7 +29,7 @@
 .link {
   font-size: 16px;
   font-weight: 400;
-  color: #111;
+  color: rgb(30, 30, 30);
   text-decoration: none;
   padding-bottom: 2px;
   letter-spacing: 0.03em;
@@ -44,7 +44,7 @@
   height: 1px;
   bottom: 0;
   left: 0;
-  background-color: #111;
+  background-color: rgb(30, 30, 30);
   transform: scaleX(1);
   transform-origin: right;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);

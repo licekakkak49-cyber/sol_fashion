@@ -46,6 +46,13 @@ const ProductCard = ({ id, image, name, price, tags = [], colors = [], selectedC
               </button>
             </div>
           )}
+          {!minimal && colors && colors.length + (extraColorsCount || 0) > 1 && (
+            <div className={styles.mobilePagination}>
+              {Array.from({ length: colors.length + (extraColorsCount || 0) }).map((_, idx) => (
+                <div key={idx} className={`${styles.dash} ${idx === 0 ? styles.activeDash : ''}`} />
+              ))}
+            </div>
+          )}
           {!isLarge && colors && colors.length > 0 && (
             <div className={styles.hoverColorsContainer}>
               {colors.map((c, i) => (

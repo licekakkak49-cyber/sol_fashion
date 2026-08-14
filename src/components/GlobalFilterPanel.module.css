@@ -140,7 +140,7 @@
   cursor: pointer;
   font-family: var(--font-sans, "Inter", sans-serif);
   font-size: 11px;
-  color: #111;
+  color: rgb(30, 30, 30);
   user-select: none;
 }
 
@@ -185,7 +185,7 @@
   top: 1px;
   width: 4px;
   height: 8px;
-  border: solid #000;
+  border: solid rgb(30, 30, 30);
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }

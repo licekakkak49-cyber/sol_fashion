@@ -104,7 +104,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 1px;
-  background-color: #111; /* Dark line */
+  background-color: rgb(30, 30, 30); /* Dark line */
   z-index: 0;
 }
 

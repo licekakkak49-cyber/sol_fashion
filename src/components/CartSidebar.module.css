@@ -48,7 +48,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #111;
+  color: rgb(30, 30, 30);
   padding: 5px;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -179,7 +179,7 @@
   font-size: 11px;
   font-weight: 400;
   cursor: pointer;
-  color: #111;
+  color: rgb(30, 30, 30);
   text-decoration: none;
   transition: opacity 0.2s;
   letter-spacing: 0.03em;
@@ -198,7 +198,7 @@
   font-size: 11px;
   font-weight: 400;
   margin: 0;
-  color: #111;
+  color: rgb(30, 30, 30);
   letter-spacing: 0.03em;
 }
 
@@ -267,7 +267,7 @@
 .applePayBtn {
   width: 100%;
   background-color: #e6e6e6; /* light gray from reference */
-  border: 1px solid #111;
+  border: 1px solid rgb(30, 30, 30);
   padding: 16px;
   display: flex;
   align-items: center;
@@ -297,13 +297,13 @@
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0.03em;
-  color: #111;
+  color: rgb(30, 30, 30);
   margin: 0 0 16px 0;
 }
 
 .termsLink {
   text-decoration: underline;
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .termsLink:hover {
@@ -313,7 +313,7 @@
 .viewCartBtn {
   width: 100%;
   background-color: transparent;
-  border: 1px solid #111;
+  border: 1px solid rgb(30, 30, 30);
   padding: 16px;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;

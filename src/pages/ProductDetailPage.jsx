@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Bookmark, X, Plus, Minus, ShoppingBag, Heart } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bookmark, X, Plus, Minus, ShoppingBag, Heart, ChevronRight, ChevronLeft } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { useAdmin } from '../context/AdminContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -18,11 +19,47 @@ const ProductDetailPage = () => {
   const { id } = useParams();
   const { products } = useAdmin();
   const product = products?.find(p => p.id === id) || null;
+  const { wishlist } = useWishlist();
+  const wishlistProductFound = wishlist?.find(p => p.id === id) || null;
+
+  const similarScrollRef = useRef(null);
+  const [similarScrollState, setSimilarScrollState] = useState({
+    isAtStart: true,
+    isAtEnd: false
+  });
+  const [isMobileSizeDrawerOpen, setIsMobileSizeDrawerOpen] = useState(false);
+
+  const handleSimilarScroll = () => {
+    if (similarScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = similarScrollRef.current;
+      setSimilarScrollState({
+        isAtStart: scrollLeft <= 10,
+        isAtEnd: scrollLeft + clientWidth >= scrollWidth - 10
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Check initial state once products are loaded
+    handleSimilarScroll();
+    
+    // Add resize listener to handle orientation changes
+    window.addEventListener('resize', handleSimilarScroll);
+    return () => window.removeEventListener('resize', handleSimilarScroll);
+  }, []);
+
+  const scrollSimilar = (direction) => {
+    if (similarScrollRef.current) {
+      const scrollAmount = similarScrollRef.current.clientWidth;
+      similarScrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   const displayImages = product ? [product.image, product.image, product.image] : MOCK_IMAGES;
   
   const { toggleWishlist, openWishlistPopup, isInWishlist } = useWishlist();
 
-  const wishlistProduct = product || {
+  const wishlistProduct = product || wishlistProductFound || {
     id: id || 'mock-product-id',
     name: 'Mori 02(BR)',
     price: '฿ 10,180.00',
@@ -128,6 +165,12 @@ const ProductDetailPage = () => {
               </div>
             ))}
           </div>
+          
+          <div className={styles.mobilePagination}>
+            {displayImages.length > 1 && displayImages.map((_, idx) => (
+              <div key={idx} className={`${styles.dash} ${idx === activeImageIndex ? styles.activeDash : ''}`} />
+            ))}
+          </div>
         </div>
 
         {/* Right Column: Sticky Details */}
@@ -166,23 +209,50 @@ const ProductDetailPage = () => {
 
             {/* Size Section */}
             <div className={styles.sizeSection}>
-              <div className={styles.sizeHeader}>
-                <span className={styles.sizeLabel} style={sizeError ? { color: 'red' } : {}}>Size</span>
-                <button className={styles.sizeGuideBtn}>Size guide</button>
+
+              {/* Desktop view */}
+              <div className={styles.desktopSizeSection}>
+                <div className={styles.sizeHeader}>
+                  <span className={styles.sizeLabel} style={sizeError ? { color: 'red' } : {}}>Size</span>
+                  <button className={styles.sizeGuideBtn}>Size guide</button>
+                </div>
+                <div className={styles.sizeOptions}>
+                  {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
+                    <button 
+                      key={size} 
+                      className={`${styles.sizeBtn} ${selectedSize === size ? styles.activeSizeBtn : ''}`}
+                      onClick={() => {
+                        setSelectedSize(size);
+                        setSizeError(false);
+                      }}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className={styles.sizeOptions}>
-                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
-                  <button 
-                    key={size} 
-                    className={`${styles.sizeBtn} ${selectedSize === size ? styles.activeSizeBtn : ''}`}
-                    onClick={() => {
-                      setSelectedSize(size);
-                      setSizeError(false);
-                    }}
-                  >
-                    {size}
-                  </button>
-                ))}
+
+              {/* Mobile view */}
+              <div className={styles.mobileSizeSection}>
+                <button 
+                  className={styles.mobileSizeSelectorBtn}
+                  onClick={() => {
+                    setSizeError(false);
+                    setIsMobileSizeDrawerOpen(true);
+                  }}
+                  style={sizeError ? { borderBottom: '1px solid red' } : {}}
+                >
+                  <span className={styles.mobileSizeLabel}>Size</span>
+                  <div className={styles.mobileSizeValueContainer}>
+                    <span className={styles.mobileSizeValue}>
+                      {selectedSize ? selectedSize : ''}
+                    </span>
+                    <ChevronRight size={16} strokeWidth={1.5} />
+                  </div>
+                </button>
+                <div className={styles.mobileSizeFooter}>
+                  <button className={styles.sizeGuideBtn}>Size guide</button>
+                </div>
               </div>
             </div>
 
@@ -294,12 +364,28 @@ const ProductDetailPage = () => {
       {/* Complete the look */}
       <div className={styles.similarFrames}>
         <h2 className={styles.similarFramesTitle}>Complete the look</h2>
-        <div className={styles.similarFramesList}>
-          {similarProducts.map(similarProduct => (
-            <div key={similarProduct.id} className={styles.similarFrameCard}>
-              <ProductCard {...similarProduct} />
-            </div>
-          ))}
+        <div className={styles.similarFramesContainer}>
+          <button 
+            className={`${styles.similarNavBtn} ${styles.similarNavLeft} ${similarScrollState.isAtStart ? styles.hiddenBtn : ''}`} 
+            onClick={() => scrollSimilar('left')}
+          >
+            <ChevronLeft size={24} strokeWidth={1} color="rgb(30,30,30)" />
+          </button>
+          
+          <div className={styles.similarFramesList} ref={similarScrollRef} onScroll={handleSimilarScroll}>
+            {similarProducts.map(similarProduct => (
+              <div key={similarProduct.id} className={styles.similarFrameCard}>
+                <ProductCard {...similarProduct} />
+              </div>
+            ))}
+          </div>
+
+          <button 
+            className={`${styles.similarNavBtn} ${styles.similarNavRight} ${similarScrollState.isAtEnd ? styles.hiddenBtn : ''}`} 
+            onClick={() => scrollSimilar('right')}
+          >
+            <ChevronRight size={24} strokeWidth={1} color="rgb(30,30,30)" />
+          </button>
         </div>
       </div>
 
@@ -310,6 +396,50 @@ const ProductDetailPage = () => {
           <span className={styles.currentBreadcrumb}>Beachwear</span>
         </div>
       </div>
+
+      {/* Mobile Size Drawer */}
+      <AnimatePresence>
+        {isMobileSizeDrawerOpen && (
+          <motion.div 
+            className={styles.mobileSizeOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileSizeDrawerOpen(false)}
+          >
+            <motion.div 
+              className={styles.mobileSizeDrawer}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.mobileSizeDrawerHeader}>
+                <h3 className={styles.mobileSizeDrawerTitle}>Size</h3>
+                <button className={styles.mobileSizeDrawerClose} onClick={() => setIsMobileSizeDrawerOpen(false)}>
+                  <X size={24} strokeWidth={1} />
+                </button>
+              </div>
+              <div className={styles.mobileSizeDrawerContent}>
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                  <button 
+                    key={size}
+                    className={`${styles.mobileSizeOption} ${selectedSize === size ? styles.mobileSizeOptionSelected : ''}`}
+                    onClick={() => {
+                      setSelectedSize(size);
+                      setIsMobileSizeDrawerOpen(false);
+                    }}
+                  >
+                    <span>{size}</span>
+                    {selectedSize === size && <span>✓</span>}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -17,7 +17,7 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #111;
+  color: rgb(30, 30, 30);
   margin: 0 0 32px 0;
 }
 
@@ -91,12 +91,12 @@
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: #111 !important;
+  color: rgb(30, 30, 30) !important;
 }
 
 .registerBtn {
   display: inline-block;
-  background-color: #111;
+  background-color: rgb(30, 30, 30);
   color: #fff;
   padding: 12px 20px;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
@@ -104,15 +104,17 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border: none;
+  border: 1px solid rgb(30, 30, 30);
   cursor: pointer;
   margin-top: 16px;
   margin-bottom: 8px;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .registerBtn:hover {
-  opacity: 0.8;
+  background-color: #fff;
+  color: rgb(30, 30, 30);
+  border-color: rgb(30, 30, 30);
 }
 
 .footerBottom {
@@ -148,7 +150,7 @@
   font-size: 28px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: #111;
+  color: rgb(30, 30, 30);
   line-height: 1;
 }
 
@@ -176,7 +178,7 @@
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: #111;
+  color: rgb(30, 30, 30);
   cursor: pointer;
   letter-spacing: 0.03em;
   transition: opacity 0.2s ease;
@@ -193,7 +195,7 @@
 .rawDivider {
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .scrollTopBtn {
@@ -204,7 +206,7 @@
   height: 40px;
   border-radius: 50%;
   background-color: #fff;
-  border: 1px solid #111;
+  border: 1px solid rgb(30, 30, 30);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -215,7 +217,7 @@
   transform: translateY(20px);
   transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  color: #111;
+  color: rgb(30, 30, 30);
 }
 
 .scrollTopBtn.visible {
@@ -291,7 +293,7 @@
     font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
     font-size: 16px;
     font-weight: 400;
-    color: #111;
+    color: rgb(30, 30, 30);
     cursor: pointer;
     letter-spacing: 0.05em;
   }
@@ -301,7 +303,7 @@
     font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
     font-size: 16px;
     font-weight: 400;
-    color: #111;
+    color: rgb(30, 30, 30);
     letter-spacing: 0.05em;
   }
   

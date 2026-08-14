@@ -224,52 +224,6 @@
   flex-direction: column;
 }
 
-@media (max-width: 1024px) {
-  /* No specific overrides needed for 1024px, the macroRow will just squeeze */
-}
-
-@media (max-width: 768px) {
-  .page {
-    padding: 100px 16px 24px 16px;
-  }
-  .optionsBarWrapper {
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  .productGridContainer {
-    gap: 4px;
-  }
-  .optionsBar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 24px;
-  }
-  .rightOptions {
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 24px;
-    padding-bottom: 8px;
-    justify-content: space-between;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-  }
-  .macroRow {
-    flex-direction: column;
-    gap: 4px;
-  }
-  .block {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-  }
-  .wideBlock {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-  }
-}
-
 .bottomSection {
   display: flex;
   flex-direction: column;
@@ -330,34 +284,63 @@
   background-color: rgb(30, 30, 30);
 }
 
+@media (max-width: 1024px) {
+  /* No specific overrides needed for 1024px, the macroRow will just squeeze */
+}
+
 @media (max-width: 768px) {
   .page {
-    padding-top: 66px;
+    padding: 66px 16px 24px 16px;
   }
   .optionsBarWrapper {
     top: 66px;
-    padding-top: 24px;
-    padding-bottom: 24px;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 22px;
+    padding-bottom: 0;
+  }
+  .productGridContainer {
+    gap: 4px;
   }
   .optionsBar {
     flex-direction: column;
     align-items: stretch;
-    gap: 24px;
-  }
-  .rightOptions {
-    justify-content: space-between;
+    gap: 0;
   }
   .pillContainer {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 8px; /* space for scrolling */
-    /* Hide scrollbar for a cleaner look */
+    padding-bottom: 22px;
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .pillContainer::-webkit-scrollbar {
     display: none;
+  }
+  .rightOptions {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    justify-content: space-between;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  .macroRow {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .block {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .wideBlock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
   }
   .bottomSection {
     margin-top: 64px;

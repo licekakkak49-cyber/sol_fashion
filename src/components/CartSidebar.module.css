@@ -30,6 +30,19 @@
   margin: 0 auto;
 }
 
+.cartItemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.topSection {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .header {
   padding: 40px 40px 20px 40px;
 }
@@ -357,9 +370,14 @@
     padding-top: 16px;
     padding-bottom: 0px;
   }
+  .topSection {
+    overflow-y: auto;
+    display: block;
+  }
   .scrollArea {
     padding-top: 16px;
     padding-bottom: 0px;
+    overflow-y: visible;
   }
   .footer {
     padding-top: 16px;
@@ -382,5 +400,11 @@
   }
   .itemImage {
     width: 130px;
+  }
+  .itemDetails {
+    padding: 12px 0;
+  }
+  .cartItemsList {
+    gap: 24px;
   }
 }

@@ -69,19 +69,20 @@ const CartSidebar = () => {
             exit={isMobile ? { y: '100%' } : { x: '100%' }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
-            <div className={styles.header}>
-              <div className={styles.innerContent} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className={styles.title}>
-                  Shopping cart{cartItems.length > 0 && <sup>{cartItems.length}</sup>}
-                </h2>
-                <button className={styles.closeBtn} onClick={closeCart} aria-label="Close Cart">
-                  <X size={24} strokeWidth={1} />
-                </button>
+            <div className={styles.topSection}>
+              <div className={styles.header}>
+                <div className={styles.innerContent} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2 className={styles.title}>
+                    Shopping cart{cartItems.length > 0 && <sup>{cartItems.length}</sup>}
+                  </h2>
+                  <button className={styles.closeBtn} onClick={closeCart} aria-label="Close Cart">
+                    <X size={24} strokeWidth={1} />
+                  </button>
+                </div>
               </div>
-            </div>
 
             <div className={styles.scrollArea}>
-              <div className={styles.innerContent} style={{ display: 'flex', flexDirection: 'column', gap: '32px', flex: cartItems.length === 0 ? 1 : 'none' }}>
+              <div className={`${styles.innerContent} ${styles.cartItemsList}`} style={{ flex: cartItems.length === 0 ? 1 : 'none' }}>
                 {cartItems.length === 0 ? (
                   <div className={styles.emptyState}>Your cart is empty</div>
                 ) : (
@@ -133,6 +134,7 @@ const CartSidebar = () => {
                   ))
                 )}
               </div>
+            </div>
             </div>
 
             {cartItems.length > 0 && (

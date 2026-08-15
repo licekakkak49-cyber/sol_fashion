@@ -32,11 +32,14 @@ const WishlistModal = () => {
   useEffect(() => {
     if (isWishlistOpen) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     };
   }, [isWishlistOpen]);
 
@@ -130,10 +133,14 @@ const WishlistModal = () => {
                     </div>
                     
                     <div className={styles.itemContent}>
-                      <div className={styles.itemInfo}>
+                      <div className={styles.itemHeaderRow}>
                         <p className={styles.name}>{item.name}</p>
-                        <p className={styles.color}>Black</p> {/* Mocking color for reference */}
+                        <p className={styles.price}>
+                          {item.price} {item.status && <span className={styles.statusError}>- {item.status}</span>}
+                        </p>
                       </div>
+                      
+                      <p className={styles.color}>Multicolor Patchwork</p> 
                       
                       {getItemSizes(item.name) && (
                         <div className={`${styles.sizeWrapper} ${sizeErrors[item.id] ? styles.sizeError : ''}`}>
@@ -150,14 +157,9 @@ const WishlistModal = () => {
                         </div>
                       )}
 
-                      <div className={styles.itemFooter}>
-                        <p className={styles.price}>
-                          {item.price} {item.status && <span>- {item.status}</span>}
-                        </p>
-                        <div className={styles.itemActions}>
-                          <button className={styles.textBtn} onClick={() => handleAddToCart(item)}>Add to cart</button>
-                          <button className={styles.textBtn} onClick={() => toggleWishlist(item)}>Remove</button>
-                        </div>
+                      <div className={styles.itemActions}>
+                        <button className={styles.textBtn} onClick={() => handleAddToCart(item)}>Add to cart</button>
+                        <button className={styles.textBtn} onClick={() => toggleWishlist(item)}>Remove</button>
                       </div>
                     </div>
                   </>

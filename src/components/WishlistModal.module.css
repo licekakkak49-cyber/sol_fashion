@@ -302,9 +302,10 @@
 
 @media (max-width: 768px) {
   .modalOverlay {
-    padding: 16px;
+    padding: 82px 16px 16px 16px;
   }
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 }

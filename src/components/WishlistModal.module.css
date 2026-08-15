@@ -52,7 +52,7 @@
 }
 
 .closeBtn:hover {
-  transform: translateY(-50%) rotate(90deg);
+  transform: rotate(90deg);
 }
 
 .emptyState {
@@ -358,5 +358,6 @@
     bottom: -16px;
     padding: 16px 0 16px 0;
     margin-bottom: -16px;
+    border-top: none;
   }
 }

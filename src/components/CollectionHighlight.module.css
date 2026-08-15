@@ -91,7 +91,7 @@
 
 @media (max-width: 768px) {
   .section {
-    padding: 0 20px 24px 20px;
+    padding: 0 10px 16px 10px;
   }
   
   .textContainer {
@@ -120,6 +120,6 @@
   .productGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: 4px;
-    margin-top: 4px;
+    margin-top: 16px;
   }
 }

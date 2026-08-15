@@ -87,6 +87,10 @@
   line-height: 1;
 }
 
+.mobileTags {
+  display: none;
+}
+
 /* Carousel Arrows */
 .carouselArrows {
   position: absolute;
@@ -300,6 +304,9 @@
 }
 
 @media (max-width: 768px) {
+  .details {
+    padding: 14px 6px 8px 6px;
+  }
   .info {
     gap: 2px;
   }
@@ -338,5 +345,15 @@
   }
   .mobilePagination .activeDash {
     background-color: rgb(30, 30, 30);
+  }
+  .desktopTags {
+    display: none !important;
+  }
+  .mobileTags {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+    margin-bottom: 4px;
   }
 }

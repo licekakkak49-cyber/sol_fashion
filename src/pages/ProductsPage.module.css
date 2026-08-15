@@ -290,14 +290,14 @@
 
 @media (max-width: 768px) {
   .page {
-    padding: 66px 16px 24px 16px;
+    padding: 66px 10px 24px 10px;
   }
   .optionsBarWrapper {
     top: 66px;
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
     padding-top: 22px;
     padding-bottom: 0;
   }
@@ -321,12 +321,12 @@
     display: none;
   }
   .rightOptions {
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 16px;
-    padding-bottom: 16px;
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 18px;
+    padding-bottom: 18px;
     justify-content: space-between;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
@@ -337,6 +337,9 @@
   .block {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
+  }
+  .largeBlock {
+    margin-bottom: 12px;
   }
   .wideBlock {
     grid-template-columns: repeat(2, minmax(0, 1fr));

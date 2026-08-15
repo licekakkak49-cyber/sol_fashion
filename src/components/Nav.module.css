@@ -403,6 +403,7 @@
   .nav {
     height: 66px;
     align-items: center;
+    padding: 0 16px;
   }
   .left, .center, .right {
     height: auto;

@@ -30,7 +30,7 @@ const ProductCard = ({ id, image, name, price, tags = [], colors = [], selectedC
         <div className={`${styles.imageContainer} ${isLarge ? styles.largeImageContainer : ''}`}>
           <img src={image} alt={name} className={styles.image} />
           {tags && tags.length > 0 && (
-            <div className={styles.tagsContainer}>
+            <div className={`${styles.tagsContainer} ${styles.desktopTags}`}>
               {tags.map((tag, idx) => (
                 <span key={idx} className={styles.tag}>{tag}</span>
               ))}
@@ -82,6 +82,13 @@ const ProductCard = ({ id, image, name, price, tags = [], colors = [], selectedC
                   {price}
                 </p>
               </div>
+              {tags && tags.length > 0 && (
+                <div className={styles.mobileTags}>
+                  {tags.map((tag, idx) => (
+                    <span key={idx} className={styles.tag}>{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
             {!hideBookmark && (
               <button className={styles.bookmarkBtn} aria-label="Save product" onClick={handleBookmarkClick}>

@@ -39,14 +39,22 @@ export const AdminProvider = ({ children }) => {
       parsed = [...parsed, ...newMocks];
     }
 
-    // Auto-inject demo tags for product 1 and 2
+    // Auto-inject demo tags
     parsed = parsed.map(p => {
-      if (p.id === '1') return { ...p, tags: ['NEW'] };
-      
       const newP = { ...p };
       
+      if (!newP.tags) newP.tags = [];
+      
+      if (['1', '2'].includes(p.id)) {
+        if (!newP.tags.includes('NEW')) newP.tags.push('NEW');
+      } else {
+        // Randomly assign NEW to about 40% of the rest
+        if (Math.random() < 0.4 && !newP.tags.includes('NEW')) {
+          newP.tags.push('NEW');
+        }
+      }
+      
       if (p.id === '2') {
-        newP.tags = ['NEW'];
         newP.colors = ['#8b5a2b', '#000000', '#d4af37', '#f5f5dc', '#ffc0cb'];
         newP.selectedColor = '#f5f5dc';
         newP.extraColorsCount = 2;

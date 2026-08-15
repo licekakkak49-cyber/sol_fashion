@@ -353,6 +353,30 @@
     padding-left: 10px;
     padding-right: 10px;
   }
+  .header {
+    padding-top: 16px;
+    padding-bottom: 0px;
+  }
+  .scrollArea {
+    padding-top: 16px;
+    padding-bottom: 0px;
+  }
+  .footer {
+    padding-top: 16px;
+    padding-bottom: 12px;
+  }
+  .totalRow {
+    margin-bottom: 12px;
+  }
+  .totalPrice {
+    font-size: 18px;
+  }
+  .checkoutBtn {
+    margin-bottom: 0px;
+  }
+  .termsText {
+    margin: 10px 0;
+  }
   .itemTop {
     gap: 16px;
   }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -7,6 +7,14 @@ import styles from './CartSidebar.module.css';
 
 const CartSidebar = () => {
   const { isCartOpen, closeCart, cartItems, removeFromCart, updateQuantity, cartTotal, formatPrice } = useCart();
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -56,9 +64,9 @@ const CartSidebar = () => {
         >
           <motion.div
             className={styles.sidebarContainer}
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={isMobile ? { y: '100%' } : { x: '100%' }}
+            animate={isMobile ? { y: 0 } : { x: 0 }}
+            exit={isMobile ? { y: '100%' } : { x: '100%' }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
             <div className={styles.header}>

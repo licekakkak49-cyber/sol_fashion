@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
@@ -9,6 +10,14 @@ const WishlistModal = () => {
   const { isWishlistOpen, closeWishlist, wishlistItems, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
   
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [selectedSizes, setSelectedSizes] = useState({});
   const [sizeErrors, setSizeErrors] = useState({});
   const [addingToCart, setAddingToCart] = useState({});
@@ -79,10 +88,16 @@ const WishlistModal = () => {
     }
   };
 
-  if (!isWishlistOpen) return null;
-
   return (
-    <div className={styles.modalOverlay}>
+    <AnimatePresence>
+      {isWishlistOpen && (
+        <motion.div 
+          className={styles.modalOverlay}
+          initial={isMobile ? { y: '100%' } : { opacity: 0, y: 20 }}
+          animate={isMobile ? { y: 0 } : { opacity: 1, y: 0 }}
+          exit={isMobile ? { y: '100%' } : { opacity: 0, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        >
       <div className={styles.header}>
         <h2 className={styles.title}>
           Wishlist{wishlistItems.length > 0 && <sup>{wishlistItems.length}</sup>}
@@ -169,7 +184,9 @@ const WishlistModal = () => {
           </div>
         </>
       )}
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

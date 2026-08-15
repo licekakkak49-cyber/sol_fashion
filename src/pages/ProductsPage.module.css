@@ -43,6 +43,14 @@
   align-items: center;
 }
 
+.pillScrollWrapper {
+  position: relative;
+}
+
+.scrollIndicator {
+  display: none;
+}
+
 .pillContainer {
   display: flex;
   gap: 20px;
@@ -227,7 +235,7 @@
 .bottomSection {
   display: flex;
   flex-direction: column;
-  margin-top: 80px;
+  margin-top: 56px;
   margin-bottom: 0;
 }
 
@@ -316,6 +324,16 @@
     padding-bottom: 22px;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    padding-right: 24px; /* Give space for the indicator */
+  }
+  .scrollIndicator {
+    display: flex;
+    position: absolute;
+    right: 0;
+    top: -6px;
+    color: rgb(30, 30, 30);
+    opacity: 0.5;
+    pointer-events: none;
   }
   .pillContainer::-webkit-scrollbar {
     display: none;
@@ -346,7 +364,7 @@
     gap: 4px;
   }
   .bottomSection {
-    margin-top: 64px;
+    margin-top: 40px;
   }
   .loadMoreContainer {
     margin-bottom: 64px;

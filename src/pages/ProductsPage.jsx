@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import GlobalFilterPanel from '../components/GlobalFilterPanel';
 import { useAdmin } from '../context/AdminContext';
@@ -143,7 +143,8 @@ const ProductsPage = () => {
       {/* Options Bar */}
       <div className={styles.optionsBarWrapper}>
         <div className={styles.optionsBar}>
-          <div className={styles.pillContainer}>
+          <div className={styles.pillScrollWrapper}>
+            <div className={styles.pillContainer}>
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
@@ -156,6 +157,10 @@ const ProductsPage = () => {
                 )}
               </button>
             ))}
+            </div>
+            <div className={styles.scrollIndicator}>
+              <ChevronRight size={14} strokeWidth={2} />
+            </div>
           </div>
           
           <div className={styles.rightOptions}>

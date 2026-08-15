@@ -356,8 +356,12 @@
 }
 
 @media (max-width: 768px) {
+  .sidebarOverlay {
+    background-color: #fff;
+  }
   .sidebarContainer {
     width: 100%;
+    box-shadow: none;
   }
   .innerContent {
     max-width: 100%;

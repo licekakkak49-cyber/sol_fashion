@@ -1,17 +1,16 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
 import styles from './WishlistPopup.module.css';
 
 const WishlistPopup = () => {
-  const { isWishlistPopupOpen, closeWishlistPopup, wishlistItems, lastAddedItem, openWishlist } = useWishlist();
+  const { isWishlistPopupOpen, closeWishlistPopup, openWishlist } = useWishlist();
 
   useEffect(() => {
     if (isWishlistPopupOpen) {
       const timer = setTimeout(() => {
         closeWishlistPopup();
-      }, 5000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [isWishlistPopupOpen, closeWishlistPopup]);
@@ -25,37 +24,20 @@ const WishlistPopup = () => {
     <AnimatePresence>
       {isWishlistPopupOpen && (
         <motion.div 
-          className={styles.popupContainer}
-          initial={{ x: '100%', opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: '100%', opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className={styles.popupWrapper}
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -10, opacity: 0 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
         >
-          <button className={styles.closeBtn} onClick={closeWishlistPopup} aria-label="Close Popup">
-            <X size={20} strokeWidth={1.2} />
-          </button>
-
-          {lastAddedItem && (
-            <p className={styles.addedText}>
-              {lastAddedItem.name} has been saved to your wishlist.
-            </p>
-          )}
-          
-          <h3 className={styles.title}>Wishlist{wishlistItems.length > 0 && <sup>{wishlistItems.length}</sup>}</h3>
-          
-          <div className={styles.itemsList}>
-            {wishlistItems.slice(-3).reverse().map(item => (
-              <div key={item.id} className={styles.item}>
-                <img src={item.image} alt={item.name} className={styles.itemImage} />
-                <p className={styles.itemName}>{item.name}</p>
-                <p className={styles.itemPrice}>{item.price}</p>
-              </div>
-            ))}
+          <div className={styles.popupContainer}>
+            <span className={styles.message}>
+              The product has been added to your wishlist.
+            </span>
+            <button className={styles.viewBtn} onClick={handleViewWishlist}>
+              View
+            </button>
           </div>
-
-          <button className={styles.viewBtn} onClick={handleViewWishlist}>
-            VIEW WISHLIST
-          </button>
         </motion.div>
       )}
     </AnimatePresence>

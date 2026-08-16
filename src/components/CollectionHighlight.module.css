@@ -1,7 +1,7 @@
 .section {
   width: 100%;
   background-color: #FFFFFF;
-  padding: 32px 24px 96px 12%; /* Increased bottom padding */
+  padding: 0 24px 160px 12%; /* Special editorial layout */
   display: flex;
   flex-direction: column;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
@@ -9,30 +9,32 @@
 }
 
 .textContainer {
-  margin: 0 0 32px 0; /* Increased bottom margin slightly */
+  margin: 0;
+  padding: 36px 0;
   max-width: fit-content;
   text-align: left;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: flex-start;
-  padding: 0;
 }
 
 .title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 400;
   margin: 0 0 12px 0;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 
 .link {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
   color: rgb(30, 30, 30);
   text-decoration: none;
   padding-bottom: 2px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   transition: opacity 0.2s;
   position: relative;
 }

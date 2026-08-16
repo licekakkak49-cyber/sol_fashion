@@ -110,7 +110,7 @@
 }
 
 .itemImage {
-  width: 110px;
+  width: 120px;
   height: auto;
   aspect-ratio: 4/5;
   object-fit: cover;
@@ -400,12 +400,6 @@
   }
   .totalPrice {
     font-size: 18px;
-  }
-  .checkoutBtn {
-    margin-bottom: 0px;
-  }
-  .termsText {
-    margin: 10px 0;
   }
   .itemTop {
     gap: 16px;

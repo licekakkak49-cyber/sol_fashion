@@ -13,8 +13,8 @@ const LineIcon = ({ size = 24, color = "currentColor" }) => (
   </svg>
 );
 
-const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="miter" className={className}>
+const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, fill = "none", className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="miter" className={className}>
     <path d="M12 21.5l-8.5-8.5a5.5 5.5 0 0 1 0-7.78 5.5 5.5 0 0 1 7.78 0L12 6.5l.72-.72a5.5 5.5 0 0 1 7.78 0 5.5 5.5 0 0 1 0 7.78l-8.5 8.5z" />
   </svg>
 );
@@ -36,7 +36,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
   const [isPastHero, setIsPastHero] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const { openWishlist } = useWishlist();
+  const { openWishlist, wishlistItems } = useWishlist();
   const { openCart, cartItems } = useCart();
   const { brands, contentArticles } = useAdmin();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -133,13 +133,13 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
   const navHeight = baseNavHeight + dropdownHeight;
 
   // Mobile specific: solid white background when scrolling up
-  const forceSolidWhite = isMobile && scrollDirection === 'up' && scrolled && !isProductDetailPage;
+  const forceSolidWhite = isMobile && scrollDirection === 'up' && scrolled;
 
-  const isMobilePDP = isMobile && isProductDetailPage;
-  const isTransparent = forceSolidWhite ? false : (isHomePage || isMobilePDP);
-  const isHidden = !isHomePage && !isMobilePDP && (scrollDirection === 'down' && scrolled);
+  const isTransparent = forceSolidWhite ? false : (isHomePage || (isProductDetailPage && !scrolled));
+  const isHidden = !isHomePage && (scrollDirection === 'down' && scrolled);
   const useWhiteText = forceSolidWhite ? false : (isHomePage && !isPastHero && !isMenuOpen && !activeDropdown);
-  const showScrolledBackground = (!isHomePage && !isMobilePDP) && (scrolled || activeDropdown);
+  const showScrolledBackground = (!isHomePage && scrolled) || activeDropdown;
+  const hasWishlistItems = wishlistItems && wishlistItems.length > 0;
 
   return (
     <>
@@ -150,17 +150,19 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
 
 
         <div className={styles.left}>
-          <Link to="/" className={styles.logoContainer}>
-            <span className={styles.textLogo}>SOL</span>
-            <span className={styles.tagline}>Let your Sol shine</span>
-          </Link>
-          <ul className={styles.navLinks}>
-            <li><Link to="/products">New In</Link></li>
-            <li><Link to="/products">Bags</Link></li>
-            <li><Link to="/products">Ready-to-Wear</Link></li>
-            <li><Link to="/products">Accessories</Link></li>
-            <li><Link to="/explore">Explore</Link></li>
-          </ul>
+          <div className={styles.leftContent}>
+            <Link to="/" className={styles.logoContainer}>
+              <span className={styles.textLogo}>SOL</span>
+              <span className={styles.tagline}>Let your Sol shine</span>
+            </Link>
+            <ul className={styles.navLinks}>
+              <li><Link to="/products">New In</Link></li>
+              <li><Link to="/products">Bags</Link></li>
+              <li><Link to="/products">Ready-to-Wear</Link></li>
+              <li><Link to="/products">Accessories</Link></li>
+              <li><Link to="/explore">Explore</Link></li>
+            </ul>
+          </div>
         </div>
 
         <div className={styles.right}>
@@ -172,7 +174,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
               <User size={18} strokeWidth={1.2} />
             </button>
             <button className={styles.iconBtn} aria-label="Wishlist" onClick={openWishlist}>
-              <HeartIcon size={18} color="currentColor" strokeWidth={1.2} />
+              <HeartIcon size={18} color="currentColor" strokeWidth={1.2} fill={hasWishlistItems ? "currentColor" : "none"} />
             </button>
             <button className={styles.cartBtn} aria-label="Cart" onClick={openCart}>
               <span className={styles.cartText}>Cart</span>
@@ -248,7 +250,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                     Account
                   </button>
                   <button className={styles.mobileFooterBtn} onClick={() => { toggleMenu(); openWishlist(); }}>
-                    <HeartIcon size={16} color="currentColor" strokeWidth={1} className={styles.mobileFooterIcon} />
+                    <HeartIcon size={16} color="currentColor" strokeWidth={1} fill={hasWishlistItems ? "currentColor" : "none"} className={styles.mobileFooterIcon} />
                     Wishlist
                   </button>
                   <div className={styles.mobileFooterBottomLinks}>

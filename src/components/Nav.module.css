@@ -45,9 +45,14 @@
 .left {
   display: flex;
   align-items: center;
-  gap: 40px;
   flex: 1;
-  height: 80px;
+  height: 100%;
+}
+
+.leftContent {
+  display: flex;
+  align-items: baseline;
+  gap: 40px;
 }
 
 .logoContainer {
@@ -127,7 +132,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 80px;
+  height: 100%;
 }
 
 .logo {
@@ -164,7 +169,7 @@
   justify-content: flex-end;
   gap: 32px;
   flex: 1;
-  height: 80px;
+  height: 100%;
 }
 
 .locationBtn {

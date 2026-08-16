@@ -2,15 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAdmin } from '../context/AdminContext';
 import styles from './LoginDrawer.module.css';
 
 const LoginDrawer = ({ isOpen, onClose }) => {
+  const { loginAdmin } = useAdmin();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
+    
+    if (activeTab === 'login') {
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      const password = formData.get('password');
+      
+      if (loginAdmin(email, password)) {
+        onClose();
+        navigate('/admin');
+        return;
+      }
+    }
+    
     onClose();
     navigate('/account');
   };
@@ -42,9 +64,9 @@ const LoginDrawer = ({ isOpen, onClose }) => {
         >
           <motion.div
             className={styles.drawer}
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={isMobile ? { y: '100%' } : { x: '100%' }}
+            animate={isMobile ? { y: 0 } : { x: 0 }}
+            exit={isMobile ? { y: '100%' } : { x: '100%' }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
             <div className={styles.header}>

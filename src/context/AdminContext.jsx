@@ -76,12 +76,88 @@ export const AdminProvider = ({ children }) => {
         newP.colors = ['#e8e2d6'];
         newP.selectedColor = '#e8e2d6';
       }
+
+      // Assign categories for testing
+      if (!newP.mainCategory) {
+        const defaultCats = {
+          'Bags': ['Mini Bags', 'Shoulder Bags', 'Totes', 'Crossbody'],
+          'Shoes': ['Heels', 'Flats', 'Sneakers', 'Boots'],
+          'Ready-to-Wear': ['Dresses', 'Tops', 'Skirts', 'Outerwear'],
+          'Accessories': ['Sunglasses', 'Jewelry', 'Hats', 'Belts']
+        };
+        const mainKeys = Object.keys(defaultCats);
+        let randomMain = mainKeys[Math.floor(Math.random() * mainKeys.length)];
+        
+        // Let's manually map some known mock products for better realism
+        if (p.name.includes('Bag') || p.name.includes('basket')) randomMain = 'Bags';
+        else if (p.name.includes('bikini') || p.name.includes('Dress') || p.name.includes('skirt') || p.name.includes('Skirt')) randomMain = 'Ready-to-Wear';
+        else if (p.name.includes('sunglasses')) randomMain = 'Accessories';
+        else if (p.name.includes('Mules')) randomMain = 'Shoes';
+
+        newP.mainCategory = randomMain;
+        
+        const subs = defaultCats[randomMain];
+        newP.subCategory = subs[Math.floor(Math.random() * subs.length)];
+      }
       
       return newP;
     });
     
     return parsed;
   });
+  
+  const [categories, setCategories] = useState(() => {
+    const saved = localStorage.getItem('sol_categories');
+    return saved ? JSON.parse(saved) : {
+      'Bags': ['Mini Bags', 'Shoulder Bags', 'Totes', 'Crossbody'],
+      'Shoes': ['Heels', 'Flats', 'Sneakers', 'Boots'],
+      'Ready-to-Wear': ['Dresses', 'Tops', 'Skirts', 'Outerwear'],
+      'Accessories': ['Sunglasses', 'Jewelry', 'Hats', 'Belts']
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sol_categories', JSON.stringify(categories));
+  }, [categories]);
+
+  const addCategory = (name) => {
+    if (!name || categories[name]) return false;
+    setCategories(prev => ({ ...prev, [name]: [] }));
+    return true;
+  };
+
+  const addSubCategory = (mainName, subName) => {
+    if (!mainName || !subName || !categories[mainName]) return false;
+    if (categories[mainName].includes(subName)) return false;
+    setCategories(prev => ({
+      ...prev,
+      [mainName]: [...prev[mainName], subName]
+    }));
+    return true;
+  };
+
+  const editCategory = (oldName, newName) => {
+    if (!oldName || !newName || !categories[oldName] || categories[newName]) return false;
+    setCategories(prev => {
+      const next = { ...prev };
+      next[newName] = next[oldName];
+      delete next[oldName];
+      return next;
+    });
+    setProducts(prev => prev.map(p => p.mainCategory === oldName ? { ...p, mainCategory: newName } : p));
+    return true;
+  };
+
+  const editSubCategory = (mainName, oldSub, newSub) => {
+    if (!mainName || !oldSub || !newSub || !categories[mainName]) return false;
+    if (categories[mainName].includes(newSub)) return false;
+    setCategories(prev => ({
+      ...prev,
+      [mainName]: prev[mainName].map(sub => sub === oldSub ? newSub : sub)
+    }));
+    setProducts(prev => prev.map(p => (p.mainCategory === mainName && p.subCategory === oldSub) ? { ...p, subCategory: newSub } : p));
+    return true;
+  };
   const [contentArticles, setContentArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -258,13 +334,48 @@ export const AdminProvider = ({ children }) => {
     setProducts(products.filter(p => p.id !== id));
   };
 
-  const changeProductOrder = (id, newIndex) => {
+  const changeProductOrder = (id, newIndex, updatedData = null) => {
     const currentIndex = products.findIndex(p => p.id === id);
-    if (currentIndex === -1 || currentIndex === newIndex) return false;
+    if (currentIndex === -1) return false;
+    if (currentIndex === newIndex && !updatedData) return false;
 
     const newProducts = [...products];
     const [movedProduct] = newProducts.splice(currentIndex, 1);
-    newProducts.splice(newIndex, 0, movedProduct);
+    
+    const finalProduct = updatedData ? { ...movedProduct, ...updatedData } : movedProduct;
+    
+    newProducts.splice(newIndex, 0, finalProduct);
+
+    setProducts(newProducts);
+    return true;
+  };
+
+  const swapProducts = (idA, idB) => {
+    if (idA === idB) return false;
+    const indexA = products.findIndex(p => p.id === idA);
+    const indexB = products.findIndex(p => p.id === idB);
+    if (indexA === -1 || indexB === -1) return false;
+
+    // Create shallow copies of the products to avoid mutating state directly
+    const newProducts = [...products];
+    const productA = { ...newProducts[indexA] };
+    const productB = { ...newProducts[indexB] };
+
+    // Swap their positions in the array
+    newProducts[indexA] = productB;
+    newProducts[indexB] = productA;
+
+    // To maintain the "Slot-based" layout, we must NOT swap their size properties.
+    // Meaning the product moving into slot A must adopt slot A's size, and vice versa.
+    // Since we just swapped the products, we need to swap their layout properties BACK.
+    const tempLayoutSize = newProducts[indexA].layoutSize;
+    const tempIsLarge = newProducts[indexA].isLarge;
+
+    newProducts[indexA].layoutSize = newProducts[indexB].layoutSize;
+    newProducts[indexA].isLarge = newProducts[indexB].isLarge;
+
+    newProducts[indexB].layoutSize = tempLayoutSize;
+    newProducts[indexB].isLarge = tempIsLarge;
 
     setProducts(newProducts);
     return true;
@@ -396,6 +507,12 @@ export const AdminProvider = ({ children }) => {
     updateProduct,
     deleteProduct,
     changeProductOrder,
+    swapProducts,
+    categories,
+    addCategory,
+    addSubCategory,
+    editCategory,
+    editSubCategory,
     addContentArticle,
     updateContentArticle,
     deleteContentArticle,

@@ -69,7 +69,7 @@
 .tagsContainer {
   position: absolute;
   top: 24px;
-  left: 6px;
+  left: 10px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -113,7 +113,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 8px 2px; /* Reduced horizontal padding to push arrows to the edge */
   color: #555;
   pointer-events: auto;
   transition: color 0.2s ease;
@@ -152,7 +152,7 @@
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  padding: 7px 6px;
+  padding: 12px 6px 7px 6px;
   gap: 16px; /* Added gap to ensure text never touches the heart icon */
 }
 

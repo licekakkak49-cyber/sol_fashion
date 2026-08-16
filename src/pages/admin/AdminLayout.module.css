@@ -3,7 +3,7 @@
 .adminLayoutWrapper {
   width: 100vw;
   height: 100vh;
-  background-color: #ffffff; /* Pure white for unified look */
+  background-color: #F9FAFB; /* Off-white for main area */
   display: flex;
   overflow: hidden;
   font-family: var(--font-sans, "Inter", sans-serif);
@@ -11,9 +11,9 @@
 
 /* Integrated Dock with Border */
 .dock {
-  width: 80px;
-  background-color: transparent;
-  border-right: 1px solid #e5e7eb;
+  width: 64px;
+  background-color: #111111;
+  border-right: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,28 +25,28 @@
 }
 
 .dockLogo {
-  color: rgb(30, 30, 30);
+  color: #ffffff;
   margin-bottom: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px; /* Squircle style */
   transition: all 0.2s ease;
 }
 
 .dockLogo:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .navLink {
-  color: #777;
+  color: #888888;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   transition: all 0.2s ease;
   position: relative;
@@ -54,17 +54,17 @@
 }
 
 .navLink:hover {
-  color: rgb(30, 30, 30);
-  background-color: rgba(0, 0, 0, 0.04);
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .navLinkActive {
-  color: rgb(30, 30, 30);
+  color: #ffffff;
   background-color: transparent;
 }
 
 .navLinkActive:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* Tooltip on hover for Dock items */
@@ -103,7 +103,7 @@
   flex: 1;
   height: 100%;
   background-color: transparent;
-  padding: 40px 48px;
+  padding: 40px 12px 40px 20px; /* 12px right padding + 8px scrollbar = 20px visual space */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -206,7 +206,7 @@
 .productGridContainer {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .macroRow {
@@ -223,16 +223,16 @@
   flex: 1;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 4px 6px;
-  align-content: start;
+  gap: 6px;
+  align-content: stretch;
 }
 
 .wideBlock {
   flex: 1 1 100%;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px 6px;
-  align-content: start;
+  gap: 6px;
+  align-content: stretch;
 }
 
 .standardCard {

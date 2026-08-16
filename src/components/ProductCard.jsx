@@ -39,10 +39,10 @@ const ProductCard = ({ id, image, name, price, tags = [], colors = [], selectedC
           {!minimal && (
             <div className={styles.carouselArrows}>
               <button className={styles.arrowBtn} aria-label="Previous image" onClick={(e) => e.preventDefault()}>
-                <ChevronLeft size={24} strokeWidth={1} />
+                <ChevronLeft size={20} strokeWidth={1} />
               </button>
               <button className={styles.arrowBtn} aria-label="Next image" onClick={(e) => e.preventDefault()}>
-                <ChevronRight size={24} strokeWidth={1} />
+                <ChevronRight size={20} strokeWidth={1} />
               </button>
             </div>
           )}

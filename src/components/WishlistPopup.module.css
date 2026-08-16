@@ -1,115 +1,61 @@
-.popupContainer {
+.popupWrapper {
   position: fixed;
   top: 90px;
-  right: 24px;
-  width: 500px;
-  background-color: #fff;
-  padding: 40px;
+  left: 0;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   z-index: 1000;
+  pointer-events: none;
+}
+
+.popupContainer {
+  background-color: #fff;
+  padding: 16px 32px;
   border: 1px solid rgb(30, 30, 30);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
 }
 
-.closeBtn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgb(30, 30, 30);
-  padding: 5px;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.closeBtn:hover {
-  transform: rotate(90deg);
-}
-
-.addedText {
+.message {
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
   font-weight: 400;
-  margin: 0 0 15px 0;
   color: rgb(30, 30, 30);
-}
-
-.title {
-  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  margin: 0 0 40px 0;
-}
-
-.title sup {
-  font-size: 8px;
-  margin-left: 2px;
-}
-
-.itemsList {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
-.item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.itemImage {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: contain;
-  background-color: transparent;
-  margin-bottom: 8px;
-}
-
-.itemName {
-  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  margin: 0 0 2px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.itemPrice {
-  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: #666;
-  margin: 0;
+  letter-spacing: 0.03em;
 }
 
 .viewBtn {
-  width: 100%;
-  padding: 16px;
-  margin-top: 32px;
   background: none;
-  border: 1px solid rgb(30, 30, 30);
+  border: none;
+  padding: 0;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
-  text-transform: uppercase;
+  color: rgb(30, 30, 30);
+  text-decoration: underline;
   cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
+  transition: opacity 0.2s;
 }
 
 .viewBtn:hover {
-  background-color: rgb(30, 30, 30);
-  color: #fff;
-  border-color: rgb(30, 30, 30);
+  opacity: 0.6;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .popupWrapper {
+    top: 70px;
+    padding: 0 24px;
+  }
   .popupContainer {
-    width: calc(100% - 40px);
-    top: 60px;
+    width: auto;
+    max-width: 100%;
+    padding: 16px 24px;
+    justify-content: center;
+    gap: 12px;
   }
 }

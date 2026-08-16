@@ -58,6 +58,7 @@ const ProductDetailPage = () => {
   const displayImages = product ? [product.image, product.image, product.image] : MOCK_IMAGES;
   
   const { toggleWishlist, openWishlistPopup, isInWishlist } = useWishlist();
+  const { addToCart, openCart } = useCart();
 
   const wishlistProduct = product || wishlistProductFound || {
     id: id || 'mock-product-id',
@@ -266,6 +267,7 @@ const ProductDetailPage = () => {
                   return;
                 }
                 addToCart(product || wishlistProduct, selectedSize);
+                openCart();
               }}
             >
               <ShoppingBag size={14} strokeWidth={1.5} className={styles.bagIcon} />

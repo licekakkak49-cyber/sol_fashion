@@ -153,7 +153,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
           <div className={styles.leftContent}>
             <Link to="/" className={styles.logoContainer}>
               <span className={styles.textLogo}>SOL</span>
-              <span className={styles.tagline}>Let your Sol shine</span>
+              <span className={styles.tagline}>Let your SOL shine</span>
             </Link>
             <ul className={styles.navLinks}>
               <li><Link to="/products">New In</Link></li>
@@ -213,7 +213,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                 <div className={styles.mobileMenuHeader}>
                   <Link to="/" className={styles.logoContainer} onClick={toggleMenu}>
                     <span className={styles.textLogo}>SOL</span>
-                    <span className={styles.tagline}>Let your Sol shine</span>
+                    <span className={styles.tagline}>Let your SOL shine</span>
                   </Link>
                   <button className={styles.mobileCloseBtn} onClick={toggleMenu}>
                     <X size={28} strokeWidth={1} />

@@ -6,34 +6,31 @@ const AdminContext = createContext();
 export const useAdmin = () => useContext(AdminContext);
 
 const MOCK_PRODUCTS = [
-  { id: '1', name: 'The Triangle bikini top', price: '225 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw66f02643/26ETOW00914AW000963HD_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '2', name: 'The small Soli Ibiza Resort basket', price: '595 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw757c19ae/26HBAW00044AC01C272DE_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '3', name: 'The Mimosa sunglasses', price: '445 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dwdfc242c5/26HEYU00072AMAC001810_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '4', name: 'The Voile skirt', price: '625 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw68248fca/26ESKW00677AK00322520_30.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '5', name: 'Le Maillot bikini', price: '250 USD', isLarge: true, layoutSize: 'large', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw040b3344/MAILLOT-TRIANGLE-PRINT-DOTS-NAVY.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '6', name: 'The Les Mules', price: '725 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw5b68dd32/26EACW00756BW00329142_19.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '7', name: 'The Le Bisou Bag', price: '850 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw9767c278/26EBAU00417BW00513150_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '8', name: 'The La Robe Dress', price: '920 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw4763ed24/26EOPW00050AW00096850_18.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '9', name: 'The La Jupe Skirt', price: '540 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw912aa6f4/25ESKW00084BW00565850_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '10', name: 'The Triangle bikini top (2)', price: '225 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw66f02643/26ETOW00914AW000963HD_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '11', name: 'The small Soli Ibiza Resort basket (2)', price: '595 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw757c19ae/26HBAW00044AC01C272DE_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '12', name: 'The Mimosa sunglasses (2)', price: '445 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dwdfc242c5/26HEYU00072AMAC001810_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '13', name: 'The Voile skirt (2)', price: '625 USD', isLarge: false, image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw68248fca/26ESKW00677AK00322520_30.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '14', name: 'Le Maillot bikini (2)', price: '250 USD', isLarge: true, layoutSize: 'large', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw040b3344/MAILLOT-TRIANGLE-PRINT-DOTS-NAVY.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '15', name: 'The Les Mules (2)', price: '725 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw5b68dd32/26EACW00756BW00329142_19.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '16', name: 'The Le Bisou Bag (2)', price: '850 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw9767c278/26EBAU00417BW00513150_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '17', name: 'The La Robe Dress (2)', price: '920 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw4763ed24/26EOPW00050AW00096850_18.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
-  { id: '18', name: 'The La Jupe Skirt (2)', price: '540 USD', layoutSize: 'small', image: 'https://www.jacquemus.com/dw/image/v2/BJFJ_PRD/on/demandware.static/-/Sites-master-jacquemus/default/dw912aa6f4/25ESKW00084BW00565850_17.jpg?sw=881&q=100', uploadDate: new Date().toISOString() },
+  // Block 1
+  { id: '1', name: 'Alemais Outfit 1', price: '450 USD', layoutSize: 'small', image: 'https://cdn.shopify.com/s/files/1/0457/2990/6847/files/8084D_1200x.jpg?v=1784181396', uploadDate: new Date().toISOString() },
+  { id: '2', name: 'Alemais Outfit 2', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/8230A-1_6000x.jpg?v=1783657629', hoverImage: 'https://alemais.com/cdn/shop/files/8230A_ACE_1_6000x.jpg?v=1783657630', uploadDate: new Date().toISOString() },
+  { id: '3', name: 'Alemais Outfit 3', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/8115T_49da3fae-0b9d-4d8e-b663-0f16b8c34c71_6000x.jpg?v=1786332736', hoverImage: 'https://alemais.com/cdn/shop/files/8115T_KENNY_1_6000x.jpg?v=1783653708', uploadDate: new Date().toISOString() },
+  { id: '4', name: 'Alemais Outfit 4', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/alemais-sustainable-pant-spur-denim-cropped-jean-1253882886_6000x.jpg?v=1786476495', hoverImage: 'https://alemais.com/cdn/shop/files/alemais-sustainable-pant-spur-denim-cropped-jean-1253882888_6000x.jpg?v=1786476442', uploadDate: new Date().toISOString() },
+  { id: '5', name: 'Alemais Hero Look', price: '850 USD', layoutSize: 'large', image: 'https://alemais.com/cdn/shop/files/Disruptor_-_2_rows_3.jpg?v=1786331368&width=2000', uploadDate: new Date().toISOString() },
+  // Block 2
+  { id: '6', name: 'Alemais Outfit 5', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/alemais-sustainable-jacket-spur-denim-jacket-1253883487_6000x.jpg?v=1786475956', hoverImage: 'https://alemais.com/cdn/shop/files/alemais-sustainable-jacket-spur-denim-jacket-1253883492_6000x.jpg?v=1786475777', uploadDate: new Date().toISOString() },
+  { id: '7', name: 'Alemais Outfit 6', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/8116S_2b259435-913b-40d0-820f-da3729472494_6000x.jpg?v=1786333610', hoverImage: 'https://alemais.com/cdn/shop/files/8116S_KENNY_1_6000x.jpg?v=1783653964', uploadDate: new Date().toISOString() },
+  { id: '8', name: 'Alemais Outfit 7', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/8074D_6000x.jpg?v=1783653185', hoverImage: 'https://alemais.com/cdn/shop/files/8074D_EZRA_1_6000x.jpg?v=1783653185', uploadDate: new Date().toISOString() },
+  { id: '9', name: 'Alemais Outfit 8', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/alemais-sustainable-short-spur-denim-micro-short-1253883483_6000x.jpg?v=1786475241', hoverImage: 'https://alemais.com/cdn/shop/files/alemais-sustainable-short-spur-denim-micro-short-1253883482_6000x.jpg?v=1786475191', uploadDate: new Date().toISOString() },
+  { id: '10', name: 'Alemais Outfit 9', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/alemais-sustainable-top-winifred-lace-blouse-1253883444_6000x.jpg?v=1786474157', hoverImage: 'https://alemais.com/cdn/shop/files/alemais-sustainable-top-winifred-lace-blouse-1253883443_6000x.jpg?v=1786474101', uploadDate: new Date().toISOString() },
+  { id: '11', name: 'Alemais Outfit 10', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/8075D_8cd95c7d-e125-4db9-a3e2-98804190e2d3_6000x.jpg?v=1786073558', hoverImage: 'https://alemais.com/cdn/shop/files/8075D_EZRA_1_6000x.jpg?v=1783653104', uploadDate: new Date().toISOString() },
+  { id: '12', name: 'Alemais Outfit 11', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/8076D_c7fc4759-d747-4c18-bf25-389f7b0219b0_6000x.jpg?v=1786332923', hoverImage: 'https://alemais.com/cdn/shop/files/8076D_EZRA_1_6000x.jpg?v=1783653145', uploadDate: new Date().toISOString() },
+  { id: '13', name: 'Alemais Outfit 12', price: '450 USD', layoutSize: 'small', image: 'https://alemais.com/cdn/shop/files/7988D_6000x.jpg?v=1786473375', hoverImage: 'https://alemais.com/cdn/shop/files/alemais-sustainable-dress-mini-winifred-lace-mini-dress-1253883431_6000x.jpg?v=1786473267', uploadDate: new Date().toISOString() }
 ];
 
 export const AdminProvider = ({ children }) => {
   const [brands, setBrands] = useState([]);
   const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('sol_products');
+    const saved = localStorage.getItem('sol_products_v4');
     let parsed = saved ? JSON.parse(saved) : MOCK_PRODUCTS;
     
     // Auto-inject the new items if they don't exist yet
-    if (!parsed.find(p => p.id === '10')) {
+    if (!parsed.find(p => p.id === '8')) {
       const existingIds = parsed.map(p => p.id);
       const newMocks = MOCK_PRODUCTS.filter(p => !existingIds.includes(p.id));
       parsed = [...parsed, ...newMocks];
@@ -236,7 +233,7 @@ export const AdminProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('sol_products', JSON.stringify(products));
+    localStorage.setItem('sol_products_v4', JSON.stringify(products));
   }, [products]);
 
   const addBrand = async (brand) => {

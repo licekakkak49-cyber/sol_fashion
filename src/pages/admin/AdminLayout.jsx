@@ -16,7 +16,7 @@ const AdminLayout = () => {
         <nav className={styles.dockNav} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <NavLink 
             to="/admin/brands" 
-            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink}
+            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive} ${styles.hideOnMobile}` : `${styles.navLink} ${styles.hideOnMobile}`}
             data-tooltip="Brands"
           >
             {({ isActive }) => (
@@ -36,7 +36,7 @@ const AdminLayout = () => {
           
           <NavLink 
             to="/admin/bespoke" 
-            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink}
+            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive} ${styles.hideOnMobile}` : `${styles.navLink} ${styles.hideOnMobile}`}
             data-tooltip="Bespoke"
           >
             {({ isActive }) => (
@@ -46,7 +46,7 @@ const AdminLayout = () => {
 
           <NavLink 
             to="/admin/lenses" 
-            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink}
+            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive} ${styles.hideOnMobile}` : `${styles.navLink} ${styles.hideOnMobile}`}
             data-tooltip="Lenses"
           >
             {({ isActive }) => (
@@ -56,7 +56,7 @@ const AdminLayout = () => {
 
           <NavLink 
             to="/admin/explore" 
-            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink}
+            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.navLinkActive} ${styles.hideOnMobile}` : `${styles.navLink} ${styles.hideOnMobile}`}
             data-tooltip="Explore"
           >
             {({ isActive }) => (
@@ -67,10 +67,10 @@ const AdminLayout = () => {
 
         <div className={styles.spacer}></div>
 
-        <button className={styles.navLink} data-tooltip="Settings" style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
+        <button className={`${styles.navLink} ${styles.hideOnMobile}`} data-tooltip="Settings" style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
           <Settings size={20} strokeWidth={1.5} />
         </button>
-        <button className={styles.navLink} data-tooltip="Log Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
+        <button className={`${styles.navLink} ${styles.hideOnMobile}`} data-tooltip="Log Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
           <LogOut size={20} strokeWidth={1.5} />
         </button>
       </aside>

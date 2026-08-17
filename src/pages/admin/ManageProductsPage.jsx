@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 import { useAdmin } from '../../context/AdminContext';
-import { Plus, X, UploadCloud, Search, Filter, Package, Edit2, Trash2, AlertTriangle, ArrowLeft, Briefcase, Shirt, Glasses, Watch, Activity, Settings } from 'lucide-react';
+import { Plus, X, UploadCloud, Search, Filter, Package, Edit2, Trash2, AlertTriangle, ArrowLeft, Briefcase, Shirt, Glasses, Watch, Activity, Settings, Hexagon, Eye, PanelTop, Tag } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 import ImageCropper from '../../components/ImageCropper';
 
@@ -289,121 +289,139 @@ const ManageProductsPage = () => {
     });
   }, [validProducts, searchQuery, activeTab, filterBrand, filterGender, filterHighlight, sortBy]);
 
+  const getInitialBreakpoint = () => {
+    if (typeof window === 'undefined') return 'lg';
+    const w = window.innerWidth;
+    if (w < 480) return 'xs';
+    if (w < 768) return 'sm';
+    if (w < 996) return 'md';
+    return 'lg';
+  };
+  const [currentBreakpoint, setCurrentBreakpoint] = useState(getInitialBreakpoint);
+  const targetCols = (currentBreakpoint === 'sm' || currentBreakpoint === 'xs' || currentBreakpoint === 'xxs') ? 2 : 4;
+  const isMobile = targetCols === 2;
+
   const { layout, renderItems } = useMemo(() => {
     const layout = [];
     const renderItems = [];
-    let currentY = 0; 
-    let currentBlockItems = [];
-    let currentCapacity = 4; 
+    let currentY = 0;
+    let currentRowType = null;
+    let currentCapacity = 0; 
     let currentBlocksInRow = []; 
-    let currentRowType = null; 
+    let currentBlockItems = [];
 
-    const commitMacroRow = () => {
-       if (currentBlocksInRow.length === 0) return;
-       
-       if (currentRowType === 'wide') {
-         let x = 0;
-         currentBlocksInRow[0].forEach(item => {
-           layout.push({ i: item.id, x, y: currentY, w: 1, h: 1 });
-           renderItems.push({ isPlaceholder: false, product: item });
-           x++;
-         });
-         for (; x < 4; x++) {
-           const phId = `ph-wide-${currentY}-${x}`;
-           layout.push({ i: phId, x, y: currentY, w: 1, h: 1, isDraggable: false, isResizable: false });
-           renderItems.push({ isPlaceholder: true, id: phId });
-         }
-         currentY += 1;
-       } else {
-         for (let b = 0; b < 2; b++) {
-           const blockX = b * 2;
-           if (b < currentBlocksInRow.length) {
-             const blockItems = currentBlocksInRow[b];
-             if (blockItems.length === 1 && blockItems[0].layoutSize === 'large') {
-               layout.push({ i: blockItems[0].id, x: blockX, y: currentY, w: 2, h: 2 });
-               renderItems.push({ isPlaceholder: false, product: blockItems[0] });
-             } else {
-               let bx = 0, by = 0;
-               blockItems.forEach(item => {
-                 layout.push({ i: item.id, x: blockX + bx, y: currentY + by, w: 1, h: 1 });
-                 renderItems.push({ isPlaceholder: false, product: item });
-                 bx++;
-                 if (bx > 1) { bx = 0; by++; }
-               });
-               while (by < 2) {
-                 const phId = `ph-std-${currentY}-${blockX + bx}-${by}`;
-                 layout.push({ i: phId, x: blockX + bx, y: currentY + by, w: 1, h: 1, isDraggable: false, isResizable: false });
-                 renderItems.push({ isPlaceholder: true, id: phId });
-                 bx++;
-                 if (bx > 1) { bx = 0; by++; }
-               }
-             }
-           } else {
-             for(let by=0; by<2; by++) {
-               for(let bx=0; bx<2; bx++) {
-                 const phId = `ph-std-${currentY}-${blockX + bx}-${by}`;
-                 layout.push({ i: phId, x: blockX + bx, y: currentY + by, w: 1, h: 1, isDraggable: false, isResizable: false });
-                 renderItems.push({ isPlaceholder: true, id: phId });
-               }
-             }
-           }
-         }
-         currentY += 2;
-       }
-       currentBlocksInRow = [];
-       currentRowType = null;
-    };
+    const numBlocks = targetCols / 2; // For 4 cols -> 2 blocks. For 2 cols -> 1 block.
 
     const pushCurrentBlock = () => {
+      if (currentBlocksInRow.length === 0 && currentBlockItems.length === 0) return;
+      
       if (currentBlockItems.length > 0) {
         currentBlocksInRow.push(currentBlockItems);
         currentBlockItems = [];
-        currentCapacity = 4;
       }
-      const maxBlocks = currentRowType === 'wide' ? 1 : 2;
-      if (currentBlocksInRow.length === maxBlocks) {
-        commitMacroRow();
+      if (currentBlocksInRow.length === 0) return;
+
+      if (currentRowType === 'wide') {
+        let x = 0;
+        currentBlocksInRow[0].forEach(item => {
+          layout.push({ i: item.id, x, y: currentY, w: 1, h: 1 });
+          renderItems.push({ isPlaceholder: false, product: item });
+          x++;
+        });
+        for (; x < targetCols; x++) {
+          const phId = `ph-wide-${currentY}-${x}`;
+          layout.push({ i: phId, x, y: currentY, w: 1, h: 1, isDraggable: false, isResizable: false });
+          renderItems.push({ isPlaceholder: true, id: phId });
+        }
+        currentY += 1;
+      } else {
+        for (let b = 0; b < numBlocks; b++) {
+          const blockX = b * 2;
+          if (b < currentBlocksInRow.length) {
+            const blockItems = currentBlocksInRow[b];
+            if (blockItems.length === 1 && blockItems[0].layoutSize === 'large') {
+              layout.push({ i: blockItems[0].id, x: blockX, y: currentY, w: 2, h: 2 });
+              renderItems.push({ isPlaceholder: false, product: blockItems[0] });
+            } else {
+              let bx = 0, by = 0;
+              blockItems.forEach(item => {
+                layout.push({ i: item.id, x: blockX + bx, y: currentY + by, w: 1, h: 1 });
+                renderItems.push({ isPlaceholder: false, product: item });
+                bx++;
+                if (bx > 1) { bx = 0; by++; }
+              });
+              while (by < 2) {
+                const phId = `ph-std-${currentY}-${blockX + bx}-${by}`;
+                layout.push({ i: phId, x: blockX + bx, y: currentY + by, w: 1, h: 1, isDraggable: false, isResizable: false });
+                renderItems.push({ isPlaceholder: true, id: phId });
+                bx++;
+                if (bx > 1) { bx = 0; by++; }
+              }
+            }
+          } else {
+            for (let bx = 0; bx < 2; bx++) {
+              for (let by = 0; by < 2; by++) {
+                const phId = `ph-std-${currentY}-${blockX + bx}-${by}`;
+                layout.push({ i: phId, x: blockX + bx, y: currentY + by, w: 1, h: 1, isDraggable: false, isResizable: false });
+                renderItems.push({ isPlaceholder: true, id: phId });
+              }
+            }
+          }
+        }
+        currentY += 2;
       }
+
+      currentRowType = null;
+      currentCapacity = 0;
+      currentBlocksInRow = [];
     };
 
     filteredProducts.forEach(product => {
-      const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
-      const productType = layoutSize === 'wide' ? 'wide' : 'standard';
-      const requiredCapacity = layoutSize === 'large' ? 4 : 1;
+      const productType = product.layoutSize === 'wide' ? 'wide' : 'standard';
       
       if (currentRowType !== null && currentRowType !== productType) {
         pushCurrentBlock();
-        commitMacroRow();
       }
       
       currentRowType = productType;
-      
-      if (requiredCapacity > currentCapacity && currentBlockItems.length > 0) {
-        pushCurrentBlock();
-      }
 
-      currentBlockItems.push(product);
-      currentCapacity -= requiredCapacity;
-
-      if (currentCapacity === 0) {
-        pushCurrentBlock();
+      if (productType === 'wide') {
+        if (currentCapacity + 1 > targetCols) {
+           pushCurrentBlock();
+           currentRowType = productType;
+        }
+        currentBlockItems.push(product);
+        currentCapacity += 1;
+      } else {
+        const requiredCapacity = product.layoutSize === 'large' ? 4 : 1;
+        if (requiredCapacity > (4 - currentCapacity) && currentBlockItems.length > 0) {
+          currentBlocksInRow.push(currentBlockItems);
+          currentBlockItems = [];
+          currentCapacity = 0;
+          if (currentBlocksInRow.length >= numBlocks) {
+            pushCurrentBlock();
+            currentRowType = productType;
+          }
+        }
+        currentBlockItems.push(product);
+        currentCapacity += requiredCapacity;
       }
     });
 
-    if (currentBlockItems.length > 0) {
+    if (currentBlockItems.length > 0 || currentBlocksInRow.length > 0) {
       pushCurrentBlock();
-    }
-    if (currentBlocksInRow.length > 0) {
-      commitMacroRow();
     }
 
     return { layout, renderItems };
-  }, [filteredProducts]);
+  }, [filteredProducts, targetCols]);
 
   const [rowHeight, setRowHeight] = useState(380);
 
+  // Track the actual layout generated by RGL (crucial for responsive breakpoints)
+  const currentLayoutRef = useRef(layout);
+
   const handleLayoutChange = (newLayout) => {
-    // Optional: could persist raw layout if needed, but we rely on onDragStop for reordering
+    currentLayoutRef.current = newLayout;
   };
 
   const handleDragStop = (newRglLayout, oldItem, newItem, placeholder, e, element) => {
@@ -411,12 +429,15 @@ const ManageProductsPage = () => {
     const targetX = newItem.x;
     const targetY = newItem.y;
 
+    // Use the actual responsive layout (which could be 2-cols on mobile) to find the target
+    const currentLayout = currentLayoutRef.current || layout;
+
     // Find if the drop coordinate falls inside the bounding box of any existing item
-    let dropTargetIndex = layout.findIndex(item => 
+    let dropTargetIndex = currentLayout.findIndex(item => 
       targetX >= item.x && targetX < item.x + item.w && 
       targetY >= item.y && targetY < item.y + item.h
     );
-    const dropTarget = layout[dropTargetIndex];
+    const dropTarget = currentLayout[dropTargetIndex];
 
     // If dropped on an existing product, SWAP them!
     if (dropTarget && !dropTarget.i.startsWith('ph-')) {
@@ -542,9 +563,9 @@ const ManageProductsPage = () => {
       
       
       {/* STICKY HEADER WRAPPER */}
-      <div style={{ position: 'sticky', top: '-40px', paddingTop: '20px', background: 'rgba(249, 250, 251, 0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', zIndex: 10, margin: '-40px -12px 16px -20px', paddingLeft: '20px', paddingRight: '12px' }}>
+      <div style={{ position: 'sticky', top: isMobile ? '-24px' : '-40px', paddingTop: isMobile ? '12px' : '20px', background: 'rgba(249, 250, 251, 0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', zIndex: 10, margin: isMobile ? '-24px -12px 12px -16px' : '-40px -12px 16px -20px', paddingLeft: isMobile ? '16px' : '20px', paddingRight: '12px' }}>
 {/* HEADER SECTION */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', gap: '24px', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMobile ? '16px' : '24px', gap: isMobile ? '12px' : '24px', width: '100%' }}>
         
         {/* Full-width Centered Search */}
         <div style={{ flex: 1, maxWidth: '800px', position: 'relative' }}>
@@ -554,7 +575,7 @@ const ManageProductsPage = () => {
             placeholder="Search by name or SKU..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: '100%', padding: '14px 20px 14px 48px', border: 'none', borderRadius: '100px', fontSize: '15px', outline: 'none', background: '#F3F4F6', color: '#111' }}
+            style={{ width: '100%', padding: isMobile ? '10px 16px 10px 42px' : '14px 20px 14px 48px', border: 'none', borderRadius: '100px', fontSize: isMobile ? '14px' : '15px', outline: 'none', background: '#F3F4F6', color: '#111' }}
           />
         </div>
 
@@ -565,8 +586,8 @@ const ManageProductsPage = () => {
             setModalStep(1);
           }
         }} style={{ flexShrink: 0 }}>
-          {isAdding ? <X size={14} style={{ marginRight: '6px' }} /> : <Plus size={14} style={{ marginRight: '6px' }} />}
-          {isAdding ? 'Close Panel' : 'New Product'}
+          {isAdding ? <X size={14} style={{ marginRight: isMobile ? '0' : '6px' }} /> : <Plus size={14} style={{ marginRight: isMobile ? '0' : '6px' }} />}
+          {!isMobile && (isAdding ? 'Close Panel' : 'New Product')}
         </button>
       </div>
 
@@ -574,21 +595,22 @@ const ManageProductsPage = () => {
       
       
       {/* Main Categories Row */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', background: '#F3F4F6', padding: '4px', borderRadius: '100px', gap: '4px' }}>
+      <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: 'flex', alignItems: 'center', marginBottom: isMobile ? '12px' : '16px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
+        <div style={{ display: 'flex', background: '#F3F4F6', padding: '4px', borderRadius: '100px', gap: '4px', whiteSpace: 'nowrap' }}>
           <button
             onClick={() => { setActiveMainCategory('All'); setActiveSubCategory('All'); }}
             style={{
-              padding: '8px 20px',
+              padding: isMobile ? '6px 14px' : '8px 20px',
               border: 'none',
               borderRadius: '100px',
               background: activeMainCategory === 'All' ? '#fff' : 'transparent',
               color: activeMainCategory === 'All' ? '#111' : '#666',
-              fontSize: '14px',
+              fontSize: isMobile ? '13px' : '14px',
               fontWeight: activeMainCategory === 'All' ? 600 : 500,
               boxShadow: activeMainCategory === 'All' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }}
           >
             All Categories
@@ -598,16 +620,17 @@ const ManageProductsPage = () => {
               key={cat}
               onClick={() => { setActiveMainCategory(cat); setActiveSubCategory('All'); }}
               style={{
-                padding: '8px 20px',
+                padding: isMobile ? '6px 14px' : '8px 20px',
                 border: 'none',
                 borderRadius: '100px',
                 background: activeMainCategory === cat ? '#fff' : 'transparent',
                 color: activeMainCategory === cat ? '#111' : '#666',
-                fontSize: '14px',
+                fontSize: isMobile ? '13px' : '14px',
                 fontWeight: activeMainCategory === cat ? 600 : 500,
                 boxShadow: activeMainCategory === cat ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
               }}
             >
               {cat}
@@ -637,14 +660,14 @@ const ManageProductsPage = () => {
       </div>
 
       {/* Sub Categories Row */}
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: 'flex', gap: isMobile ? '16px' : '24px', marginBottom: isMobile ? '8px' : '16px', alignItems: 'center', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
         <button
           onClick={() => setActiveSubCategory('All')}
           style={{
-            padding: '0 0 12px 0',
+            padding: isMobile ? '0 0 8px 0' : '0 0 12px 0',
             border: 'none',
             background: 'transparent',
-            fontSize: '14px',
+            fontSize: isMobile ? '13px' : '14px',
             fontWeight: activeSubCategory === 'All' ? 600 : 500,
             color: activeSubCategory === 'All' ? '#111' : '#888',
             borderBottom: activeSubCategory === 'All' ? '2px solid #111' : '2px solid transparent',
@@ -652,7 +675,8 @@ const ManageProductsPage = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            whiteSpace: 'nowrap'
           }}
         >
           All
@@ -671,10 +695,10 @@ const ManageProductsPage = () => {
             key={sub}
             onClick={() => setActiveSubCategory(sub)}
             style={{
-              padding: '0 0 12px 0',
+              padding: isMobile ? '0 0 8px 0' : '0 0 12px 0',
               border: 'none',
               background: 'transparent',
-              fontSize: '14px',
+              fontSize: isMobile ? '13px' : '14px',
               fontWeight: activeSubCategory === sub ? 600 : 500,
               color: activeSubCategory === sub ? '#111' : '#888',
               borderBottom: activeSubCategory === sub ? '2px solid #111' : '2px solid transparent',
@@ -682,7 +706,8 @@ const ManageProductsPage = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }}
           >
             {sub}
@@ -784,9 +809,10 @@ const ManageProductsPage = () => {
         ) : (
           <ResponsiveGridLayout
             className="layout"
-            layouts={{ lg: layout, md: layout, sm: layout }}
+            layouts={{ lg: layout, md: layout, sm: layout, xs: layout, xxs: layout }}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 4, md: 4, sm: 2, xs: 2, xxs: 1 }}
+            cols={{ lg: 4, md: 4, sm: 2, xs: 2, xxs: 2 }}
+            onBreakpointChange={(newBreakpoint) => setCurrentBreakpoint(newBreakpoint)}
             rowHeight={rowHeight}
             containerPadding={[0, 0]}
             margin={[12, 12]}
@@ -875,6 +901,7 @@ const ManageProductsPage = () => {
         />
       )}
     
+
 {isAdding && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
           <div className={styles.card} style={{ background: '#fff', padding: '40px', width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '24px', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}>
@@ -889,130 +916,144 @@ const ManageProductsPage = () => {
                 </button>
               </div>
             </div>
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            {/* Same Add Form content... */}
-            <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '32px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={labelStyle}>Product Images</label>
-                <div style={{ flex: 1, minHeight: '220px', border: '1px dashed #bbb', borderRadius: '16px', display: 'flex', flexDirection: 'column', color: '#666', background: '#f9fafb', position: 'relative', overflow: 'hidden', padding: '12px' }}>
-                  
-                  {formData.images.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
-                      {formData.images.map((imgUrl, idx) => (
-                        <div key={idx} style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', background: '#fff', border: formData.primaryImageIndex === idx ? '2px solid #111' : '1px solid #e5e7eb' }}>
-                          <img src={imgUrl} alt={`Preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                          
-                          {/* Star for Primary */}
-                          <button 
-                            type="button" 
-                            onClick={() => handleChange('primaryImageIndex', idx)}
-                            style={{ position: 'absolute', top: '4px', left: '4px', background: formData.primaryImageIndex === idx ? '#111' : 'rgba(255,255,255,0.9)', color: formData.primaryImageIndex === idx ? '#fff' : '#ccc', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}
-                            title="Set as Primary Image"
-                          >
-                            <span style={{ fontSize: '12px' }}>★</span>
-                          </button>
 
-                          {/* Delete Button */}
-                          <button 
-                            type="button" 
-                            onClick={() => {
-                              const newImages = formData.images.filter((_, i) => i !== idx);
-                              const newPrimary = formData.primaryImageIndex === idx ? 0 : (formData.primaryImageIndex > idx ? formData.primaryImageIndex - 1 : formData.primaryImageIndex);
-                              setFormData(prev => ({ ...prev, images: newImages, primaryImageIndex: newPrimary }));
-                            }}
-                            style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}
-                          >
-                            <X size={12} />
-                          </button>
+            {/* Step 1: Category Selection */}
+            {modalStep === 1 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '24px 0' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#111', marginBottom: '8px' }}>What are you creating?</h2>
+                  <p style={{ color: '#666', fontSize: '14px' }}>Select a category to customize your product details</p>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', width: '100%', maxWidth: '800px' }}>
+                  {Object.keys(categories).map(cat => (
+                    <button 
+                      key={cat} 
+                      onClick={() => { handleChange('mainCategory', cat); setModalStep(2); }} 
+                      style={{ padding: '24px', border: '1px solid #e5e7eb', borderRadius: '16px', background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }} 
+                      onMouseOver={(e) => e.currentTarget.style.borderColor = '#111'} 
+                      onMouseOut={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                    >
+                       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
+                         {cat === 'Bags' ? <Package size={24} /> : cat === 'Shoes' ? <Hexagon size={24} /> : cat === 'Lenses' ? <Eye size={24} /> : cat === 'Bespoke' ? <PanelTop size={24} /> : <Tag size={24} />}
+                       </div>
+                       <span style={{ fontWeight: 600, fontSize: '14px', color: '#111' }}>{cat}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Image Upload & Crop */}
+            {modalStep === 2 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '13px', fontWeight: 500 }}>
+                   <button onClick={() => setModalStep(1)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', gap: '4px' }}>← Back</button>
+                   <span>/ Step 2: Product Images</span>
+                </div>
+                <div style={{ flex: 1, minHeight: '300px', border: '1px dashed #bbb', borderRadius: '16px', display: 'flex', flexDirection: 'column', color: '#666', background: '#f9fafb', position: 'relative', overflow: 'hidden', padding: '24px' }}>
+                  {formData.images.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', width: '100%' }}>
+                      {formData.images.map((imgUrl, idx) => (
+                        <div key={idx} style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', background: '#fff', border: formData.primaryImageIndex === idx ? '2px solid #111' : '1px solid #e5e7eb' }}>
+                          <img src={imgUrl} alt={`Preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          <button type="button" onClick={() => handleChange('primaryImageIndex', idx)} style={{ position: 'absolute', top: '8px', left: '8px', background: formData.primaryImageIndex === idx ? '#111' : 'rgba(255,255,255,0.9)', color: formData.primaryImageIndex === idx ? '#fff' : '#ccc', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }} title="Set as Primary Image"><span style={{ fontSize: '14px' }}>★</span></button>
+                          <button type="button" onClick={() => { const newImages = formData.images.filter((_, i) => i !== idx); const newPrimary = formData.primaryImageIndex === idx ? 0 : (formData.primaryImageIndex > idx ? formData.primaryImageIndex - 1 : formData.primaryImageIndex); setFormData(prev => ({ ...prev, images: newImages, primaryImageIndex: newPrimary })); }} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}><X size={14} /></button>
                         </div>
                       ))}
-                      
-                      {/* Add More Button */}
-                      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handleImageUpload} 
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} 
-                        />
-                        <Plus size={24} color="#999" />
+                      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fff' }}>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} />
+                        <Plus size={32} color="#999" />
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleImageUpload} 
-                        style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} 
-                      />
-                      <UploadCloud size={32} style={{ marginBottom: '12px', color: '#888' }} />
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: '#444' }}>Click or Drop images</span>
-                      <span style={{ fontSize: '11px', opacity: 0.7, marginTop: '6px' }}>Add up to 5 images</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', minHeight: '250px' }}>
+                      <input type="file" accept="image/*" onChange={handleImageUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} />
+                      <UploadCloud size={48} style={{ marginBottom: '16px', color: '#888' }} />
+                      <span style={{ fontSize: '15px', fontWeight: 500, color: '#444' }}>Click or Drop images here</span>
+                      <span style={{ fontSize: '13px', opacity: 0.7, marginTop: '8px' }}>High quality images will be cropped and optimized to WebP</span>
                     </div>
                   )}
-
                 </div>
                 {imageWarning && (
-                  <div style={{ marginTop: '12px', padding: '8px 12px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', color: '#d97706', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <AlertTriangle size={14} />
-                    {imageWarning}
+                  <div style={{ padding: '12px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', color: '#d97706', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertTriangle size={16} />{imageWarning}
                   </div>
                 )}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                  <button onClick={() => setModalStep(3)} className={styles.btnPrimary} disabled={formData.images.length === 0} style={{ padding: '12px 32px', fontSize: '14px', opacity: formData.images.length === 0 ? 0.5 : 1 }}>Next Step →</button>
+                </div>
               </div>
+            )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div><label style={labelStyle}>Product Name *</label><input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} style={inputStyle} placeholder="e.g. Aden 02" /></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <div><label style={labelStyle}>SKU</label><input type="text" value={formData.sku} onChange={(e) => handleChange('sku', e.target.value)} style={inputStyle} placeholder="e.g. AD-02-BLK" /></div>
-                  <div><label style={labelStyle}>Price (฿) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} placeholder="e.g. 15900" /></div>
-                  <div><label style={labelStyle}>Stock Quantity</label><input type="number" value={formData.stock} onChange={(e) => handleChange('stock', e.target.value)} style={inputStyle} placeholder="e.g. 15" /></div>
+            {/* Step 3: Product Details & Publish */}
+            {modalStep === 3 && (
+              <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '13px', fontWeight: 500 }}>
+                   <button type="button" onClick={() => setModalStep(2)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', gap: '4px' }}>← Back</button>
+                   <span>/ Step 3: Details for {formData.mainCategory}</span>
                 </div>
-                <div><label style={labelStyle}>Product Story / Description</label><textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} placeholder="Describe the inspiration, fit, and feel..." /></div>
-              </div>
-            </div>
-            <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.05)' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  <PillSelector label="Main Category" options={Object.keys(categories).map(c => ({ value: c, label: c }))} selectedValue={formData.mainCategory} onChange={(val) => { handleChange('mainCategory', val); handleChange('subCategory', ''); }} />
-                  {formData.mainCategory && categories[formData.mainCategory] && (
-                    <PillSelector label="Sub Category" options={categories[formData.mainCategory].map(c => ({ value: c, label: c }))} selectedValue={formData.subCategory} onChange={(val) => handleChange('subCategory', val)} />
-                  )}
-                </div>
-                <PillSelector label="Brand" options={brandOptions} selectedValue={formData.brandId} onChange={(val) => handleChange('brandId', val)} />
-                <PillSelector label="Gender" options={genders} selectedValue={formData.gender} onChange={(val) => handleChange('gender', val)} />
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={labelStyle}>Dimensions (mm)</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                    <input type="number" value={formData.sizeLens} onChange={(e) => handleChange('sizeLens', e.target.value)} style={inputStyle} placeholder="Lens (e.g. 52)" />
-                    <input type="number" value={formData.sizeBridge} onChange={(e) => handleChange('sizeBridge', e.target.value)} style={inputStyle} placeholder="Bridge (e.g. 20)" />
-                    <input type="number" value={formData.sizeTemple} onChange={(e) => handleChange('sizeTemple', e.target.value)} style={inputStyle} placeholder="Temple (e.g. 145)" />
+                
+                {/* Basic Info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div><label style={labelStyle}>Product Name *</label><input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} style={inputStyle} placeholder="e.g. Aden 02" /></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div><label style={labelStyle}>Price (฿) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} placeholder="e.g. 15900" /></div>
+                      <div><label style={labelStyle}>SKU</label><input type="text" value={formData.sku} onChange={(e) => handleChange('sku', e.target.value)} style={inputStyle} placeholder="e.g. AD-02-BLK" /></div>
+                    </div>
+                    <div><label style={labelStyle}>Stock Quantity</label><input type="number" value={formData.stock} onChange={(e) => handleChange('stock', e.target.value)} style={inputStyle} placeholder="e.g. 15" /></div>
+                    <div><label style={labelStyle}>Product Story / Description</label><textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} placeholder="Describe the inspiration, fit, and feel..." /></div>
+                  </div>
+                  
+                  {/* Dynamic Info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                      {formData.mainCategory && categories[formData.mainCategory] && (
+                        <PillSelector label="Sub Category" options={categories[formData.mainCategory].map(c => ({ value: c, label: c }))} selectedValue={formData.subCategory} onChange={(val) => handleChange('subCategory', val)} />
+                      )}
+                      <PillSelector label="Brand" options={brandOptions} selectedValue={formData.brandId} onChange={(val) => handleChange('brandId', val)} />
+                    </div>
+                    
+                    {(formData.mainCategory === 'Lenses' || formData.mainCategory === 'Bespoke') && (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                          <PillSelector label="Frame Color" options={frameColors} selectedValue={formData.frameColor} onChange={(val) => handleChange('frameColor', val)} />
+                          <PillSelector label="Lens Color" options={lensColors} selectedValue={formData.lensColor} onChange={(val) => handleChange('lensColor', val)} />
+                          <PillSelector label="Shape" options={shapes} selectedValue={formData.shape} onChange={(val) => handleChange('shape', val)} />
+                          <PillSelector label="Material" options={materials} selectedValue={formData.material} onChange={(val) => handleChange('material', val)} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Dimensions (mm)</label>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                            <input type="number" value={formData.sizeLens} onChange={(e) => handleChange('sizeLens', e.target.value)} style={inputStyle} placeholder="Lens (e.g. 52)" />
+                            <input type="number" value={formData.sizeBridge} onChange={(e) => handleChange('sizeBridge', e.target.value)} style={inputStyle} placeholder="Bridge (e.g. 20)" />
+                            <input type="number" value={formData.sizeTemple} onChange={(e) => handleChange('sizeTemple', e.target.value)} style={inputStyle} placeholder="Temple (e.g. 145)" />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {(formData.mainCategory === 'Shoes' || formData.mainCategory === 'Ready-to-Wear') && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                        <PillSelector label="Gender" options={genders} selectedValue={formData.gender} onChange={(val) => handleChange('gender', val)} />
+                        <PillSelector label="Material" options={materials} selectedValue={formData.material} onChange={(val) => handleChange('material', val)} />
+                      </div>
+                    )}
+                    
+                    <MultiPillSelector label="Collection Highlight" options={highlightOptions} selectedValues={formData.highlight} onChange={(val) => handleChange('highlight', val)} />
                   </div>
                 </div>
-              </div>
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  <PillSelector label="Frame Color" options={frameColors} selectedValue={formData.frameColor} onChange={(val) => handleChange('frameColor', val)} />
-                  <PillSelector label="Lens Color" options={lensColors} selectedValue={formData.lensColor} onChange={(val) => handleChange('lensColor', val)} />
-                  <PillSelector label="Shape" options={shapes} selectedValue={formData.shape} onChange={(val) => handleChange('shape', val)} />
-                  <PillSelector label="Material" options={materials} selectedValue={formData.material} onChange={(val) => handleChange('material', val)} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  <PillSelector label="Polarized Lenses" options={polarizeOptions} selectedValue={formData.isPolarized} onChange={(val) => handleChange('isPolarized', val)} />
-                  <MultiPillSelector label="Collection Highlight" options={highlightOptions} selectedValues={formData.highlight} onChange={(val) => handleChange('highlight', val)} />
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-              <button type="button" onClick={resetForm} style={{ padding: '12px 24px', fontSize: '14px', background: 'transparent', border: '1px solid #e5e7eb', borderRadius: '100px', cursor: 'pointer', fontWeight: 500, color: '#666' }}>Cancel</button>
-              <button type="submit" className={styles.btnPrimary} style={{ padding: '12px 32px', fontSize: '14px' }}>{editingId ? 'Update Product' : 'Save Product'}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-      )}
 
+                <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.05)', margin: '16px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button type="button" onClick={resetForm} style={{ padding: '12px 24px', fontSize: '14px', background: 'transparent', border: '1px solid #e5e7eb', borderRadius: '100px', cursor: 'pointer', fontWeight: 500, color: '#666' }}>Cancel</button>
+                  <button type="submit" className={styles.btnPrimary} style={{ padding: '12px 32px', fontSize: '14px' }}>{editingId ? 'Update Product' : 'Publish Product'}</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 </div>
   );
 };

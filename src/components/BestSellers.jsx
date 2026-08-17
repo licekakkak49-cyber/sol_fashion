@@ -24,7 +24,11 @@ const BestSellers = () => {
         {BEST_SELLERS.map(product => (
           <div key={product.id} className={styles.cardWrapper}>
             <ProductCard 
-              {...product} 
+              id={product.id}
+              image={product.image}
+              hoverImage={product.hoverImage}
+              name={product.name}
+              price={product.price}
               minimal={true} 
               hideBookmark={true} 
             />

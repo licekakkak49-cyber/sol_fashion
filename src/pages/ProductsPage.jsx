@@ -212,6 +212,7 @@ const ProductsPage = () => {
                       <ProductCard 
                         id={product.id}
                         image={product.image}
+                        hoverImage={product.hoverImage}
                         name={product.name}
                         price={product.price}
                         tags={product.tags}

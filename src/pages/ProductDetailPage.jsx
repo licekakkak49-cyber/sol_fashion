@@ -55,7 +55,9 @@ const ProductDetailPage = () => {
     }
   };
 
-  const displayImages = product ? [product.image, product.image, product.image] : MOCK_IMAGES;
+  const displayImages = product 
+    ? (product.hoverImage ? [product.image, product.hoverImage] : [product.image]) 
+    : MOCK_IMAGES;
   
   const { toggleWishlist, openWishlistPopup, isInWishlist } = useWishlist();
   const { addToCart, openCart } = useCart();

@@ -9,8 +9,9 @@ const HomePage = () => {
       <HeroSection />
       <CollectionHighlight />
       <BannerSection 
-        imageUrl="https://eu.louisvuitton.com/images/is/image//content/dam/lv/editorial-content/New-Homepage/2026/central/collections/women-shoes/WShoes_Novelties_Mules_Sandals_HP_Push_August26_DI3.jpg?wid=4096"
-        altText="New Collection Banner"
+        imageUrl="https://alemais.com/cdn/shop/files/260702_ALE_15_013_a.jpg?v=1786427393&width=2048"
+        altText="Alemais Full Screen Banner"
+        objectPosition="top"
       />
     </>
   );

@@ -103,10 +103,49 @@
   flex: 1;
   height: 100%;
   background-color: transparent;
-  padding: 40px 12px 40px 20px; /* 12px right padding + 8px scrollbar = 20px visual space */
+  padding: 40px 12px 40px 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .adminLayoutWrapper {
+    flex-direction: column-reverse; /* Put dock at the bottom */
+  }
+
+  .dock {
+    width: 100%;
+    height: 64px;
+    flex-direction: row;
+    padding: 0 16px;
+    z-index: 50;
+    justify-content: space-around;
+  }
+
+  .dockLogo {
+    display: none;
+  }
+
+  .spacer {
+    display: none;
+  }
+
+  .dockNav {
+    flex-direction: row !important;
+    flex: 1;
+    justify-content: center;
+    gap: 24px !important;
+  }
+
+  .hideOnMobile {
+    display: none !important;
+  }
+
+  .mainContent {
+    padding: 24px 12px 24px 16px;
+  }
 }
 
 /* Scrollbar styling for main area */
@@ -122,6 +161,15 @@
 }
 .mainContent::-webkit-scrollbar-thumb:hover {
   background: rgba(0,0,0,0.2);
+}
+
+/* Utility to hide scrollbars for horizontal scrolling areas */
+.hideScrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hideScrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* Common UI Elements */

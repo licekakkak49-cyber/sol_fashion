@@ -178,26 +178,42 @@ const ManageProductsPage = () => {
   };
 
   const removeProductFromSet = async (setId, productId) => {
-    const { data: set } = await supabase.from('sets').select('*').eq('id', setId).single();
-    if (set) {
-      const newItems = set.items.map(item => {
-        if (item.productId === productId) {
-           return { productId: `draft-${Date.now()}-${Math.random()}`, layoutSize: item.layoutSize, isHidden: true };
+    const draftId = `draft-${Date.now()}-${Math.random()}`;
+    // 1. Optimistic UI update
+    setSets(prev => prev.map(s => {
+      if (s.id !== setId) return s;
+      const newItems = s.items.map(item => 
+        item.productId === productId ? { productId: draftId, layoutSize: item.layoutSize, isHidden: true } : item
+      );
+      
+      // 2. Background DB update
+      supabase.from('sets').update({ items: newItems }).eq('id', setId).then(({ error }) => {
+        if (error) {
+          console.error("removeProductFromSet error:", error);
+          fetchData(); // Rollback
         }
-        return item;
       });
-      await supabase.from('sets').update({ items: newItems }).eq('id', setId);
-      fetchData();
-    }
+      
+      return { ...s, items: newItems };
+    }));
   };
 
   const updateProductInSet = async (setId, productId, updatedData) => {
-    const { data: set } = await supabase.from('sets').select('*').eq('id', setId).single();
-    if (set) {
-      const newItems = set.items.map(item => item.productId === productId ? { ...item, ...updatedData } : item);
-      await supabase.from('sets').update({ items: newItems }).eq('id', setId);
-      fetchData();
-    }
+    // 1. Optimistic UI update
+    setSets(prev => prev.map(s => {
+      if (s.id !== setId) return s;
+      const newItems = s.items.map(item => item.productId === productId ? { ...item, ...updatedData } : item);
+      
+      // 2. Background DB update
+      supabase.from('sets').update({ items: newItems }).eq('id', setId).then(({ error }) => {
+        if (error) {
+          console.error("updateProductInSet error:", error);
+          fetchData(); // Rollback
+        }
+      });
+      
+      return { ...s, items: newItems };
+    }));
   };
 
   const changeProductOrderInSet = async (setId, productId, newIndex, updatedData = null) => {

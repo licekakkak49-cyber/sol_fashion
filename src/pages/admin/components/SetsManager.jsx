@@ -27,78 +27,136 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
     return product ? { ...product, setId: set.id, layoutSize: item.layoutSize } : null;
   }).filter(Boolean);
 
-  const { layout, renderItems } = useMemo(() => {
+  const { layout, renderItems, blockMarkers } = useMemo(() => {
     const layout = [];
     const renderItems = [];
-    let currentY = 0;
-    let currentX = 0;
+    const blockMarkers = [];
     
-    setProducts.forEach(product => {
-      const size = product.layoutSize || 'small';
-      
-      if (size === 'wide') {
-        if (currentX > 0) { currentX = 0; currentY += 1; }
-        layout.push({ i: product.id, x: 0, y: currentY, w: 4, h: 1 });
-        renderItems.push({ isPlaceholder: product.isPlaceholder, product });
-        currentY += 1;
-      } else if (size === 'large') {
-        if (currentX > 2) { currentX = 0; currentY += 1; }
-        layout.push({ i: product.id, x: currentX, y: currentY, w: 2, h: 2 });
-        renderItems.push({ isPlaceholder: product.isPlaceholder, product });
-        currentX += 2;
-      } else {
-        if (currentX > 3) { currentX = 0; currentY += 1; }
-        layout.push({ i: product.id, x: currentX, y: currentY, w: 1, h: 1 });
-        renderItems.push({ isPlaceholder: product.isPlaceholder, product });
-        currentX += 1;
-      }
-    });
+    let currentY = 0;
+    let i = 0;
+    
+    while (i < setProducts.length) {
+       // Look ahead: Game Map pattern (4 smalls + 1 large)
+       if (
+         i + 4 < setProducts.length &&
+         setProducts[i].layoutSize === 'small' &&
+         setProducts[i+1].layoutSize === 'small' &&
+         setProducts[i+2].layoutSize === 'small' &&
+         setProducts[i+3].layoutSize === 'small' &&
+         setProducts[i+4].layoutSize === 'large'
+       ) {
+          blockMarkers.push({ y: currentY, startIndex: i, length: 5, type: '4+1' });
+          layout.push({ i: setProducts[i].id,   x: 0, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+1].id, x: 1, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+2].id, x: 0, y: currentY+1, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+3].id, x: 1, y: currentY+1, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+4].id, x: 2, y: currentY, w: 2, h: 2 });
+          
+          for(let j=0; j<5; j++) renderItems.push({ isPlaceholder: setProducts[i+j].isPlaceholder, product: setProducts[i+j] });
+          i += 5;
+          currentY += 2;
+       }
+       // Look ahead: Inverted Game Map pattern (1 large + 4 smalls)
+       else if (
+         i + 4 < setProducts.length &&
+         setProducts[i].layoutSize === 'large' &&
+         setProducts[i+1].layoutSize === 'small' &&
+         setProducts[i+2].layoutSize === 'small' &&
+         setProducts[i+3].layoutSize === 'small' &&
+         setProducts[i+4].layoutSize === 'small'
+       ) {
+          blockMarkers.push({ y: currentY, startIndex: i, length: 5, type: '1+4' });
+          // Large on left
+          layout.push({ i: setProducts[i].id,   x: 0, y: currentY, w: 2, h: 2 });
+          // Smalls on right
+          layout.push({ i: setProducts[i+1].id, x: 2, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+2].id, x: 3, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+3].id, x: 2, y: currentY+1, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+4].id, x: 3, y: currentY+1, w: 1, h: 1 });
+          
+          for(let j=0; j<5; j++) renderItems.push({ isPlaceholder: setProducts[i+j].isPlaceholder, product: setProducts[i+j] });
+          i += 5;
+          currentY += 2;
+       } 
+       // Look ahead: Flat Row pattern (4 smalls)
+       else if (
+         i + 3 < setProducts.length &&
+         setProducts[i].layoutSize === 'small' &&
+         setProducts[i+1].layoutSize === 'small' &&
+         setProducts[i+2].layoutSize === 'small' &&
+         setProducts[i+3].layoutSize === 'small'
+       ) {
+          blockMarkers.push({ y: currentY, startIndex: i, length: 4, type: 'row' });
+          layout.push({ i: setProducts[i].id,   x: 0, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+1].id, x: 1, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+2].id, x: 2, y: currentY, w: 1, h: 1 });
+          layout.push({ i: setProducts[i+3].id, x: 3, y: currentY, w: 1, h: 1 });
+          
+          for(let j=0; j<4; j++) renderItems.push({ isPlaceholder: setProducts[i+j].isPlaceholder, product: setProducts[i+j] });
+          i += 4;
+          currentY += 1;
+       }
+       // Fallback: standard linear mapping
+       else {
+          const item = setProducts[i];
+          const w = item.layoutSize === 'large' ? 2 : 1;
+          const h = item.layoutSize === 'large' ? 2 : 1;
+          blockMarkers.push({ y: currentY, startIndex: i, length: 1, type: 'fallback' });
+          layout.push({ i: item.id, x: 0, y: currentY, w, h });
+          renderItems.push({ isPlaceholder: item.isPlaceholder, product: item });
+          i += 1;
+          currentY += h;
+       }
+    }
 
-    return { layout, renderItems };
+    return { layout, renderItems, blockMarkers };
   }, [setProducts]);
 
-  const handleDragStop = (newRglLayout, oldItem, newItem) => {
+  const handleDragStop = (newRglLayout, oldItem, newItem, placeholder, e, element) => {
     const draggedId = newItem.i;
-    const targetX = newItem.x;
-    const targetY = newItem.y;
 
-    // Find if the drop coordinate falls inside the bounding box of any existing item
-    let dropTargetIndex = layout.findIndex(item => 
-      targetX >= item.x && targetX < item.x + item.w && 
-      targetY >= item.y && targetY < item.y + item.h
-    );
+    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
 
-    if (dropTargetIndex !== -1) {
-      const targetId = layout[dropTargetIndex].i;
+    if (!clientX || !clientY || !element) return;
+
+    // Temporarily hide the dragged element to find what's underneath
+    const originalVisibility = element.style.visibility;
+    element.style.visibility = 'hidden';
+    const elementsUnder = document.elementsFromPoint(clientX, clientY);
+    element.style.visibility = originalVisibility;
+
+    // Find the first element that is a grid item and not the dragged element itself
+    const targetElement = elementsUnder.find(el => el.hasAttribute('data-grid-id') && el.getAttribute('data-grid-id') !== draggedId);
+
+    if (targetElement) {
+      const targetId = targetElement.getAttribute('data-grid-id');
       
-      if (targetId !== draggedId) {
-        // SWAP in set.items
-        const newItems = [...set.items];
-        const indexA = newItems.findIndex(i => i.productId === draggedId);
-        const indexB = newItems.findIndex(i => i.productId === targetId);
+      // SWAP in set.items
+      const newItems = [...set.items];
+      const indexA = newItems.findIndex(i => i.productId === draggedId);
+      const indexB = newItems.findIndex(i => i.productId === targetId);
+      
+      if (indexA !== -1 && indexB !== -1) {
+        const itemA = { ...newItems[indexA] };
+        const itemB = { ...newItems[indexB] };
         
-        if (indexA !== -1 && indexB !== -1) {
-          const itemA = { ...newItems[indexA] };
-          const itemB = { ...newItems[indexB] };
-          
-          const sizeA = itemA.layoutSize;
-          const sizeB = itemB.layoutSize;
-          
-          itemA.layoutSize = sizeB;
-          itemB.layoutSize = sizeA;
-          
-          // Swap positions in the array
-          newItems[indexA] = itemB;
-          newItems[indexB] = itemA;
-          
-          updateSet(set.id, { items: newItems });
-        }
+        // Retain original slot shapes
+        const sizeA = itemA.layoutSize;
+        const sizeB = itemB.layoutSize;
+        
+        itemA.layoutSize = sizeB;
+        itemB.layoutSize = sizeA;
+        
+        // Swap the items
+        newItems[indexA] = itemB;
+        newItems[indexB] = itemA;
+        
+        updateSet(set.id, { items: newItems });
       }
     } else {
-      // Fallback: Just reorder if dropped outside (like the very end)
-      const sorted = [...newRglLayout].sort((a, b) => {
-        return (a.y * 4 + a.x) - (b.y * 4 + b.x);
-      });
+      // Dropped outside. Standard reordering based on grid position.
+      const sorted = [...newRglLayout].sort((a, b) => (a.y * 4 + a.x) - (b.y * 4 + b.x));
       const newIndex = sorted.findIndex(item => item.i === draggedId);
       if (newIndex !== -1) {
         changeProductOrderInSet(set.id, draggedId, newIndex);
@@ -106,19 +164,6 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
     }
   };
 
-  const handleToggleSize = (product) => {
-    const currentSize = product.layoutSize || 'small';
-    const sizes = ['small', 'large', 'wide'];
-    const nextSize = sizes[(sizes.indexOf(currentSize) + 1) % sizes.length];
-    
-    // For placeholders, we update via updateSet directly because they don't have standard updateProductInSet
-    if (product.isPlaceholder) {
-      const newItems = set.items.map(item => item.productId === product.id ? { ...item, layoutSize: nextSize } : item);
-      updateSet(set.id, { items: newItems });
-    } else {
-      updateProductInSet(set.id, product.id, { layoutSize: nextSize });
-    }
-  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -136,13 +181,45 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
     updateSet(set.id, { items: newItems });
   };
   
-  const appendWideRow = () => {
+  const appendRow1x1 = () => {
     const newItems = [...set.items];
     for(let i=0; i<4; i++) newItems.push({ productId: `draft-${Date.now()}-${i}`, layoutSize: 'small' });
-    // Note: a wide row is just 4 smalls in sequence
+    updateSet(set.id, { items: newItems });
+  };
+  
+  const deleteBlock = (startIndex, length) => {
+    if (!window.confirm("Delete this block?")) return;
+    const newItems = [...set.items];
+    newItems.splice(startIndex, length);
+    updateSet(set.id, { items: newItems });
+  };
+  
+  const appendBlock1Plus4 = () => {
+    const newItems = [...set.items];
+    newItems.push({ productId: `draft-${Date.now()}-L`, layoutSize: 'large' });
+    for(let i=0; i<4; i++) newItems.push({ productId: `draft-${Date.now()}-${i}`, layoutSize: 'small' });
     updateSet(set.id, { items: newItems });
   };
 
+  const flipBlock = (startIndex, type) => {
+    const newItems = [...set.items];
+    const block = newItems.slice(startIndex, startIndex + 5);
+    
+    if (type === '4+1') {
+      // Current: [s,s,s,s, L] -> Target: [L, s,s,s,s]
+      const L = block.pop();
+      block.unshift(L);
+    } else if (type === '1+4') {
+      // Current: [L, s,s,s,s] -> Target: [s,s,s,s, L]
+      const L = block.shift();
+      block.push(L);
+    }
+    
+    newItems.splice(startIndex, 5, ...block);
+    updateSet(set.id, { items: newItems });
+  };
+  
+  
   // Image Upload Flow
   const handlePlaceholderClick = (placeholder) => {
     handleEdit(placeholder, set.id);
@@ -237,12 +314,63 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
         <div style={{ padding: '20px' }}>
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
             <button onClick={appendBlock4Plus1} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#f3f4f6', color: '#111', border: '1px dashed #ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
-              <LayoutGrid size={16} /> Add 4+1 Block
+              <LayoutGrid size={16} /> Add 4+1 (Large Right)
             </button>
-            <button onClick={appendWideRow} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#f3f4f6', color: '#111', border: '1px dashed #ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
-              <Layout size={16} /> Add 1x4 Row
+            <button onClick={appendBlock1Plus4} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#f3f4f6', color: '#111', border: '1px dashed #ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+              <LayoutGrid size={16} style={{ transform: 'scaleX(-1)' }} /> Add 1+4 (Large Left)
             </button>
-          </div>
+            <button onClick={appendRow1x1} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#f3f4f6', color: '#111', border: '1px dashed #ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+              <Layout size={16} /> Add 4-Card Row
+            </button>
+                      </div>
+
+          <div style={{ position: 'relative', paddingLeft: '40px' }}>
+            {/* Block Controls (Floating Trash Cans) */}
+            {blockMarkers.map((marker, idx) => (
+              <div 
+                key={`marker-${idx}`}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: marker.y * (rowHeight + 12),
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  zIndex: 20,
+                  marginTop: '12px'
+                }}
+              >
+                {(marker.type === '4+1' || marker.type === '1+4') && (
+                  <div 
+                    onClick={() => flipBlock(marker.startIndex, marker.type)}
+                    style={{
+                      width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', color: '#0ea5e9', background: '#e0f2fe', borderRadius: '8px',
+                      transition: 'all 0.2s ease', opacity: 0.6
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = 1; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'scale(1)'; }}
+                    title="Flip Block (Swap Left/Right)"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                  </div>
+                )}
+                
+                <div 
+                  onClick={() => deleteBlock(marker.startIndex, marker.length)}
+                  style={{
+                    width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: '#ef4444', background: '#fee2e2', borderRadius: '8px',
+                    transition: 'all 0.2s ease', opacity: 0.6
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = 1; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'scale(1)'; }}
+                  title="Delete Block"
+                >
+                  <Trash2 size={16} />
+                </div>
+              </div>
+            ))}
 
           <ResponsiveGridLayout
             className="layout"
@@ -253,6 +381,7 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
             containerPadding={[0, 0]}
             margin={[12, 12]}
             compactType={null}
+            preventCollision={true}
             onDragStop={handleDragStop}
             onWidthChange={(containerWidth, margin, cols, containerPadding) => {
               const pad = containerPadding ? (containerPadding[0] * 2) : 0;
@@ -269,46 +398,22 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
               
               if (item.isPlaceholder) {
                 return (
-                  <div key={product.id}>
+                  <div key={product.id} data-grid-id={product.id}>
                     <div 
-                      style={{ 
-                        height: '100%', 
-                        border: '2px dashed #cbd5e1', 
-                        borderRadius: '12px', 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        background: '#f8fafc',
-                        cursor: 'grab',
-                        color: '#64748b',
-                        position: 'relative'
-                      }}
+                      className={styles.ghostSlot}
+                      onClick={(e) => { e.stopPropagation(); handlePlaceholderClick(product); }}
+                      title="Click to add product, or drag to swap"
                     >
-                      <ImageIcon size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handlePlaceholderClick(product); }}
-                        style={{ 
-                          padding: '8px 16px', background: '#111', color: '#fff', border: 'none', 
-                          borderRadius: '100px', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                          marginBottom: '4px', zIndex: 10 
-                        }}
-                      >
-                        Add Product
-                      </button>
-                      <span style={{ fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>{layoutSize === 'large' ? '2x2 (Large)' : '1x1 (Small)'}</span>
-                      
-                      {/* Drag handle area */}
-                      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
-                         <button onClick={(e) => { e.stopPropagation(); handleToggleSize(product); }} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}>Resize</button>
-                      </div>
+                      <Plus className={styles.ghostSlotIcon} size={32} style={{ marginBottom: '8px' }} />
+                      <span style={{ fontSize: '12px', fontWeight: 500, marginTop: '4px' }}>
+                        {layoutSize === 'large' ? '2x2 (Large)' : '1x1 (Small)'}
+                      </span>
                     </div>
                   </div>
                 );
               }
-
               return (
-                <div key={product.id}>
+                <div key={product.id} data-grid-id={product.id}>
                   <div 
                     className={`${styles.card} ${isLarge ? styles.largeCard : styles.standardCard}`} 
                     style={{ 
@@ -323,14 +428,8 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
                   >
                     <div style={{ flex: 1, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                       <img src={product.image} alt={product.name} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-       <div style={{position:'absolute', top: 30, background:'rgba(255,0,0,0.8)', color: '#fff', padding: 4, zIndex: 99}}>{product.image ? 'IMG LEN: ' + product.image.length : 'NO IMG'}</div>
                       {!product.image && <div style={{position: 'absolute', color: 'red'}}>No Image</div>}
                       
-                      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 10 }}>
-                        <button onClick={() => handleToggleSize(product)} style={{ background: layoutSize === 'wide' ? '#10b981' : (isLarge ? '#007aff' : '#111'), color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>
-                          {layoutSize === 'wide' ? '1x4' : (isLarge ? '2x2 (Large)' : '1x1 (Small)')}
-                        </button>
-                      </div>
                     </div>
                     
                     <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', background: '#fff' }}>
@@ -338,10 +437,13 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
                         <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'rgb(30, 30, 30)', lineHeight: '1.2' }}>{product.name}</h4>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '12px' }}>
-                        <button onClick={() => handleEdit(product)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#2563eb', padding: '0', fontSize: '11px', fontWeight: 500, textDecoration: 'underline' }}>
-                          Edit Details
-                        </button>
-                        <button onClick={() => removeProductFromSet(set.id, product.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0', fontSize: '11px', fontWeight: 500, textDecoration: 'underline' }}>
+                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#10b981' }}>${product.price}</p>
+                      </div>
+                      <div style={{ position: 'absolute', bottom: 12, right: 12 }}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); removeProductFromSet(set.id, product.id); }}
+                          style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', fontWeight: 500 }}
+                        >
                           Remove
                         </button>
                       </div>
@@ -351,6 +453,7 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
               );
             })}
           </ResponsiveGridLayout>
+          </div>
         </div>
       )}
 

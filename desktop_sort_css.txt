@@ -1,0 +1,74 @@
+.rightOptions {
+  display: flex;
+  align-items: center;
+  gap: 64px;
+}
+
+.textOptionBtn {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: rgb(30, 30, 30);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
+}
+
+.textOptionBtn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.textOptionBtn:hover::after,
+.textOptionBtnActive::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.sortDropdownContainer {
+  position: relative;
+}
+
+.sortDropdownContent {
+  position: absolute;
+  top: calc(100% + 16px); 
+  right: 0;
+  background-color: #ffffff;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 210px;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+}
+
+.sortDropdownItem {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: rgb(30, 30, 30);
+  background: transparent;
+  border: 1px solid rgb(30, 30, 30);
+  padding: 6px 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+

@@ -1,150 +1,106 @@
-.panel {
-  position: absolute;
-  top: -20px; /* Overlay the options bar */
-  left: -40px;
-  right: -40px;
-  width: calc(100% + 80px); /* Match page padding */
-  background-color: #FFFFFF;
-  border: none;
-  border-bottom: 1px solid #e5e5e5;
-  z-index: 50;
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
-}
-
-.panelOpen {
-  max-height: 800px; /* arbitrary large value for smooth open */
-  opacity: 1;
-}
-
-.panelHeader {
+.sidebarOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 40px 40px 0 40px;
+  justify-content: flex-end;
 }
 
-.headerLeft {
+
+.innerContent {
+  width: 100%;
+  max-width: 85%;
+  margin: 0 auto;
+}
+
+.sidebarContainer {
+  width: 50vw;
+  max-width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background-color: #ffffff;
   display: flex;
-  align-items: center;
-  gap: 24px;
+  flex-direction: column;
+  position: relative;
 }
 
-.filterTitle {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 16px;
+@media (max-width: 768px) {
+  .innerContent {
+    max-width: 100%;
+  }
+  .sidebarContainer {
+    width: 100vw;
+  }
+  .header {
+    padding: 16px 10px 0 10px;
+  }
+  .scrollContent {
+    padding: 0 10px;
+  }
+  .footer {
+    padding: 24px 10px;
+  }
+  .topCheckboxes {
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+}
+
+.header {
+  padding: 40px 40px 20px 40px;
+}
+
+.headerTitle {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
   font-weight: 500;
   color: rgb(30, 30, 30);
-  display: flex;
-  align-items: flex-start;
-}
-
-.filterTitle sup {
-  font-size: 10px;
-  margin-left: 2px;
-}
-
-.tagContainer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.filterTag {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 11px;
-  font-weight: 400;
-  color: #fff;
-  background: linear-gradient(135deg, #e4a5b1 0%, #cf8291 100%);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 30px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: all 0.2s;
-}
-
-.filterTag svg {
-  transition: transform 0.2s, opacity 0.2s;
-}
-
-.filterTag:hover svg {
-  transform: scale(1.2);
-  opacity: 0.8;
 }
 
 .closeBtn {
   background: none;
   border: none;
-  color: rgb(30, 30, 30);
   cursor: pointer;
+  color: rgb(30, 30, 30);
+  padding: 5px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  transition: opacity 0.2s;
 }
 
 .closeBtn:hover {
-  opacity: 0.6;
+  transform: rotate(90deg);
 }
 
-.content {
-  padding: 40px;
-  display: flex;
-  justify-content: flex-start;
-  gap: clamp(20px, 4vw, 100px);
-}
-
-.column {
+.scrollContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 40px;
   display: flex;
   flex-direction: column;
 }
 
-.columnTitle {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 24px;
-  color: rgb(30, 30, 30);
+.topCheckboxes {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
 }
 
-.optionsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(60px, auto));
-  column-gap: 24px;
-  row-gap: 20px;
-}
-
-.optionsGridDynamic {
-  grid-template-columns: repeat(5, minmax(60px, auto));
-}
-
-.optionsGridOneCol {
-  grid-template-columns: 1fr;
-}
-
-/* Checkbox and Radio styling */
 .optionLabel {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   cursor: pointer;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 11px;
-  color: rgb(30, 30, 30);
-  user-select: none;
+  position: relative;
 }
 
-.optionLabel input {
+.checkboxInput {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -153,100 +109,190 @@
 }
 
 .customBox {
-  position: relative;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgb(30, 30, 30);
   display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 1px solid #555;
+  position: relative;
+  transition: all 0.2s ease;
   background-color: transparent;
-  transition: all 0.2s;
 }
 
-/* Square for checkboxes */
-.optionLabel input[type="checkbox"] ~ .customBox {
-  border-radius: 2px;
+.checkboxInput:checked ~ .customBox {
+  background-color: rgb(30, 30, 30);
 }
 
-/* Circle for radios */
-.optionLabel input[type="radio"] ~ .customBox {
-  border-radius: 50%;
-}
-
-/* Checked state */
-.optionLabel input:checked ~ .customBox {
-  border-color: rgb(30, 30, 30);
-}
-
-/* Custom checkmark using SVG/pseudo element */
-.optionLabel input[type="checkbox"]:checked ~ .customBox::after {
+.checkboxInput:checked ~ .customBox::after {
   content: "";
   position: absolute;
-  left: 3.5px;
+  left: 4px;
   top: 1px;
   width: 4px;
   height: 8px;
-  border: solid rgb(30, 30, 30);
-  border-width: 0 1.5px 1.5px 0;
+  border: solid white;
+  border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
-/* Custom radio dot */
-.optionLabel input[type="radio"]:checked ~ .customBox::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 6px;
-  height: 6px;
+.checkboxInput:disabled ~ .customBox {
+  border-color: #999;
+}
+
+.optionText {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: rgb(30, 30, 30);
+}
+
+.accordionGroup {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.accordionItem {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.accordionHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: rgb(30, 30, 30);
+}
+
+.chevron {
+  transition: transform 0.3s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.accordionContent {
+  overflow: hidden;
+}
+
+.accordionInner {
+  padding-bottom: 24px;
+}
+
+.subTitle {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgb(30, 30, 30);
+  margin: 0 0 16px 0;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.footer {
+  padding: 40px;
+  margin-top: auto;
+}
+
+.resetBtn, .seeResultBtn {
+  flex: 1;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  padding: 15px 16px;
+  cursor: pointer;
+  text-align: center;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.resetBtn {
+  background-color: transparent;
+  color: rgb(30, 30, 30);
+  border: 1px solid rgb(30, 30, 30);
+}
+
+.resetBtn:hover {
+  background-color: #d4d4d4;
+}
+
+.seeResultBtn {
   background-color: rgb(30, 30, 30);
-  border-radius: 50%;
+  color: #fff;
+  border: 1px solid rgb(30, 30, 30);
 }
 
-.optionLabel:hover .customBox {
+.seeResultBtn:hover {
+  background-color: #000;
+}
+
+.grid3Col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.grid5Col {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.boxLabel {
+  display: flex;
+  align-items: center;
+  border: 1px solid #c8c8c8;
+  padding: 12px 16px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  background-color: transparent;
+}
+
+.boxLabelChecked {
   border-color: rgb(30, 30, 30);
+  background-color: #f7f7f7;
 }
 
-.divider {
-  width: 1px;
-  background-color: #c0c0c0;
-  height: auto;
-  margin: 0 -20px;
+.boxLabelSize {
+  justify-content: flex-start;
+  padding: 8px 12px;
 }
 
-/* Mobile responsive */
-@media (max-width: 1600px) {
-  .optionsGridDynamic {
-    grid-template-columns: repeat(4, minmax(60px, auto));
-  }
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
 }
 
-@media (max-width: 1440px) {
-  .optionsGridDynamic {
-    grid-template-columns: repeat(3, minmax(60px, auto));
-  }
+.boxText {
+  font-family: "Futura PT", "Helvetica Neue", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: rgb(30, 30, 30);
+  text-transform: uppercase;
 }
 
-@media (max-width: 1024px) {
-  .content {
-    flex-wrap: wrap;
-    gap: 40px;
-    padding: 30px 16px;
-  }
-  .optionsGrid, .optionsGridDynamic {
-    grid-template-columns: repeat(2, minmax(60px, auto));
-  }
-  .divider {
-    display: none;
-  }
+
+.grid6Col {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
 }
 
-@media (max-width: 768px) {
-  .optionsGrid, .optionsGridDynamic {
-    grid-template-columns: 1fr;
-  }
-  .panel {
-    left: -20px;
-    right: -20px;
-    width: calc(100% + 40px);
-  }
-}

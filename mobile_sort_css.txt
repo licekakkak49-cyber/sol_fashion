@@ -1,0 +1,83 @@
+@media (max-width: 768px) {
+  .page {
+    padding: 66px 10px 24px 10px;
+  }
+  .optionsBarWrapper {
+    top: 66px;
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 22px;
+    padding-bottom: 0;
+  }
+  .productGridContainer {
+    gap: 4px;
+  }
+  .optionsBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .pillContainer {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 22px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding-right: 24px; /* Give space for the indicator */
+  }
+  .scrollIndicator {
+    display: flex;
+    position: absolute;
+    right: 0;
+    top: -6px;
+    color: rgb(30, 30, 30);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .pillContainer::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rightOptions {
+    flex-wrap: wrap;
+  }
+  .sortDropdownContainer {
+    display: contents;
+  }
+  .sortDropdownContainer > button {
+    order: 1;
+  }
+  .rightOptions > button {
+    order: 2;
+  }
+  .sortDropdownContent {
+    position: static;
+    width: 100%;
+    order: 3;
+    background-color: transparent;
+    padding: 16px 0 0 0;
+    box-shadow: none;
+    border: none;
+  }
+  .sortDropdownItem {
+    width: 100%;
+    margin-bottom: 8px;
+    background: transparent;
+    border: 1px solid rgb(30, 30, 30);
+    padding: 12px;
+    text-align: center;
+  }
+  .rightOptions {
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    justify-content: space-between;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  

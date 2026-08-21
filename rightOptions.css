@@ -1,0 +1,132 @@
+.rightOptions {
+  display: flex;
+  align-items: center;
+  gap: 64px;
+}
+
+.textOptionBtn {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: rgb(30, 30, 30);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
+}
+
+.textOptionBtn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.textOptionBtn:hover::after,
+.textOptionBtnActive::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.sortDropdownContainer {
+  position: relative;
+}
+
+.sortDropdownContent {
+  position: absolute;
+  top: calc(100% + 16px); 
+  right: 0;
+  background-color: #ffffff;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 210px;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+}
+
+.sortDropdownItem {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+--
+  .rightOptions {
+    flex-wrap: wrap;
+  }
+  .sortDropdownContainer {
+    display: contents;
+  }
+  .sortDropdownContainer > button {
+    order: 1;
+  }
+  .rightOptions > button {
+    order: 2;
+  }
+  .sortDropdownContent {
+    position: static;
+    width: 100%;
+    order: 3;
+    background-color: transparent;
+    padding: 16px 0 0 0;
+    box-shadow: none;
+    border: none;
+  }
+  .sortDropdownItem {
+    width: 100%;
+    margin-bottom: 8px;
+    background: transparent;
+    border: 1px solid rgb(30, 30, 30);
+    padding: 12px;
+    text-align: center;
+  }
+  .rightOptions {
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    justify-content: space-between;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  .macroRow {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .block {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .largeBlock {
+    margin-bottom: 12px;
+  }
+  .wideBlock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .bottomSection {
+    margin-top: 40px;
+  }
+  .loadMoreContainer {
+    margin-bottom: 64px;
+    width: 100%;
+  }
+  .loadMoreBtn {
+    width: 100%;
+    min-width: 100%;
+    padding: 16px 0;
+  }
+  .breadcrumbs {
+    font-size: 13px;
+  }
+}

@@ -147,11 +147,62 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  transition: opacity 0.2s ease;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
 }
 
-.textOptionBtn:hover {
-  opacity: 0.5;
+.textOptionBtn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.textOptionBtn:hover::after,
+.textOptionBtnActive::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.sortDropdownContainer {
+  position: relative;
+}
+
+.sortDropdownContent {
+  position: absolute;
+  top: calc(100% + 16px); 
+  right: 0;
+  background-color: #ffffff;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 210px;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+}
+
+.sortDropdownItem {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: rgb(30, 30, 30);
+  background: transparent;
+  border: 1px solid rgb(30, 30, 30);
+  padding: 6px 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-transform: uppercase;
 }
 
 /* Header */
@@ -338,6 +389,37 @@
   .pillContainer::-webkit-scrollbar {
     display: none;
   }
+
+  .rightOptions {
+    flex-wrap: wrap;
+  }
+  .sortDropdownContainer {
+    display: contents;
+  }
+  .sortDropdownContainer > button {
+    order: 1;
+  }
+  .rightOptions > button {
+    order: 2;
+  }
+  .sortDropdownContent {
+    position: static;
+    width: 100%;
+    order: 3;
+    background-color: transparent;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    gap: 8px;
+  }
+  .sortDropdownItem {
+    width: 100%;
+    margin-bottom: 0;
+    background: transparent;
+    border: 1px solid rgb(30, 30, 30);
+    padding: 10px;
+    text-align: center;
+  }
   .rightOptions {
     margin-left: -10px;
     margin-right: -10px;
@@ -347,6 +429,7 @@
     padding-bottom: 18px;
     justify-content: space-between;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+    row-gap: 32px;
   }
   .macroRow {
     flex-direction: column;

@@ -18,6 +18,7 @@ import WishlistPopup from './components/WishlistPopup';
 import CartSidebar from './components/CartSidebar';
 import LoginDrawer from './components/LoginDrawer';
 import StorePage from './pages/StorePage';
+import SearchDrawer from './components/SearchDrawer';
 import AdminLayout from './pages/admin/AdminLayout';
 import ManageBrandsPage from './pages/admin/ManageBrandsPage';
 import ManageProductsPage from './pages/admin/ManageProductsPage';
@@ -29,6 +30,7 @@ import './App.css';
 function App() {
   const { isAdminAuthenticated } = useAdmin();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
   const isHomePage = location.pathname === '/';
@@ -70,7 +72,7 @@ function App() {
 
   return (
     <>
-      <Nav isHomePage={isHomePage} onOpenLogin={() => setIsLoginOpen(true)} />
+      <Nav isHomePage={isHomePage} onOpenLogin={() => setIsLoginOpen(true)} onOpenSearch={() => setIsSearchOpen(true)} />
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -93,6 +95,7 @@ function App() {
       <WishlistPopup />
       <CartSidebar />
       <LoginDrawer isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <SearchDrawer isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
 }

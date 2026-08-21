@@ -1,0 +1,39 @@
+.rightOptions {
+    flex-wrap: wrap;
+  }
+  .sortDropdownContainer {
+    display: contents;
+  }
+  .sortDropdownContainer > button {
+    order: 1;
+  }
+  .rightOptions > button {
+    order: 2;
+  }
+  .sortDropdownContent {
+    position: static;
+    width: 100%;
+    order: 3;
+    background-color: transparent;
+    padding: 16px 0 0 0;
+    box-shadow: none;
+    border: none;
+  }
+  .sortDropdownItem {
+    width: 100%;
+    margin-bottom: 8px;
+    background: transparent;
+    border: 1px solid rgb(30, 30, 30);
+    padding: 12px;
+    text-align: center;
+  }
+  .rightOptions {
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    justify-content: space-between;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import GlobalFilterPanel from '../components/GlobalFilterPanel';
@@ -11,16 +12,17 @@ const CATEGORIES = [
 ];
 
 const ProductsPage = () => {
-  const { products, loading } = useAdmin();
+  const { products, sets, loading } = useAdmin();
   const [activeCategory, setActiveCategory] = useState('View all');
   const [visibleCount, setVisibleCount] = useState(8);
   
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
-    frameColor: [],
-    lensColor: [],
-    material: [],
-    shape: []
+    color: [],
+    size: [],
+    category: [],
+    line: []
   });
   const [sortBy, setSortBy] = useState('Newest');
 
@@ -39,66 +41,127 @@ const ProductsPage = () => {
     });
   }, [selectedFilters, products]);
 
-  const macroRows = useMemo(() => {
-    const rows = [];
-    let currentBlock = [];
-    let currentCapacity = 4;
-    let currentBlocksInRow = []; // Up to 2 blocks per Macro Row (Standard), or 1 block (Wide)
-    let currentRowType = null; // 'standard' or 'wide'
+  const displayGroups = useMemo(() => {
+    const buildRows = (items) => {
+      const rows = [];
+      let currentBlock = [];
+      let currentCapacity = 4;
+      let currentBlocksInRow = [];
+      let currentRowType = null;
 
-    const pushCurrentBlock = () => {
+      const pushCurrentBlock = () => {
+        if (currentBlock.length > 0) {
+          currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
+          currentBlock = [];
+          currentCapacity = 4;
+        }
+        
+        const maxBlocks = currentRowType === 'wide' ? 1 : 2;
+        
+        if (currentBlocksInRow.length === maxBlocks) {
+          rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
+          currentBlocksInRow = [];
+          currentRowType = null;
+        }
+      };
+
+      items.forEach(product => {
+        const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+        const productType = layoutSize === 'wide' ? 'wide' : 'standard';
+        const requiredCapacity = layoutSize === 'large' ? 4 : 1;
+        
+        if (currentRowType !== null && currentRowType !== productType) {
+          pushCurrentBlock();
+          if (currentBlocksInRow.length > 0) {
+            rows.push({ type: currentRowType, blocks: currentBlocksInRow });
+            currentBlocksInRow = [];
+          }
+        }
+        
+        currentRowType = productType;
+        
+        if (requiredCapacity > currentCapacity && currentBlock.length > 0) {
+          pushCurrentBlock();
+        }
+
+        currentBlock.push(product);
+        currentCapacity -= requiredCapacity;
+
+        if (currentCapacity === 0) {
+          pushCurrentBlock();
+        }
+      });
+
       if (currentBlock.length > 0) {
         currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
-        currentBlock = [];
-        currentCapacity = 4;
       }
-      
-      const maxBlocks = currentRowType === 'wide' ? 1 : 2;
-      
-      if (currentBlocksInRow.length === maxBlocks) {
+      if (currentBlocksInRow.length > 0) {
         rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
-        currentBlocksInRow = [];
-        currentRowType = null;
       }
+
+      return rows;
     };
 
-    filteredProducts.forEach(product => {
-      // Map legacy isLarge to layoutSize
-      const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
-      const productType = layoutSize === 'wide' ? 'wide' : 'standard';
-      const requiredCapacity = layoutSize === 'large' ? 4 : 1;
-      
-      if (currentRowType !== null && currentRowType !== productType) {
-        pushCurrentBlock();
-        if (currentBlocksInRow.length > 0) {
-          rows.push({ type: currentRowType, blocks: currentBlocksInRow });
-          currentBlocksInRow = [];
-        }
-      }
-      
-      currentRowType = productType;
-      
-      if (requiredCapacity > currentCapacity && currentBlock.length > 0) {
-        pushCurrentBlock();
-      }
-
-      currentBlock.push(product);
-      currentCapacity -= requiredCapacity;
-
-      if (currentCapacity === 0) {
-        pushCurrentBlock();
-      }
+    const now = new Date();
+    const activeSets = (sets || []).filter(s => {
+       if (s.status === 'published') return true;
+       if (s.status === 'scheduled' && s.scheduledDate) {
+          return new Date(s.scheduledDate) <= now;
+       }
+       return false;
     });
 
-    if (currentBlock.length > 0) {
-      currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
-    }
-    if (currentBlocksInRow.length > 0) {
-      rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
+    const groups = [];
+    let assignedProductIds = new Set();
+    let displayProductCount = 0;
+
+    activeSets.forEach(set => {
+       const setItems = (set.items || []).map(setItem => {
+          const product = filteredProducts.find(p => p.id === setItem.productId);
+          if (product) {
+             return { ...product, layoutSize: setItem.layoutSize };
+          }
+          return null;
+       }).filter(Boolean);
+
+       if (setItems.length > 0) {
+          const visibleSetItems = [];
+          for (let item of setItems) {
+             if (displayProductCount < visibleCount) {
+                visibleSetItems.push(item);
+                assignedProductIds.add(item.id);
+                displayProductCount++;
+             }
+          }
+          
+          if (visibleSetItems.length > 0) {
+             groups.push({
+               type: 'set',
+               id: set.id,
+               rows: buildRows(visibleSetItems)
+             });
+          }
+       }
+    });
+
+    const unassignedItems = [];
+    for (let product of filteredProducts) {
+       if (!assignedProductIds.has(product.id) && displayProductCount < visibleCount) {
+          unassignedItems.push(product);
+          displayProductCount++;
+       }
     }
 
-    return rows;
-  }, [filteredProducts]);
+    if (unassignedItems.length > 0) {
+       groups.push({
+          type: 'unassigned',
+          id: 'unassigned',
+          rows: buildRows(unassignedItems)
+       });
+    }
+
+    return groups;
+  }, [filteredProducts, sets, visibleCount]);
 
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + 16, filteredProducts.length));
@@ -122,6 +185,16 @@ const ProductsPage = () => {
       ...prev,
       [category]: prev[category].filter(item => item !== value)
     }));
+  };
+
+  const clearAllFilters = () => {
+    setSelectedFilters({
+      color: [],
+      size: [],
+      category: [],
+      line: []
+    });
+    setVisibleCount(16);
   };
 
   const getCategoryCount = (cat) => {
@@ -164,20 +237,57 @@ const ProductsPage = () => {
           </div>
           
           <div className={styles.rightOptions}>
+            <div className={styles.sortDropdownContainer}>
+              <button 
+                className={`${styles.textOptionBtn} ${isSortOpen ? styles.textOptionBtnActive : ''}`} 
+                onClick={() => {
+                  setIsSortOpen(!isSortOpen);
+                  setIsFilterOpen(false);
+                }}
+              >
+                Sort By
+              </button>
+              
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div 
+                    className={styles.sortDropdownContent}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <button 
+                       className={`${styles.sortDropdownItem} ${sortBy === 'price-desc' ? styles.sortDropdownItemActive : ''}`}
+                       onClick={() => { setSortBy('price-desc'); setIsSortOpen(false); }}
+                    >
+                      PRICE : HIGH-TO-LOW
+                    </button>
+                    <button 
+                       className={`${styles.sortDropdownItem} ${sortBy === 'price-asc' ? styles.sortDropdownItemActive : ''}`}
+                       onClick={() => { setSortBy('price-asc'); setIsSortOpen(false); }}
+                    >
+                      PRICE : LOW TO HIGH
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button 
-              className={styles.textOptionBtn} 
-              onClick={() => setIsFilterOpen(true)}
-            >
-              Sort By
-            </button>
-            <button 
-              className={styles.textOptionBtn} 
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`${styles.textOptionBtn} ${isFilterOpen ? styles.textOptionBtnActive : ''}`} 
+              onClick={() => {
+                setIsFilterOpen(!isFilterOpen);
+                setIsSortOpen(false);
+              }}
             >
               Filters
             </button>
           </div>
         </div>
+
+
+      </div>
 
         {/* Global Filter Panel drops down from here */}
         <GlobalFilterPanel 
@@ -189,46 +299,49 @@ const ProductsPage = () => {
           filteredCount={filteredProducts.length}
           onClose={() => setIsFilterOpen(false)}
           removeFilter={removeFilter}
+          onClearAll={clearAllFilters}
         />
-      </div>
 
-
-      {/* Product Grid based on Bin-Packing Algorithm */}
+      {/* Product Grid based on Bin-Packing Algorithm grouped by Sets */}
       <div className={styles.productGridContainer}>
-        {macroRows.map((row, rowIndex) => (
-          <div key={`row-${rowIndex}`} className={styles.macroRow}>
-            {row.blocks.map((block, blockIndex) => {
-              const isLargeBlock = block.items.length === 1 && (block.items[0].layoutSize === 'large' || block.items[0].isLarge);
-              const blockClass = row.type === 'wide' ? styles.wideBlock : (isLargeBlock ? styles.largeBlock : styles.block);
-              return (
-                <div key={`block-${rowIndex}-${blockIndex}`} className={blockClass}>
-                  {block.items.map((product) => {
-                  const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+        {displayGroups.map(group => (
+          <React.Fragment key={group.id}>
+            {group.rows.map((row, rowIndex) => (
+              <div key={`row-${group.id}-${rowIndex}`} className={styles.macroRow}>
+                {row.blocks.map((block, blockIndex) => {
+                  const isLargeBlock = block.items.length === 1 && (block.items[0].layoutSize === 'large' || block.items[0].isLarge);
+                  const blockClass = row.type === 'wide' ? styles.wideBlock : (isLargeBlock ? styles.largeBlock : styles.block);
                   return (
-                    <div 
-                      key={product.id} 
-                      className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
-                    >
-                      <ProductCard 
-                        id={product.id}
-                        image={product.image}
-                        hoverImage={product.hoverImage}
-                        name={product.name}
-                        price={product.price}
-                        tags={product.tags}
-                        colors={product.colors}
-                        selectedColor={product.selectedColor}
-                        extraColorsCount={product.extraColorsCount}
-                        isLarge={layoutSize === 'large'}
-                      />
-                    </div>
-                  );
+                    <div key={`block-${group.id}-${rowIndex}-${blockIndex}`} className={blockClass}>
+                      {block.items.map((product) => {
+                      const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+                      return (
+                        <div 
+                          key={product.id} 
+                          className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
+                        >
+                          <ProductCard 
+                            id={product.id}
+                            image={product.image}
+                            hoverImage={product.hoverImage}
+                            name={product.name}
+                            price={product.price}
+                            tags={product.tags}
+                            colors={product.colors}
+                            selectedColor={product.selectedColor}
+                            extraColorsCount={product.extraColorsCount}
+                            isLarge={layoutSize === 'large'}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
                 })}
+                {row.type === 'standard' && row.blocks.length === 1 && <div className={styles.blockPlaceholder}></div>}
               </div>
-            );
-            })}
-            {row.type === 'standard' && row.blocks.length === 1 && <div className={styles.blockPlaceholder}></div>}
-          </div>
+            ))}
+          </React.Fragment>
         ))}
       </div>
 

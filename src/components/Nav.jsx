@@ -25,7 +25,7 @@ const STATIC_MENU_DATA = {
   'NEWSROOM': ['PRESS RELEASES', 'EVENTS', 'MEDIA KIT']
 };
 
-const Nav = ({ isHomePage = false, onOpenLogin }) => {
+const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
   const location = useLocation();
   const isProductDetailPage = location.pathname.startsWith('/product/');
   const isMobileProductDetailPage = isProductDetailPage && window.innerWidth <= 768; // Initialize based on current width, but we use isMobile state later
@@ -167,7 +167,7 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
 
         <div className={styles.right}>
           <div className={styles.iconGroup}>
-            <button className={styles.iconBtn} aria-label="Search">
+            <button className={styles.iconBtn} aria-label="Search" onClick={onOpenSearch}>
               <Search size={18} strokeWidth={1.2} />
             </button>
             <button className={styles.iconBtn} aria-label="Account" onClick={onOpenLogin}>
@@ -221,9 +221,8 @@ const Nav = ({ isHomePage = false, onOpenLogin }) => {
                 </div>
 
                 {/* Mobile Search */}
-                <div className={styles.mobileSearchContainer}>
-                  <Search size={18} strokeWidth={1} className={styles.mobileSearchIcon} />
-                  <input type="text" placeholder="Search here..." className={styles.mobileSearchInput} />
+                <div className={styles.mobileSearchContainer} onClick={() => { toggleMenu(); onOpenSearch(); }} style={{cursor: 'pointer'}}>
+                  <input type="text" placeholder="Search here" className={styles.mobileSearchInput} readOnly style={{cursor: 'pointer'}} />
                 </div>
 
                 {/* Mobile Main Links */}

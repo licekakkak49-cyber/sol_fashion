@@ -6,8 +6,15 @@ export const getCroppedImg = async (imageSrc, pixelCrop) => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+
+  const MAX_WIDTH = 800;
+  let scale = 1;
+  if (pixelCrop.width > MAX_WIDTH) {
+    scale = MAX_WIDTH / pixelCrop.width;
+  }
+
+  canvas.width = pixelCrop.width * scale;
+  canvas.height = pixelCrop.height * scale;
 
   ctx.drawImage(
     image,
@@ -17,11 +24,12 @@ export const getCroppedImg = async (imageSrc, pixelCrop) => {
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    canvas.width,
+    canvas.height
   );
 
   return new Promise((resolve) => {
-    resolve(canvas.toDataURL('image/webp', 0.9));
+    // Drop quality to 0.7 for even smaller base64
+    resolve(canvas.toDataURL('image/jpeg', 0.7));
   });
 };

@@ -3,8 +3,9 @@ import Cropper from 'react-easy-crop';
 import { X, Check } from 'lucide-react';
 import { getCroppedImg } from '../utils/cropImage';
 
-const ImageCropper = ({ imageSrc, onCropComplete, onCancel, aspectRatio = 4 / 3, showFocusBox = true }) => {
+const ImageCropper = ({ imageSrc, onCropComplete, onCancel, aspectRatio = 4 / 3, showFocusBox = true, warningMessage = '', allowAspectChange = false }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [currentAspect, setCurrentAspect] = useState(aspectRatio);
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
@@ -28,7 +29,7 @@ const ImageCropper = ({ imageSrc, onCropComplete, onCancel, aspectRatio = 4 / 3,
           image={imageSrc}
           crop={crop}
           zoom={zoom}
-          aspect={aspectRatio}
+          aspect={currentAspect}
           onCropChange={setCrop}
           onCropComplete={onCropCompleteInternal}
           onZoomChange={setZoom}
@@ -45,7 +46,32 @@ const ImageCropper = ({ imageSrc, onCropComplete, onCancel, aspectRatio = 4 / 3,
         )}
       </div>
       
-      <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+      
+      {allowAspectChange && (
+        <div style={{ display: 'flex', gap: '8px', marginTop: '16px', background: '#333', padding: '8px', borderRadius: '100px' }}>
+          {[
+            { label: '3:4', value: 3/4 },
+            { label: '1:1', value: 1 },
+            { label: '4:3', value: 4/3 },
+            { label: '16:9', value: 16/9 },
+          ].map(opt => (
+            <button 
+              key={opt.label}
+              onClick={() => setCurrentAspect(opt.value)}
+              style={{
+                padding: '6px 16px', borderRadius: '100px', border: 'none', cursor: 'pointer',
+                fontSize: '13px', fontWeight: 600, transition: 'all 0.2s',
+                background: currentAspect === opt.value ? '#fff' : 'transparent',
+                color: currentAspect === opt.value ? '#111' : '#fff'
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
         <button onClick={onCancel} style={{ padding: '12px 24px', borderRadius: '100px', background: '#333', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>
           <X size={16} /> Cancel
         </button>
@@ -54,8 +80,13 @@ const ImageCropper = ({ imageSrc, onCropComplete, onCancel, aspectRatio = 4 / 3,
         </button>
       </div>
       
+      {warningMessage && (
+        <div style={{ marginTop: '16px', color: '#fca5a5', fontSize: '14px', fontWeight: 500, background: 'rgba(220,38,38,0.2)', padding: '8px 16px', borderRadius: '8px' }}>
+          {warningMessage}
+        </div>
+      )}
       <div style={{ marginTop: '16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
-        Drag to pan, scroll to zoom. Align the glasses in the center box.
+        Drag to pan, scroll to zoom.
       </div>
     </div>
   );

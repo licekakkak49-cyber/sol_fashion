@@ -26,6 +26,7 @@
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 0;
   grid-column: 2;
   text-align: center;
@@ -125,6 +126,7 @@
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 0;
 }
 
@@ -134,6 +136,7 @@
   color: #666;
   font-weight: 400;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 16px 0 0 0;
 }
 
@@ -143,6 +146,7 @@
   color: rgb(30, 30, 30);
   font-weight: 400;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   margin: 0;
 }
 
@@ -188,6 +192,7 @@
   cursor: pointer;
   color: rgb(30, 30, 30);
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   transition: color 0.2s;
 }
 
@@ -256,14 +261,15 @@
 .mainActionBtn {
   width: 100%;
   max-width: 400px;
-  padding: 16px;
+  padding: 15px 16px;
   background-color: rgb(30, 30, 30);
   color: #fff;
   border: 1px solid rgb(30, 30, 30);
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 400;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -293,6 +299,7 @@
   color: rgb(30, 30, 30);
   margin: 0;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   line-height: 1.4;
   padding-right: 16px;
 }

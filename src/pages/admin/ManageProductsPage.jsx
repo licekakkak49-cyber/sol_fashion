@@ -5,9 +5,13 @@ import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 import { useAdmin } from '../../context/AdminContext';
-import { Plus, X, UploadCloud, Search, Filter, Package, Edit2, Trash2, AlertTriangle, ArrowLeft, Briefcase, Shirt, Glasses, Watch, Activity, Settings, Hexagon, Eye, PanelTop, Tag } from 'lucide-react';
+import { Plus, X, UploadCloud, Search, Filter, Package, Edit2, Trash2, AlertTriangle, ArrowLeft, Briefcase, Shirt, Glasses, Watch, Activity, Settings, Hexagon, Eye, PanelTop, Tag, LayoutGrid, AlignJustify, SlidersHorizontal } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 import ImageCropper from '../../components/ImageCropper';
+import SetsManager from './components/SetsManager';
+import ProductEditorDrawer from './components/ProductEditorDrawer';
+import { supabase } from '../../utils/supabaseClient';
+import InventoryList from './components/InventoryList';
 
 // Pill Selector for Light Mode
 const PillSelector = ({ label, options, selectedValue, onChange }) => (
@@ -35,6 +39,38 @@ const PillSelector = ({ label, options, selectedValue, onChange }) => (
         </button>
       ))}
     </div>
+  </div>
+);
+
+
+const DropdownSelector = ({ label, options, selectedValue, onChange }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <label style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+    <select
+      value={selectedValue || ''}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '12px 16px',
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+        fontSize: '13px',
+        background: '#f9fafb',
+        color: selectedValue ? '#111' : '#888',
+        outline: 'none',
+        cursor: 'pointer',
+        appearance: 'none',
+        backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E")',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 12px center',
+        backgroundSize: '16px'
+      }}
+    >
+      <option value="" disabled>Select {label}</option>
+      {options.map(opt => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
   </div>
 );
 
@@ -73,12 +109,181 @@ const MultiPillSelector = ({ label, options, selectedValues, onChange }) => (
 );
 
 const ManageProductsPage = () => {
-  const { products, brands, addProduct, updateProduct, deleteProduct, changeProductOrder, swapProducts, categories, addCategory, addSubCategory, editCategory, editSubCategory } = useAdmin();
+  const { 
+    brands, 
+    changeProductOrder, 
+    swapProducts, 
+    categories, 
+    addCategory, 
+    addSubCategory, 
+    editCategory, 
+    editSubCategory 
+  } = useAdmin();
+
+  const [products, setProducts] = useState([]);
+  const [sets, setSets] = useState([]);
+  
+  const fetchData = async () => {
+    try {
+      const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      const { data: sData } = await supabase.from('sets').select('*').order('created_at', { ascending: false });
+      
+      const mappedProducts = (pData || []).map(p => ({
+        ...p,
+        mainCategory: p.main_category,
+        subCategory: p.sub_category,
+        coverImage: p.cover_image_url,
+        hoverImage: p.hover_image_url,
+        galleryImages: p.gallery_images_urls,
+        layoutSize: p.layout_size,
+        heelHeight: p.heel_height,
+        image: p.cover_image_url
+      }));
+      
+      setProducts(mappedProducts);
+      setSets(sData || []);
+    } catch(e) {
+      console.error(e);
+    }
+  };
+  
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const addSet = async (newSet) => {
+    const { error } = await supabase.from('sets').insert([newSet]);
+    if (error) {
+      console.error('Error adding set:', error);
+      alert('Failed to create set: ' + error.message);
+    }
+    fetchData();
+  };
+
+  const updateSet = async (setId, updatedData) => {
+    // Optimistic UI update
+    setSets(prev => prev.map(s => s.id === setId ? { ...s, ...updatedData } : s));
+    
+    // Background DB update
+    const { error } = await supabase.from('sets').update(updatedData).eq('id', setId);
+    if (error) {
+      console.error("Update set error:", error);
+      fetchData(); // Rollback if error
+    }
+  };
+
+  const deleteSet = async (setId) => {
+    await supabase.from('sets').delete().eq('id', setId);
+    fetchData();
+  };
+
+  const removeProductFromSet = async (setId, productId) => {
+    const { data: set } = await supabase.from('sets').select('*').eq('id', setId).single();
+    if (set) {
+      const newItems = set.items.map(item => {
+        if (item.productId === productId) {
+           return { productId: `draft-${Date.now()}-${Math.random()}`, layoutSize: item.layoutSize, isHidden: true };
+        }
+        return item;
+      });
+      await supabase.from('sets').update({ items: newItems }).eq('id', setId);
+      fetchData();
+    }
+  };
+
+  const updateProductInSet = async (setId, productId, updatedData) => {
+    const { data: set } = await supabase.from('sets').select('*').eq('id', setId).single();
+    if (set) {
+      const newItems = set.items.map(item => item.productId === productId ? { ...item, ...updatedData } : item);
+      await supabase.from('sets').update({ items: newItems }).eq('id', setId);
+      fetchData();
+    }
+  };
+
+  const changeProductOrderInSet = async (setId, productId, newIndex, updatedData = null) => {
+    // 1. Optimistic UI update
+    setSets(prev => prev.map(s => {
+      if (s.id !== setId) return s;
+      const currentIndex = s.items.findIndex(i => i.productId === productId);
+      if (currentIndex === -1) return s;
+      const newItems = [...s.items];
+      const [movedItem] = newItems.splice(currentIndex, 1);
+      const itemToInsert = updatedData ? { ...movedItem, ...updatedData } : movedItem;
+      newItems.splice(newIndex, 0, itemToInsert);
+      
+      // 2. Background DB update
+      supabase.from('sets').update({ items: newItems }).eq('id', setId).then(({ error }) => {
+        if (error) {
+          console.error("changeProductOrderInSet error:", error);
+          fetchData(); // Rollback
+        }
+      });
+      
+      return { ...s, items: newItems };
+    }));
+  };
+  
+  const deleteProduct = async (id) => {
+    await supabase.from('products').delete().eq('id', id);
+    fetchData();
+  };
+
   
   // Filtering and Search State
+  
+    
+  const handleCreateSet = () => {
+    if (!newSetName.trim()) return;
+    const defaultItems = [
+      { productId: `draft-${Date.now()}-1`, layoutSize: 'small' },
+      { productId: `draft-${Date.now()}-2`, layoutSize: 'small' },
+      { productId: `draft-${Date.now()}-3`, layoutSize: 'small' },
+      { productId: `draft-${Date.now()}-4`, layoutSize: 'small' },
+      { productId: `draft-${Date.now()}-5`, layoutSize: 'large' },
+    ];
+
+    addSet({ 
+      name: newSetName.trim(), 
+      status: 'draft', 
+      items: defaultItems, 
+      mainCategory: activeMainCategory, 
+      subCategory: activeSubCategory 
+    });
+    setNewSetName("");
+    setIsAddingSet(false);
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMainCategory, setActiveMainCategory] = useState('Bags');
-  const [activeSubCategory, setActiveSubCategory] = useState('All');
+  const [activeSubCategory, setActiveSubCategory] = useState('Tote Bags');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  
+  // List Mode Filters
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [listFilters, setListFilters] = useState({
+    categories: [],
+    stockLevels: [], // 'out_of_stock', 'low_stock', 'in_stock'
+    statuses: [], // 'active', 'draft'
+    sets: []
+  });
+
+  const toggleListFilter = (type, value) => {
+    setListFilters(prev => {
+      const current = prev[type];
+      if (current.includes(value)) {
+        return { ...prev, [type]: current.filter(v => v !== value) };
+      } else {
+        return { ...prev, [type]: [...current, value] };
+      }
+    });
+  };
+
+  const removeListFilter = (type, value) => {
+    setListFilters(prev => ({
+      ...prev,
+      [type]: prev[type].filter(v => v !== value)
+    }));
+  };
   const [activeTab, setActiveTab] = useState('All'); // 'All', 'In Stock', 'Low Stock', 'Out of Stock'
   
   // Category Modal State
@@ -91,147 +296,88 @@ const ManageProductsPage = () => {
   const [sortBy, setSortBy] = useState('Newest');
 
   const [isAdding, setIsAdding] = useState(false);
-  const [modalStep, setModalStep] = useState(1);
-  const [productCategory, setProductCategory] = useState('');
-  const [editingId, setEditingId] = useState(null);
-  const [formError, setFormError] = useState('');
   
-  // Drag and Drop State
-  
-  const [cropImageSrc, setCropImageSrc] = useState(null);
-  const [imageWarning, setImageWarning] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    brandId: '',
-    price: '',
-    sku: '',
-    stock: '',
-    description: '',
-    sizeLens: '',
-    sizeBridge: '',
-    sizeTemple: '',
-    gender: 'Unisex',
-    isPolarized: 'No',
-    frameColor: 'Black',
-    lensColor: 'Clear',
-    material: 'Acetate',
-    shape: 'Square',
-    highlight: [],
-    images: [],
-    primaryImageIndex: 0,
-    tags: '',
-    mainCategory: '',
-    subCategory: ''
-  });
+  const [editorConfig, setEditorConfig] = useState({ isOpen: false, initialData: null, targetSetId: null });
 
-  const getBrandName = (brandId) => {
-    const brand = (brands || []).find(b => b?.slug === brandId || b?.id === brandId);
-    return brand ? brand.name : brandId;
+  const handleAddNew = () => {
+    setEditorConfig({
+      isOpen: true,
+      initialData: { mainCategory: activeMainCategory !== 'All' ? activeMainCategory : '', subCategory: activeSubCategory !== 'All' ? activeSubCategory : '' },
+      targetSetId: null
+    });
   };
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    setFormError('');
+  const handleEdit = (product, setId = null) => {
+    setEditorConfig({
+      isOpen: true,
+      initialData: product,
+      targetSetId: setId
+    });
+  };
+
+  const handleSaveProduct = async (payload) => {
+    const isPlaceholder = payload.id && payload.id.startsWith('draft-');
     
-    if (!formData.name.trim()) {
-      setFormError('⚠️ Product Name is required.');
-      return;
-    }
-    if (!formData.brandId) {
-      setFormError('⚠️ Please select a Brand.');
-      return;
-    }
-    if (!formData.price) {
-      setFormError('⚠️ Price is required.');
-      return;
-    }
-    
-    const finalImages = formData.images.length > 0 ? formData.images : (editingId && formData.image ? [formData.image] : ["https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=1000"]);
-    
-    const payload = {
-      ...formData,
-      status: parseInt(formData.stock) > 0 ? 'In Stock' : 'Out of Stock',
-      images: finalImages,
-      image: finalImages[formData.primaryImageIndex] || finalImages[0]
+    const dbPayload = {
+      name: payload.name,
+      price: payload.price,
+      main_category: payload.mainCategory,
+      sub_category: payload.subCategory,
+      cover_image_url: payload.coverImage,
+      hover_image_url: payload.hoverImage,
+      gallery_images_urls: payload.galleryImages,
+      description: payload.description,
+      status: payload.status,
+      layout_size: payload.layoutSize,
+      stock: payload.stock,
+      size: payload.size,
+      fit: payload.fit,
+      hardware: payload.hardware,
+      heel_height: payload.heelHeight
     };
-
-    if (editingId) {
-      updateProduct(editingId, payload);
-    } else {
-      addProduct(payload);
-    }
     
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '', brandId: '', price: '', sku: '', stock: '', description: '',
-      sizeLens: '', sizeBridge: '', sizeTemple: '', gender: 'Unisex', isPolarized: 'No',
-      frameColor: 'Black', lensColor: 'Clear', material: 'Acetate', shape: 'Square', highlight: [], 
-      images: [], primaryImageIndex: 0, tags: '', mainCategory: '', subCategory: ''
-    });
-    setIsAdding(false);
-    setEditingId(null);
-    setFormError('');
-    setModalStep(1);
-    setProductCategory('');
-  };
-
-  const handleEdit = (product) => {
-    // Ensure highlight is an array for old data compatibility
-    const safeHighlight = Array.isArray(product.highlight) 
-      ? product.highlight 
-      : (product.highlight && product.highlight !== 'None' ? [product.highlight] : []);
-      
-    // Reconstruct images array if not present but image exists
-    const safeImages = Array.isArray(product.images) && product.images.length > 0 
-      ? product.images 
-      : (product.image ? [product.image] : []);
-      
-    // Find primary index if it matches the main image, otherwise default to 0
-    let primaryIdx = safeImages.findIndex(img => img === product.image);
-    if (primaryIdx === -1) primaryIdx = 0;
-
-    setFormData({
-      ...product,
-      highlight: safeHighlight,
-      images: safeImages,
-      primaryImageIndex: primaryIdx,
-      tags: product.tags ? (Array.isArray(product.tags) ? product.tags.join(', ') : product.tags) : '',
-      mainCategory: product.mainCategory || '',
-      subCategory: product.subCategory || ''
-    });
-    setEditingId(product.id);
-    setProductCategory(product.mainCategory || 'Bags');
-    setModalStep(2);
-    setIsAdding(true);
-    setFormError('');
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.src = reader.result;
-        img.onload = () => {
-          if (img.width < 800 || img.height < 800) {
-            setImageWarning('⚠️ Warning: Image resolution is below 800x800px. It may appear blurry after cropping.');
-          } else {
-            setImageWarning('');
+    try {
+      if (isPlaceholder || !payload.id) {
+        // Insert new product
+        const { data: newProduct, error } = await supabase
+          .from('products')
+          .insert([dbPayload])
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        // If it was a placeholder in a set, update the set's JSON
+        if (editorConfig.targetSetId && isPlaceholder) {
+          // We need to fetch the set, update the items JSON, and save back
+          const { data: set } = await supabase.from('sets').select('*').eq('id', editorConfig.targetSetId).single();
+          if (set) {
+            const newItems = set.items.map(item => 
+              item.productId === payload.id ? { ...item, productId: newProduct.id, isHidden: false } : item
+            );
+            await supabase.from('sets').update({ items: newItems }).eq('id', set.id);
           }
-          setCropImageSrc(reader.result);
-        };
-      };
-      reader.readAsDataURL(file);
+        }
+      } else {
+        // Update existing
+        const { error } = await supabase
+          .from('products')
+          .update(dbPayload)
+          .eq('id', payload.id);
+          
+        if (error) throw error;
+      }
+      
+      // We should ideally fetch the fresh data here or let real-time handle it.
+      // For now, we will call a refresh function if we build one, or just let the user know.
+      console.log('Saved to Supabase successfully!');
+      fetchData();
+      // Temporary hack: fallback to old context to keep UI updated until we refactor the fetch query
+      // (This will be removed in the next step when we fetch from Supabase)
+    } catch (e) {
+      console.error('Supabase Error:', e);
+      alert('Error saving to database. Check console.');
     }
-    e.target.value = null; // Reset so the same file can be clicked again
-  };
-
-  const handleChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const validProducts = Array.isArray(products) ? products.filter(Boolean) : [];
@@ -241,27 +387,7 @@ const ManageProductsPage = () => {
     if (!validProducts.length) return [];
     
     const filtered = validProducts.filter(p => {
-      // 1. Tab Filter
-      const stockNum = parseInt(p.stock) || 0;
-      if (activeTab === 'In Stock' && stockNum === 0) return false;
-      if (activeTab === 'Low Stock' && (stockNum === 0 || stockNum > 5)) return false;
-      if (activeTab === 'Out of Stock' && stockNum > 0) return false;
-      
-      // 2. Category Filters
-      if (activeMainCategory !== 'All' && p.mainCategory !== activeMainCategory) return false;
-      if (activeSubCategory !== 'All' && p.subCategory !== activeSubCategory) return false;
-
-      // 3. Dropdown Filters
-      if (filterBrand !== 'All' && p.brandId !== filterBrand) return false;
-      
-      // Fallback gender to Unisex if missing for older mock data
-      const pGender = p.gender || 'Unisex';
-      if (filterGender !== 'All' && pGender !== filterGender) return false;
-      
-      const pHighlight = Array.isArray(p.highlight) ? p.highlight : (p.highlight && p.highlight !== 'None' ? [p.highlight] : []);
-      if (filterHighlight !== 'All' && !pHighlight.includes(filterHighlight)) return false;
-      
-      // 4. Search Query
+      // 1. Search Query (Applies to both modes)
       if (searchQuery) {
         const query = String(searchQuery || '').toLowerCase();
         const safeName = String(p.name || '');
@@ -270,6 +396,60 @@ const ManageProductsPage = () => {
         const matchName = safeName.toLowerCase().includes(query);
         const matchSku = safeSku.toLowerCase().includes(query);
         if (!matchName && !matchSku) return false;
+      }
+
+      const stockNum = parseInt(p.stock) || 0;
+
+      if (viewMode === 'grid') {
+        // --- GRID MODE LOGIC ---
+        // Tab Filter
+        if (activeTab === 'In Stock' && stockNum === 0) return false;
+        if (activeTab === 'Low Stock' && (stockNum === 0 || stockNum > 5)) return false;
+        if (activeTab === 'Out of Stock' && stockNum > 0) return false;
+        
+        // Category Filters
+        if (activeMainCategory !== 'All' && p.mainCategory !== activeMainCategory) return false;
+        if (activeSubCategory !== 'All' && p.subCategory !== activeSubCategory) return false;
+
+        // Dropdown Filters
+        if (filterBrand !== 'All' && p.brandId !== filterBrand) return false;
+        const pGender = p.gender || 'Unisex';
+        if (filterGender !== 'All' && pGender !== filterGender) return false;
+        
+        const pHighlight = Array.isArray(p.highlight) ? p.highlight : (p.highlight && p.highlight !== 'None' ? [p.highlight] : []);
+        if (filterHighlight !== 'All' && !pHighlight.includes(filterHighlight)) return false;
+      } else {
+        // --- LIST MODE LOGIC (Faceted Filters) ---
+        // Categories
+        if (listFilters.categories.length > 0) {
+          if (!listFilters.categories.includes(p.mainCategory)) return false;
+        }
+        
+        // Stock Levels
+        if (listFilters.stockLevels.length > 0) {
+          const isOOS = stockNum === 0;
+          const isLow = stockNum > 0 && stockNum < 10;
+          const isInStock = stockNum >= 10;
+          
+          let matchesStock = false;
+          if (listFilters.stockLevels.includes('out_of_stock') && isOOS) matchesStock = true;
+          if (listFilters.stockLevels.includes('low_stock') && isLow) matchesStock = true;
+          if (listFilters.stockLevels.includes('in_stock') && isInStock) matchesStock = true;
+          
+          if (!matchesStock) return false;
+        }
+        
+        // Statuses
+        if (listFilters.statuses.length > 0) {
+          const pStatus = p.status || 'draft';
+          if (!listFilters.statuses.includes(pStatus)) return false;
+        }
+
+        // Sets
+        if (listFilters.sets && listFilters.sets.length > 0) {
+          const isInSet = sets.some(s => listFilters.sets.includes(s.id) && s.items.some(i => i.productId === p.id));
+          if (!isInSet) return false;
+        }
       }
       
       return true;
@@ -548,12 +728,13 @@ const ManageProductsPage = () => {
     letterSpacing: '0.05em' 
   };
 
-  const frameColors = ['Black', 'Silver', 'Brown', 'Clear', 'White', 'Gold', 'Tortoise'].map(c => ({ label: c, value: c }));
-  const lensColors = ['Black', 'Gray', 'Brown', 'Green', 'Blue', 'Clear', 'Pink'].map(c => ({ label: c, value: c }));
-  const shapes = ['Square', 'Oval', 'Round', 'Cat-eye', 'Aviator'].map(c => ({ label: c, value: c }));
-  const materials = ['Acetate', 'Metal', 'Mixed', 'Nylon'].map(c => ({ label: c, value: c }));
-  const genders = ['Men', 'Women', 'Unisex', 'Kids'].map(c => ({ label: c, value: c }));
-  const polarizeOptions = [{label: 'Yes', value: 'Yes'}, {label: 'No', value: 'No'}];
+  const rtwSizes = ['XS', 'S', 'M', 'L', 'XL'].map(c => ({ label: c, value: c }));
+  const rtwFits = ['Oversized', 'Slim Fit', 'Relaxed', 'Cropped'].map(c => ({ label: c, value: c }));
+  const bagHardware = ['Gold-tone', 'Silver-tone', 'Matte Black'].map(c => ({ label: c, value: c }));
+  const shoeSizes = ['35', '36', '37', '38', '39', '40', '41', '42'].map(c => ({ label: c, value: c }));
+  const heelHeights = ['Flat', '55mm', '85mm', '100mm'].map(c => ({ label: c, value: c }));
+  const accSizes = ['One Size', 'S', 'M', 'L'].map(c => ({ label: c, value: c }));
+  const materials = ['Cotton', 'Silk', 'Leather', 'Calfskin', 'Suede', 'Canvas', 'Nylon'].map(c => ({ label: c, value: c }));
   const highlightOptions = [{label: 'New Arrival', value: 'New Arrival'}, {label: 'Best Seller', value: 'Best Seller'}];
   const brandOptions = (brands || []).map(b => ({ label: b?.name || '', value: b?.slug || '' }));
 
@@ -565,60 +746,104 @@ const ManageProductsPage = () => {
       {/* STICKY HEADER WRAPPER */}
       <div style={{ position: 'sticky', top: isMobile ? '-24px' : '-40px', paddingTop: isMobile ? '12px' : '20px', background: 'rgba(249, 250, 251, 0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', zIndex: 10, margin: isMobile ? '-24px -12px 12px -16px' : '-40px -12px 16px -20px', paddingLeft: isMobile ? '16px' : '20px', paddingRight: '12px' }}>
 {/* HEADER SECTION */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMobile ? '16px' : '24px', gap: isMobile ? '12px' : '24px', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMobile ? '16px' : '24px', gap: isMobile ? '12px' : '24px', width: '100%', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
         
         {/* Full-width Centered Search */}
-        <div style={{ flex: 1, maxWidth: '800px', position: 'relative' }}>
+        <div style={{ flex: 1, maxWidth: '800px', position: 'relative', width: isMobile ? '100%' : 'auto' }}>
           <Search size={18} color="#888" style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text" 
             placeholder="Search by name or SKU..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: '100%', padding: isMobile ? '10px 16px 10px 42px' : '14px 20px 14px 48px', border: 'none', borderRadius: '100px', fontSize: isMobile ? '14px' : '15px', outline: 'none', background: '#F3F4F6', color: '#111' }}
+            style={{ 
+              width: '100%', 
+              padding: isMobile ? '10px 16px 10px 42px' : '14px 20px 14px 48px', 
+              paddingRight: viewMode === 'list' ? '48px' : '20px', 
+              border: 'none', 
+              borderRadius: '100px', 
+              fontSize: isMobile ? '14px' : '15px', 
+              outline: 'none', 
+              background: '#F3F4F6', 
+              color: '#111',
+              transition: 'padding 0.2s'
+            }}
           />
+          {viewMode === 'list' && (
+             <button 
+               onClick={() => setIsFilterOpen(!isFilterOpen)}
+               style={{ 
+                 position: 'absolute', 
+                 right: '8px', 
+                 top: '50%', 
+                 transform: 'translateY(-50%)',
+                 display: 'flex', 
+                 alignItems: 'center', 
+                 justifyContent: 'center',
+                 width: '32px',
+                 height: '32px',
+                 borderRadius: '50%', 
+                 border: 'none', 
+                 background: isFilterOpen ? '#e5e7eb' : 'transparent', 
+                 color: isFilterOpen ? '#111' : '#6b7280', 
+                 cursor: 'pointer', 
+                 transition: 'all 0.2s'
+               }}
+               title="Toggle Filters"
+             >
+               <SlidersHorizontal size={18} />
+             </button>
+          )}
+        </div>
+        
+        {/* View Mode Toggle */}
+
+        <div style={{ display: 'flex', background: '#F3F4F6', padding: '4px', borderRadius: '100px', gap: '4px' }}>
+          <button 
+            onClick={() => setViewMode('grid')}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: isMobile ? '8px 12px' : '10px 16px', border: 'none', borderRadius: '100px', cursor: 'pointer',
+              background: viewMode === 'grid' ? '#fff' : 'transparent',
+              color: viewMode === 'grid' ? '#111' : '#6b7280',
+              fontWeight: viewMode === 'grid' ? 600 : 500,
+              fontSize: '13px',
+              boxShadow: viewMode === 'grid' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <LayoutGrid size={16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Layout</span>
+          </button>
+          <button 
+            onClick={() => setViewMode('list')}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: isMobile ? '8px 12px' : '10px 16px', border: 'none', borderRadius: '100px', cursor: 'pointer',
+              background: viewMode === 'list' ? '#fff' : 'transparent',
+              color: viewMode === 'list' ? '#111' : '#6b7280',
+              fontWeight: viewMode === 'list' ? 600 : 500,
+              fontSize: '13px',
+              boxShadow: viewMode === 'list' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            <AlignJustify size={16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>List</span>
+          </button>
+
         </div>
 
-        <button className={styles.btnPrimary} onClick={() => {
-          if (isAdding) resetForm();
-          else {
-            setIsAdding(true);
-            setModalStep(1);
-          }
-        }} style={{ flexShrink: 0 }}>
-          {isAdding ? <X size={14} style={{ marginRight: isMobile ? '0' : '6px' }} /> : <Plus size={14} style={{ marginRight: isMobile ? '0' : '6px' }} />}
-          {!isMobile && (isAdding ? 'Close Panel' : 'New Product')}
-        </button>
       </div>
 
       
       
       
-      {/* Main Categories Row */}
-      <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: 'flex', alignItems: 'center', marginBottom: isMobile ? '12px' : '16px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
+            {/* Main Categories Row */}
+      <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: viewMode === 'list' ? 'none' : 'flex', alignItems: 'center', marginBottom: isMobile ? '12px' : '16px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
         <div style={{ display: 'flex', background: '#F3F4F6', padding: '4px', borderRadius: '100px', gap: '4px', whiteSpace: 'nowrap' }}>
-          <button
-            onClick={() => { setActiveMainCategory('All'); setActiveSubCategory('All'); }}
-            style={{
-              padding: isMobile ? '6px 14px' : '8px 20px',
-              border: 'none',
-              borderRadius: '100px',
-              background: activeMainCategory === 'All' ? '#fff' : 'transparent',
-              color: activeMainCategory === 'All' ? '#111' : '#666',
-              fontSize: isMobile ? '13px' : '14px',
-              fontWeight: activeMainCategory === 'All' ? 600 : 500,
-              boxShadow: activeMainCategory === 'All' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            All Categories
-          </button>
           {Object.keys(categories).map(cat => (
             <button 
               key={cat}
-              onClick={() => { setActiveMainCategory(cat); setActiveSubCategory('All'); }}
+              onClick={() => { setActiveMainCategory(cat); setActiveSubCategory(categories[cat]?.[0] || ''); }}
               style={{
                 padding: isMobile ? '6px 14px' : '8px 20px',
                 border: 'none',
@@ -660,35 +885,8 @@ const ManageProductsPage = () => {
       </div>
 
       {/* Sub Categories Row */}
-      <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: 'flex', gap: isMobile ? '16px' : '24px', marginBottom: isMobile ? '8px' : '16px', alignItems: 'center', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
-        <button
-          onClick={() => setActiveSubCategory('All')}
-          style={{
-            padding: isMobile ? '0 0 8px 0' : '0 0 12px 0',
-            border: 'none',
-            background: 'transparent',
-            fontSize: isMobile ? '13px' : '14px',
-            fontWeight: activeSubCategory === 'All' ? 600 : 500,
-            color: activeSubCategory === 'All' ? '#111' : '#888',
-            borderBottom: activeSubCategory === 'All' ? '2px solid #111' : '2px solid transparent',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          All
-          <span style={{ 
-            background: activeSubCategory === 'All' ? '#f3f4f6' : 'transparent',
-            padding: '2px 8px', borderRadius: '100px', fontSize: '11px', fontWeight: 600
-          }}>
-            {activeMainCategory === 'All' 
-              ? validProducts.length 
-              : validProducts.filter(p => p.mainCategory === activeMainCategory).length}
-          </span>
-        </button>
+      <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: viewMode === 'list' ? 'none' : 'flex', gap: isMobile ? '16px' : '24px', marginBottom: isMobile ? '8px' : '16px', alignItems: 'center', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
+        
         
         {activeMainCategory !== 'All' && categories[activeMainCategory] && categories[activeMainCategory].map(sub => (
           <button
@@ -797,264 +995,173 @@ const ManageProductsPage = () => {
       )}
 
             </div>
-
-      {/* WYSIWYG Product Grid */}
-      <div className={styles.productGridContainer} style={{ minHeight: '400px' }}>
-        {filteredProducts.length === 0 ? (
-          <div style={{ padding: '64px', textAlign: 'center', color: '#888' }}>
-            <Package size={48} strokeWidth={1} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#111', fontWeight: 500 }}>No products found</h3>
-            <p style={{ margin: 0, fontSize: '14px' }}>Try adjusting your search or filters to find what you're looking for.</p>
-          </div>
-        ) : (
-          <ResponsiveGridLayout
-            className="layout"
-            layouts={{ lg: layout, md: layout, sm: layout, xs: layout, xxs: layout }}
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 4, md: 4, sm: 2, xs: 2, xxs: 2 }}
-            onBreakpointChange={(newBreakpoint) => setCurrentBreakpoint(newBreakpoint)}
-            rowHeight={rowHeight}
-            containerPadding={[0, 0]}
-            margin={[12, 12]}
-            compactType="vertical"
-            allowOverlap={true}
-            onLayoutChange={handleLayoutChange}
-            onDragStop={handleDragStop}
-            onWidthChange={(containerWidth, margin, cols, containerPadding) => {
-              const pad = containerPadding ? (containerPadding[0] * 2) : 0;
-              const colW = (containerWidth - (margin[0] * (cols - 1)) - pad) / cols;
-              const newRowHeight = (colW * (4/3)) + 70; // 3:4 aspect ratio + 70px for the text block
-              setRowHeight(newRowHeight);
-            }}
-            isResizable={false}
+            {/* MEGA FILTER PANEL */}
+      {viewMode === 'list' && isFilterOpen && (
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '16px', position: 'relative' }}>
+          
+          <button 
+            onClick={() => setIsFilterOpen(false)}
+            style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}
           >
-            {renderItems.map((item) => {
-              if (item.isPlaceholder) {
-                return (
-                  <div key={item.id} style={{ pointerEvents: 'none' }}></div>
-                );
-              }
-              const product = item.product;
-              const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
-              const isLarge = layoutSize === 'large';
-              
-              return (
-                <div key={product.id}>
-                  <div 
-                    className={`${styles.card} ${isLarge ? styles.largeCard : styles.standardCard}`} 
-                    style={{ 
-                      padding: '0', 
-                      overflow: 'hidden', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      cursor: 'grab',
-                      height: '100%',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                    }}
-                  >
-                    <div style={{ flex: 1, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                      <img src={product.image} alt={product.name} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      
-                      {/* Editor Controls Overlay */}
-                      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 10 }}>
-                        <button onClick={() => handleToggleSize(product)} style={{ background: layoutSize === 'wide' ? '#10b981' : (isLarge ? '#007aff' : '#111'), color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}>
-                          {layoutSize === 'wide' ? '1x4' : (isLarge ? '2x2 (Large)' : '1x1 (Small)')}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div style={{ padding: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'rgb(30, 30, 30)', lineHeight: '1.2' }}>{product.name}</h4>
-                        <span style={{ fontSize: '12px', fontWeight: 500, color: '#888', whiteSpace: 'nowrap', marginLeft: '8px' }}>
-                          {product.price}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '12px' }}>
-                        <button onClick={() => handleEdit(product)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', padding: '0', fontSize: '11px', fontWeight: 500, textDecoration: 'underline' }}>
-                          Edit
-                        </button>
-                        <button onClick={() => deleteProduct(product.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0', fontSize: '11px', fontWeight: 500, textDecoration: 'underline' }}>
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </ResponsiveGridLayout>
-        )}
-      </div>
-
-      {cropImageSrc && (
-        <ImageCropper 
-          imageSrc={cropImageSrc} 
-          onCropComplete={(croppedBase64) => {
-            setFormData(prev => ({ 
-              ...prev, 
-              images: [...prev.images, croppedBase64] 
-            }));
-            setCropImageSrc(null);
-          }}
-          onCancel={() => setCropImageSrc(null)}
-        />
-      )}
-    
-
-{isAdding && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
-          <div className={styles.card} style={{ background: '#fff', padding: '40px', width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '24px', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 600, color: '#111' }}>
-                {editingId ? 'Edit Product' : 'Add New Product'}
-              </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                {formError && <span style={{ color: '#dc2626', fontSize: '13px', fontWeight: 500, background: '#fee2e2', padding: '6px 12px', borderRadius: '100px' }}>{formError}</span>}
-                <button onClick={resetForm} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#666', transition: 'background 0.2s' }}>
-                  <X size={16} />
-                </button>
+            <X size={20} />
+          </button>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '48px' }}>
+            
+            {/* Column 1: Category */}
+            <div style={{ flex: '1 1 200px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Categories</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {Object.keys(categories).map(cat => (
+                  <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={listFilters.categories.includes(cat)} 
+                      onChange={() => toggleListFilter('categories', cat)} 
+                      style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }}
+                    /> 
+                    {cat}
+                  </label>
+                ))}
               </div>
             </div>
 
-            {/* Step 1: Category Selection */}
-            {modalStep === 1 && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '24px 0' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#111', marginBottom: '8px' }}>What are you creating?</h2>
-                  <p style={{ color: '#666', fontSize: '14px' }}>Select a category to customize your product details</p>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', width: '100%', maxWidth: '800px' }}>
-                  {Object.keys(categories).map(cat => (
-                    <button 
-                      key={cat} 
-                      onClick={() => { handleChange('mainCategory', cat); setModalStep(2); }} 
-                      style={{ padding: '24px', border: '1px solid #e5e7eb', borderRadius: '16px', background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }} 
-                      onMouseOver={(e) => e.currentTarget.style.borderColor = '#111'} 
-                      onMouseOut={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-                    >
-                       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111' }}>
-                         {cat === 'Bags' ? <Package size={24} /> : cat === 'Shoes' ? <Hexagon size={24} /> : cat === 'Lenses' ? <Eye size={24} /> : cat === 'Bespoke' ? <PanelTop size={24} /> : <Tag size={24} />}
-                       </div>
-                       <span style={{ fontWeight: 600, fontSize: '14px', color: '#111' }}>{cat}</span>
-                    </button>
-                  ))}
-                </div>
+            {/* Column 2: Stock Level */}
+            <div style={{ flex: '1 1 200px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Stock Level</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                  <input type="checkbox" checked={listFilters.stockLevels.includes('in_stock')} onChange={() => toggleListFilter('stockLevels', 'in_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> In Stock
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                  <input type="checkbox" checked={listFilters.stockLevels.includes('low_stock')} onChange={() => toggleListFilter('stockLevels', 'low_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Low Stock (&lt; 10)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                  <input type="checkbox" checked={listFilters.stockLevels.includes('out_of_stock')} onChange={() => toggleListFilter('stockLevels', 'out_of_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Out of Stock
+                </label>
               </div>
-            )}
+            </div>
 
-            {/* Step 2: Image Upload & Crop */}
-            {modalStep === 2 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '13px', fontWeight: 500 }}>
-                   <button onClick={() => setModalStep(1)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', gap: '4px' }}>← Back</button>
-                   <span>/ Step 2: Product Images</span>
-                </div>
-                <div style={{ flex: 1, minHeight: '300px', border: '1px dashed #bbb', borderRadius: '16px', display: 'flex', flexDirection: 'column', color: '#666', background: '#f9fafb', position: 'relative', overflow: 'hidden', padding: '24px' }}>
-                  {formData.images.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', width: '100%' }}>
-                      {formData.images.map((imgUrl, idx) => (
-                        <div key={idx} style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', background: '#fff', border: formData.primaryImageIndex === idx ? '2px solid #111' : '1px solid #e5e7eb' }}>
-                          <img src={imgUrl} alt={`Preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                          <button type="button" onClick={() => handleChange('primaryImageIndex', idx)} style={{ position: 'absolute', top: '8px', left: '8px', background: formData.primaryImageIndex === idx ? '#111' : 'rgba(255,255,255,0.9)', color: formData.primaryImageIndex === idx ? '#fff' : '#ccc', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }} title="Set as Primary Image"><span style={{ fontSize: '14px' }}>★</span></button>
-                          <button type="button" onClick={() => { const newImages = formData.images.filter((_, i) => i !== idx); const newPrimary = formData.primaryImageIndex === idx ? 0 : (formData.primaryImageIndex > idx ? formData.primaryImageIndex - 1 : formData.primaryImageIndex); setFormData(prev => ({ ...prev, images: newImages, primaryImageIndex: newPrimary })); }} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}><X size={14} /></button>
-                        </div>
-                      ))}
-                      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fff' }}>
-                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} />
-                        <Plus size={32} color="#999" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', minHeight: '250px' }}>
-                      <input type="file" accept="image/*" onChange={handleImageUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} />
-                      <UploadCloud size={48} style={{ marginBottom: '16px', color: '#888' }} />
-                      <span style={{ fontSize: '15px', fontWeight: 500, color: '#444' }}>Click or Drop images here</span>
-                      <span style={{ fontSize: '13px', opacity: 0.7, marginTop: '8px' }}>High quality images will be cropped and optimized to WebP</span>
-                    </div>
-                  )}
-                </div>
-                {imageWarning && (
-                  <div style={{ padding: '12px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', color: '#d97706', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <AlertTriangle size={16} />{imageWarning}
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                  <button onClick={() => setModalStep(3)} className={styles.btnPrimary} disabled={formData.images.length === 0} style={{ padding: '12px 32px', fontSize: '14px', opacity: formData.images.length === 0 ? 0.5 : 1 }}>Next Step →</button>
-                </div>
+            {/* Column 3: Status */}
+            <div style={{ flex: '1 1 200px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Status</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                  <input type="checkbox" checked={listFilters.statuses.includes('active')} onChange={() => toggleListFilter('statuses', 'active')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Active
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                  <input type="checkbox" checked={listFilters.statuses.includes('draft')} onChange={() => toggleListFilter('statuses', 'draft')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Draft
+                </label>
               </div>
-            )}
+            </div>
 
-            {/* Step 3: Product Details & Publish */}
-            {modalStep === 3 && (
-              <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '13px', fontWeight: 500 }}>
-                   <button type="button" onClick={() => setModalStep(2)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center', gap: '4px' }}>← Back</button>
-                   <span>/ Step 3: Details for {formData.mainCategory}</span>
-                </div>
-                
-                {/* Basic Info */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div><label style={labelStyle}>Product Name *</label><input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} style={inputStyle} placeholder="e.g. Aden 02" /></div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                      <div><label style={labelStyle}>Price (฿) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} placeholder="e.g. 15900" /></div>
-                      <div><label style={labelStyle}>SKU</label><input type="text" value={formData.sku} onChange={(e) => handleChange('sku', e.target.value)} style={inputStyle} placeholder="e.g. AD-02-BLK" /></div>
-                    </div>
-                    <div><label style={labelStyle}>Stock Quantity</label><input type="number" value={formData.stock} onChange={(e) => handleChange('stock', e.target.value)} style={inputStyle} placeholder="e.g. 15" /></div>
-                    <div><label style={labelStyle}>Product Story / Description</label><textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} placeholder="Describe the inspiration, fit, and feel..." /></div>
-                  </div>
-                  
-                  {/* Dynamic Info */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                      {formData.mainCategory && categories[formData.mainCategory] && (
-                        <PillSelector label="Sub Category" options={categories[formData.mainCategory].map(c => ({ value: c, label: c }))} selectedValue={formData.subCategory} onChange={(val) => handleChange('subCategory', val)} />
-                      )}
-                      <PillSelector label="Brand" options={brandOptions} selectedValue={formData.brandId} onChange={(val) => handleChange('brandId', val)} />
-                    </div>
-                    
-                    {(formData.mainCategory === 'Lenses' || formData.mainCategory === 'Bespoke') && (
-                      <>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                          <PillSelector label="Frame Color" options={frameColors} selectedValue={formData.frameColor} onChange={(val) => handleChange('frameColor', val)} />
-                          <PillSelector label="Lens Color" options={lensColors} selectedValue={formData.lensColor} onChange={(val) => handleChange('lensColor', val)} />
-                          <PillSelector label="Shape" options={shapes} selectedValue={formData.shape} onChange={(val) => handleChange('shape', val)} />
-                          <PillSelector label="Material" options={materials} selectedValue={formData.material} onChange={(val) => handleChange('material', val)} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>Dimensions (mm)</label>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                            <input type="number" value={formData.sizeLens} onChange={(e) => handleChange('sizeLens', e.target.value)} style={inputStyle} placeholder="Lens (e.g. 52)" />
-                            <input type="number" value={formData.sizeBridge} onChange={(e) => handleChange('sizeBridge', e.target.value)} style={inputStyle} placeholder="Bridge (e.g. 20)" />
-                            <input type="number" value={formData.sizeTemple} onChange={(e) => handleChange('sizeTemple', e.target.value)} style={inputStyle} placeholder="Temple (e.g. 145)" />
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {(formData.mainCategory === 'Shoes' || formData.mainCategory === 'Ready-to-Wear') && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <PillSelector label="Gender" options={genders} selectedValue={formData.gender} onChange={(val) => handleChange('gender', val)} />
-                        <PillSelector label="Material" options={materials} selectedValue={formData.material} onChange={(val) => handleChange('material', val)} />
-                      </div>
-                    )}
-                    
-                    <MultiPillSelector label="Collection Highlight" options={highlightOptions} selectedValues={formData.highlight} onChange={(val) => handleChange('highlight', val)} />
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.05)', margin: '16px 0' }} />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                  <button type="button" onClick={resetForm} style={{ padding: '12px 24px', fontSize: '14px', background: 'transparent', border: '1px solid #e5e7eb', borderRadius: '100px', cursor: 'pointer', fontWeight: 500, color: '#666' }}>Cancel</button>
-                  <button type="submit" className={styles.btnPrimary} style={{ padding: '12px 32px', fontSize: '14px' }}>{editingId ? 'Update Product' : 'Publish Product'}</button>
-                </div>
-              </form>
-            )}
+            {/* Column 4: Look Sets */}
+            <div style={{ flex: '1 1 200px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Look Sets</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '200px', overflowY: 'auto' }}>
+                {sets.length === 0 && <span style={{ fontSize: '14px', color: '#888' }}>No sets available</span>}
+                {sets.map(s => (
+                  <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={listFilters.sets && listFilters.sets.includes(s.id)} 
+                      onChange={() => toggleListFilter('sets', s.id)} 
+                      style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }}
+                    /> 
+                    {s.name || 'Unnamed Set'}
+                  </label>
+                ))}
+              </div>
+            </div>
+            
           </div>
         </div>
       )}
-</div>
+
+      {viewMode === 'list' && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px', minHeight: '32px' }}>
+          {listFilters.categories.map(val => (
+            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+              Category: {val}
+              <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('categories', val)} />
+            </span>
+          ))}
+          {listFilters.stockLevels.map(val => (
+            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+              Stock: {val.replace('_', ' ')}
+              <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('stockLevels', val)} />
+            </span>
+          ))}
+          {listFilters.statuses.map(val => (
+            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+              Status: {val}
+              <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('statuses', val)} />
+            </span>
+          ))}
+          {listFilters.sets && listFilters.sets.map(val => {
+            const setName = sets.find(s => s.id === val)?.name || 'Unknown Set';
+            return (
+              <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                Set: {setName}
+                <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('sets', val)} />
+              </span>
+            );
+          })}
+          {(listFilters.categories.length > 0 || listFilters.stockLevels.length > 0 || listFilters.statuses.length > 0 || (listFilters.sets && listFilters.sets.length > 0)) && (
+            <button onClick={() => setListFilters({ categories: [], stockLevels: [], statuses: [], sets: [] })} style={{ border: 'none', background: 'transparent', fontSize: '13px', color: '#6b7280', cursor: 'pointer', padding: '6px 8px' }}>
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
+      
+      {/* View Container */}
+
+      <div className={styles.productGridContainer} style={{ minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+        {viewMode === 'list' ? (
+          <InventoryList 
+            products={filteredProducts} 
+            handleEdit={handleEdit} 
+            handleDelete={deleteProduct} 
+          />
+        ) : !activeSubCategory || activeSubCategory === 'All' ? (
+          <div style={{ padding: '64px', textAlign: 'center', color: '#888' }}>
+            <Package size={48} strokeWidth={1} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#111', fontWeight: 500 }}>Select a Subcategory</h3>
+            <p style={{ margin: 0, fontSize: '14px' }}>Please select a subcategory (e.g., Tote Bags) to view or create Look Sets.</p>
+          </div>
+        ) : (
+          <SetsManager 
+            handleEdit={handleEdit} 
+            activeMainCategory={activeMainCategory}
+            activeSubCategory={activeSubCategory}
+            products={products}
+            sets={sets}
+            addSet={addSet}
+            updateSet={updateSet}
+            deleteSet={deleteSet}
+            removeProductFromSet={removeProductFromSet}
+            updateProductInSet={updateProductInSet}
+            changeProductOrderInSet={changeProductOrderInSet}
+          />
+        )}
+      </div>
+
+    
+
+
+      <ProductEditorDrawer 
+        isOpen={editorConfig.isOpen}
+        onClose={() => setEditorConfig({ ...editorConfig, isOpen: false })}
+        onSave={handleSaveProduct}
+        initialData={editorConfig.initialData}
+        categories={categories}
+        brands={brands}
+        config={{ defaultMainCategory: activeMainCategory, defaultSubCategory: activeSubCategory, targetSetId: editorConfig.targetSetId }}
+      />
+      
+          
+    </div>
   );
 };
 

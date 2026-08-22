@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
@@ -6,14 +7,33 @@ import GlobalFilterPanel from '../components/GlobalFilterPanel';
 import { useAdmin } from '../context/AdminContext';
 import styles from './ProductsPage.module.css';
 
-const CATEGORIES = [
-  'View all', 'New In', 'SOL Fall 2026', 
-  'Bags', 'Dresses', 'Tops', 'Bottoms', 'Accessories'
-];
+const ProductsPage = ({ previewSets = null }) => {
+  const adminCtx = useAdmin();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const mainParam = searchParams.get('main');
 
-const ProductsPage = () => {
-  const { products, sets, loading } = useAdmin();
+  const displayCategories = useMemo(() => {
+    const contextCats = adminCtx.categories || {};
+    const mainCats = Object.keys(contextCats);
+    if (mainParam === 'New In') {
+      return ['View all', ...mainCats];
+    }
+    if (mainParam && contextCats[mainParam]) {
+      return ['View all', 'New In', ...contextCats[mainParam]];
+    }
+    return ['View all', 'New In', ...mainCats];
+  }, [mainParam, adminCtx.categories]);
+
+  const products = adminCtx.products;
+  const sets = previewSets || adminCtx.sets;
+  const loading = adminCtx.loading;
+
   const [activeCategory, setActiveCategory] = useState('View all');
+  
+  useEffect(() => {
+    setActiveCategory('View all');
+  }, [mainParam]);
   const [visibleCount, setVisibleCount] = useState(8);
   
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -29,7 +49,15 @@ const ProductsPage = () => {
 
   const filteredProducts = useMemo(() => {
     return (products || []).filter(product => {
-      // If a category has selected filters, the product must match at least one of them.
+      // 1. Navigation & Category Pill Filtering
+      if (mainParam && mainParam !== 'New In' && mainParam !== 'Explore') {
+        if (product.mainCategory !== mainParam) return false;
+      }
+      if (activeCategory && activeCategory !== 'View all' && activeCategory !== 'New In') {
+        if (product.subCategory !== activeCategory) return false;
+      }
+      
+      // 2. Sidebar Filters
       for (const [category, values] of Object.entries(selectedFilters)) {
         if (values.length > 0) {
           if (!values.includes(product[category])) {
@@ -39,7 +67,7 @@ const ProductsPage = () => {
       }
       return true;
     });
-  }, [selectedFilters, products]);
+  }, [selectedFilters, products, mainParam, activeCategory]);
 
   const displayGroups = useMemo(() => {
     const buildRows = (items) => {
@@ -104,6 +132,18 @@ const ProductsPage = () => {
 
     const now = new Date();
     const activeSets = (sets || []).filter(s => {
+       // 1. Navigation & Category Pill Filtering
+       if (!previewSets) {
+         if (mainParam && mainParam !== 'New In' && mainParam !== 'Explore') {
+           if (s.mainCategory !== mainParam) return false;
+         }
+         if (activeCategory && activeCategory !== 'View all' && activeCategory !== 'New In') {
+           if (s.subCategory !== activeCategory) return false;
+         }
+       }
+       
+       // 2. Status check
+       if (previewSets) return true;
        if (s.status === 'published') return true;
        if (s.status === 'scheduled' && s.scheduledDate) {
           return new Date(s.scheduledDate) <= now;
@@ -161,7 +201,7 @@ const ProductsPage = () => {
     }
 
     return groups;
-  }, [filteredProducts, sets, visibleCount]);
+  }, [filteredProducts, sets, visibleCount, previewSets, mainParam, activeCategory]);
 
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + 16, filteredProducts.length));
@@ -213,12 +253,14 @@ const ProductsPage = () => {
 
   return (
     <div className={styles.page}>
+{!previewSets && (
+        <>
       {/* Options Bar */}
       <div className={styles.optionsBarWrapper}>
         <div className={styles.optionsBar}>
           <div className={styles.pillScrollWrapper}>
             <div className={styles.pillContainer}>
-            {CATEGORIES.map((cat) => (
+            {displayCategories.map((cat) => (
               <button
                 key={cat}
                 className={`${styles.pillBtn} ${activeCategory === cat ? styles.pillActive : ''}`}
@@ -301,6 +343,8 @@ const ProductsPage = () => {
           removeFilter={removeFilter}
           onClearAll={clearAllFilters}
         />
+        </>
+      )}
 
       {/* Product Grid based on Bin-Packing Algorithm grouped by Sets */}
       <div className={styles.productGridContainer}>
@@ -345,7 +389,7 @@ const ProductsPage = () => {
         ))}
       </div>
 
-      {/* Bottom Section */}
+{!previewSets && (
       <div className={styles.bottomSection}>
         {visibleCount < filteredProducts.length && (
           <div className={styles.loadMoreContainer}>
@@ -359,6 +403,7 @@ const ProductsPage = () => {
           <span className={styles.currentBreadcrumb}>Beachwear</span>
         </div>
       </div>
+      )}
     </div>
   );
 };

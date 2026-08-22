@@ -129,18 +129,55 @@ export const AdminProvider = ({ children }) => {
   });
   
   const [categories, setCategories] = useState(() => {
-    const saved = localStorage.getItem('sol_categories_v2');
+    const saved = localStorage.getItem('sol_categories_v3');
     return saved ? JSON.parse(saved) : {
-      'Ready-to-Wear': ['Knit Top', 'Shirt', 'Blouse', 'Short', 'Pants', 'Skirt', 'Maxi Dress', 'Mini Dress'],
-      'Bags': ['Bags'],
-      'Shoes': ['Shoes'],
-      'Accessories': ['Head Piece', 'Others']
+      'Bags': ['Crossbody Bags', 'Shoulder Bags', 'Handbags', 'Totes', 'Mini Bags'],
+      'Ready to Wear': ['Knit Top', 'Shirt', 'Blouse', 'Shorts', 'Pants', 'Skirt', 'Mini Dress', 'Maxi Dress', 'Sets'],
+      'Accessories & Shoes': ['Jewelry', 'Hats', 'Belts', 'Sandals', 'Heels', 'Flats']
     };
   });
 
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+
+  // 1. Fetch categories from Supabase on mount
   useEffect(() => {
-    localStorage.setItem('sol_categories_v2', JSON.stringify(categories));
-  }, [categories]);
+    const fetchCats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('key_name', 'categories')
+          .single();
+        
+        if (data && data.setting_value) {
+          setCategories(data.setting_value);
+        }
+      } catch (err) {
+        console.warn("Could not fetch categories from Supabase, using local fallback.");
+      } finally {
+        setCategoriesLoaded(true);
+      }
+    };
+    fetchCats();
+  }, []);
+
+  // 2. Save categories to Supabase and LocalStorage when modified
+  useEffect(() => {
+    localStorage.setItem('sol_categories_v3', JSON.stringify(categories));
+    
+    // Only push to Supabase if we have already loaded the real data from it
+    if (categoriesLoaded) {
+      supabase
+        .from('store_settings')
+        .upsert({ 
+          key_name: 'categories', 
+          setting_value: categories 
+        })
+        .then(({ error }) => {
+          if (error) console.error("Error syncing categories to Supabase:", error);
+        });
+    }
+  }, [categories, categoriesLoaded]);
 
   const addCategory = (name) => {
     if (!name || categories[name]) return false;
@@ -214,13 +251,32 @@ export const AdminProvider = ({ children }) => {
         })));
       }
 
-      // 2. Fetch Products (BYPASSED - Using LocalStorage instead)
-      /* 
-      const { data: productsData } = await supabase.from('products').select('*').order('upload_date', { ascending: false });
-      if (productsData) {
-        ...
+      // 2. Fetch Products
+      const { data: productsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (productsData && productsData.length > 0) {
+        setProducts(productsData.map(p => ({
+          ...p,
+          uploadDate: p.created_at,
+          mainCategory: p.main_category,
+          subCategory: p.sub_category,
+          coverImage: p.cover_image_url,
+          hoverImage: p.hover_image_url,
+          galleryImages: p.gallery_images_urls || [],
+          layoutSize: p.layout_size,
+          heelHeight: p.heel_height
+        })));
       }
-      */
+
+      // Fetch Sets
+      const { data: setsData } = await supabase.from('sets').select('*').order('created_at', { ascending: false });
+      if (setsData && setsData.length > 0) {
+        setSets(setsData.map(s => ({
+          ...s,
+          mainCategory: s.main_category,
+          subCategory: s.sub_category,
+          scheduledDate: s.scheduled_date
+        })));
+      }
 
       // 3. Fetch Articles & Modules
       const { data: articlesData } = await supabase.from('content_articles').select(`
@@ -341,15 +397,44 @@ export const AdminProvider = ({ children }) => {
   const addSet = (set) => {
     const newId = Date.now().toString();
     const newSet = { ...set, id: newId, items: set.items || [], status: set.status || 'draft', scheduledDate: set.scheduledDate || null };
-    setSets([...sets, newSet]);
+    setSets(prev => [...prev, newSet]);
+    
+    supabase.from('sets').insert({
+      id: newId,
+      name: set.name,
+      items: newSet.items,
+      status: newSet.status,
+      main_category: newSet.mainCategory,
+      sub_category: newSet.subCategory,
+      scheduled_date: newSet.scheduledDate
+    }).then(({ error }) => {
+      if (error) console.error("Error inserting set:", error);
+    });
   };
 
   const updateSet = (id, updatedData) => {
-    setSets(sets.map(s => s.id === id ? { ...s, ...updatedData } : s));
+    setSets(prev => prev.map(s => s.id === id ? { ...s, ...updatedData } : s));
+    
+    const dbUpdate = {};
+    if (updatedData.name !== undefined) dbUpdate.name = updatedData.name;
+    if (updatedData.items !== undefined) dbUpdate.items = updatedData.items;
+    if (updatedData.status !== undefined) dbUpdate.status = updatedData.status;
+    if (updatedData.mainCategory !== undefined) dbUpdate.main_category = updatedData.mainCategory;
+    if (updatedData.subCategory !== undefined) dbUpdate.sub_category = updatedData.subCategory;
+    if (updatedData.scheduledDate !== undefined) dbUpdate.scheduled_date = updatedData.scheduledDate;
+
+    if (Object.keys(dbUpdate).length > 0) {
+      supabase.from('sets').update(dbUpdate).eq('id', id).then(({ error }) => {
+        if (error) console.error("Error updating set:", error);
+      });
+    }
   };
 
   const deleteSet = (id) => {
-    setSets(sets.filter(s => s.id !== id));
+    setSets(prev => prev.filter(s => s.id !== id));
+    supabase.from('sets').delete().eq('id', id).then(({ error }) => {
+      if (error) console.error("Error deleting set:", error);
+    });
   };
 
   const addProductToSet = (setId, productId, layoutSize = 'small') => {
@@ -416,17 +501,64 @@ export const AdminProvider = ({ children }) => {
       id: newId,
       uploadDate: new Date().toISOString()
     };
-    // Update local state, useEffect will sync to localStorage
     setProducts(prev => [...prev, newProduct]);
+    
+    supabase.from('products').insert({
+      id: newProduct.id,
+      name: newProduct.name,
+      price: newProduct.price,
+      main_category: newProduct.mainCategory,
+      sub_category: newProduct.subCategory,
+      cover_image_url: newProduct.coverImage,
+      hover_image_url: newProduct.hoverImage,
+      gallery_images_urls: newProduct.galleryImages,
+      description: newProduct.description,
+      status: newProduct.status || 'draft',
+      layout_size: newProduct.layoutSize || 'small',
+      stock: newProduct.stock,
+      size: newProduct.size,
+      fit: newProduct.fit,
+      hardware: newProduct.hardware,
+      heel_height: newProduct.heelHeight
+    }).then(({ error }) => {
+      if (error) console.error("Error inserting product:", error);
+    });
+    
     return newProduct;
   };
 
   const updateProduct = async (id, updatedData) => {
-    setProducts(products.map(p => p.id === id ? { ...p, ...updatedData } : p));
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedData } : p));
+    
+    const dbUpdate = {};
+    if (updatedData.name !== undefined) dbUpdate.name = updatedData.name;
+    if (updatedData.price !== undefined) dbUpdate.price = updatedData.price;
+    if (updatedData.mainCategory !== undefined) dbUpdate.main_category = updatedData.mainCategory;
+    if (updatedData.subCategory !== undefined) dbUpdate.sub_category = updatedData.subCategory;
+    if (updatedData.coverImage !== undefined) dbUpdate.cover_image_url = updatedData.coverImage;
+    if (updatedData.hoverImage !== undefined) dbUpdate.hover_image_url = updatedData.hoverImage;
+    if (updatedData.galleryImages !== undefined) dbUpdate.gallery_images_urls = updatedData.galleryImages;
+    if (updatedData.description !== undefined) dbUpdate.description = updatedData.description;
+    if (updatedData.status !== undefined) dbUpdate.status = updatedData.status;
+    if (updatedData.layoutSize !== undefined) dbUpdate.layout_size = updatedData.layoutSize;
+    if (updatedData.stock !== undefined) dbUpdate.stock = updatedData.stock;
+    if (updatedData.size !== undefined) dbUpdate.size = updatedData.size;
+    if (updatedData.fit !== undefined) dbUpdate.fit = updatedData.fit;
+    if (updatedData.hardware !== undefined) dbUpdate.hardware = updatedData.hardware;
+    if (updatedData.heelHeight !== undefined) dbUpdate.heel_height = updatedData.heelHeight;
+    
+    if (Object.keys(dbUpdate).length > 0) {
+      supabase.from('products').update(dbUpdate).eq('id', id).then(({ error }) => {
+        if (error) console.error("Error updating product:", error);
+      });
+    }
   };
 
   const deleteProduct = async (id) => {
-    setProducts(products.filter(p => p.id !== id));
+    setProducts(prev => prev.filter(p => p.id !== id));
+    supabase.from('products').delete().eq('id', id).then(({ error }) => {
+      if (error) console.error("Error deleting product:", error);
+    });
   };
 
   const changeProductOrder = (id, newIndex, updatedData = null) => {

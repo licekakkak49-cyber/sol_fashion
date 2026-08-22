@@ -38,7 +38,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const { openWishlist, wishlistItems } = useWishlist();
   const { openCart, cartItems } = useCart();
-  const { brands, contentArticles } = useAdmin();
+  const { brands, contentArticles, categories = {} } = useAdmin();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -156,10 +156,10 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
               <span className={styles.tagline}>Let your SOL shine</span>
             </Link>
             <ul className={styles.navLinks}>
-              <li><Link to="/products">New In</Link></li>
-              <li><Link to="/products">Bags</Link></li>
-              <li><Link to="/products">Ready-to-Wear</Link></li>
-              <li><Link to="/products">Accessories</Link></li>
+              <li><Link to="/products?main=New In">New In</Link></li>
+              {Object.keys(categories).map(cat => (
+                <li key={cat}><Link to={`/products?main=${cat}`}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
+              ))}
               <li><Link to="/explore">Explore</Link></li>
             </ul>
           </div>
@@ -227,10 +227,10 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
 
                 {/* Mobile Main Links */}
                 <ul className={styles.mobileMenuLinks}>
-                  <li><Link to="/products" onClick={toggleMenu}>New In</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>Bags</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>Ready-to-Wear</Link></li>
-                  <li><Link to="/products" onClick={toggleMenu}>Accessories</Link></li>
+                  <li><Link to="/products?main=New In" onClick={toggleMenu}>New In</Link></li>
+                  {Object.keys(categories).map(cat => (
+                    <li key={cat}><Link to={`/products?main=${cat}`} onClick={toggleMenu}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
+                  ))}
                   <li><Link to="/explore" onClick={toggleMenu}>Explore</Link></li>
                 </ul>
 

@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAdmin } from '../../../context/AdminContext';
-import { Plus, X, ChevronDown, ChevronUp, Trash2, Image as ImageIcon, LayoutGrid, Layout } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp, Trash2, Edit2, Image as ImageIcon, LayoutGrid, Layout, Eye } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout/legacy';
 import styles from '../AdminLayout.module.css';
+import PreviewModal from './PreviewModal';
+
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -414,38 +416,31 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
               }
               return (
                 <div key={product.id} data-grid-id={product.id}>
-                  <div 
-                    className={`${styles.card} ${isLarge ? styles.largeCard : styles.standardCard}`} 
-                    style={{ 
-                      padding: '0', 
-                      overflow: 'hidden', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      cursor: 'grab',
-                      height: '100%',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                    }}
-                  >
-                    <div style={{ flex: 1, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                      <img src={product.image} alt={product.name} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      {!product.image && <div style={{position: 'absolute', color: 'red'}}>No Image</div>}
-                      
-                    </div>
+                  <div className={styles.productCard}>
+                    <img src={product.image} alt={product.name} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {!product.image && <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'red'}}>No Image</div>}
                     
-                    <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'rgb(30, 30, 30)', lineHeight: '1.2' }}>{product.name}</h4>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '12px' }}>
-                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#10b981' }}>${product.price}</p>
-                      </div>
-                      <div style={{ position: 'absolute', bottom: 12, right: 12 }}>
+                    <div className={styles.productOverlay}>
+                      <div className={styles.overlayActions}>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); removeProductFromSet(set.id, product.id); }}
-                          style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', fontWeight: 500 }}
+                          className={styles.overlayActionBtn}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(product, set.id); }}
+                          title="Edit Product"
                         >
-                          Remove
+                          <Edit2 size={14} className={styles.overlayEditBtn} />
                         </button>
+                        <button 
+                          className={styles.overlayActionBtn}
+                          onClick={(e) => { e.stopPropagation(); removeProductFromSet(set.id, product.id); }}
+                          title="Remove from Set"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      
+                      <div className={styles.overlayInfo}>
+                        <h4>{product.name}</h4>
+                        <p>${product.price}</p>
                       </div>
                     </div>
                   </div>
@@ -458,6 +453,7 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
       )}
 
       
+
     </div>
   );
 };
@@ -466,6 +462,7 @@ export default function SetsManager({ handleEdit, activeMainCategory, activeSubC
   
   const [isAddingSet, setIsAddingSet] = useState(false);
   const [newSetName, setNewSetName] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleCreateSet = () => {
     if (!newSetName.trim()) return;
@@ -479,7 +476,13 @@ export default function SetsManager({ handleEdit, activeMainCategory, activeSubC
       { productId: `draft-${Date.now()}-5`, layoutSize: 'large' },
     ];
 
-    addSet({ name: newSetName, status: 'draft', items: defaultItems });
+    addSet({ 
+      name: newSetName.trim(), 
+      status: 'draft', 
+      items: defaultItems, 
+      mainCategory: activeMainCategory, 
+      subCategory: activeSubCategory 
+    });
     setNewSetName("");
     setIsAddingSet(false);
   };
@@ -491,12 +494,20 @@ export default function SetsManager({ handleEdit, activeMainCategory, activeSubC
           <h2 style={{ fontSize: '24px', fontWeight: 600, margin: '0 0 4px 0' }}>Visual Set Builder</h2>
           <p style={{ color: '#666', margin: 0, fontSize: '14px' }}>Build complete looks and campaigns by arranging placeholders and uploading images directly.</p>
         </div>
-        <button 
-          onClick={() => setIsAddingSet(true)}
-          style={{ padding: '10px 20px', background: '#111', color: '#fff', border: 'none', borderRadius: '100px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          <Plus size={18} /> New Look Set
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={() => setShowPreview(true)}
+            style={{ padding: '10px 20px', background: '#fff', color: '#111', border: '1px solid #e5e7eb', borderRadius: '100px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Eye size={18} /> Live Preview
+          </button>
+          <button 
+            onClick={() => setIsAddingSet(true)}
+            style={{ padding: '10px 20px', background: '#111', color: '#fff', border: 'none', borderRadius: '100px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Plus size={18} /> New Look Set
+          </button>
+        </div>
       </div>
 
       {isAddingSet && (
@@ -519,14 +530,30 @@ export default function SetsManager({ handleEdit, activeMainCategory, activeSubC
       )}
 
       <div>
-        {sets.length === 0 ? (
+        {sets.filter(s => {
+            if (activeMainCategory && activeMainCategory !== 'New In') {
+              if (s.mainCategory !== activeMainCategory && s.main_category !== activeMainCategory) return false;
+            }
+            if (activeSubCategory && activeSubCategory !== 'View all' && activeSubCategory !== 'New In') {
+              if (s.subCategory !== activeSubCategory && s.sub_category !== activeSubCategory) return false;
+            }
+            return true;
+          }).length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px', color: '#888', background: '#f9fafb', borderRadius: '12px', border: '2px dashed #e2e8f0' }}>
             <Layout size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
             <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#111' }}>No sets created yet</h3>
             <p style={{ margin: 0, fontSize: '14px' }}>Click "New Look Set" to start building your first visual campaign.</p>
           </div>
         ) : (
-          sets.map(set => (
+          sets.filter(s => {
+            if (activeMainCategory && activeMainCategory !== 'New In') {
+              if (s.mainCategory !== activeMainCategory && s.main_category !== activeMainCategory) return false;
+            }
+            if (activeSubCategory && activeSubCategory !== 'View all' && activeSubCategory !== 'New In') {
+              if (s.subCategory !== activeSubCategory && s.sub_category !== activeSubCategory) return false;
+            }
+            return true;
+          }).map(set => (
             <SetAccordion 
               key={set.id} 
               set={set} 
@@ -542,6 +569,8 @@ export default function SetsManager({ handleEdit, activeMainCategory, activeSubC
           ))
         )}
       </div>
+
+      {showPreview && <PreviewModal sets={sets} onClose={() => setShowPreview(false)} />}
     </div>
   );
 }

@@ -158,7 +158,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
             <ul className={styles.navLinks}>
               <li><Link to="/products?main=New In">New In</Link></li>
               {Object.keys(categories).map(cat => (
-                <li key={cat}><Link to={`/products?main=${cat}`}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
+                <li key={cat}><Link to={`/products?main=${encodeURIComponent(cat)}`}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
               ))}
               <li><Link to="/explore">Explore</Link></li>
             </ul>
@@ -229,7 +229,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
                 <ul className={styles.mobileMenuLinks}>
                   <li><Link to="/products?main=New In" onClick={toggleMenu}>New In</Link></li>
                   {Object.keys(categories).map(cat => (
-                    <li key={cat}><Link to={`/products?main=${cat}`} onClick={toggleMenu}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
+                    <li key={cat}><Link to={`/products?main=${encodeURIComponent(cat)}`} onClick={toggleMenu}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
                   ))}
                   <li><Link to="/explore" onClick={toggleMenu}>Explore</Link></li>
                 </ul>

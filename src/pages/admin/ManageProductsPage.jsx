@@ -12,6 +12,7 @@ import SetsManager from './components/SetsManager';
 import ProductEditorDrawer from './components/ProductEditorDrawer';
 import { supabase } from '../../utils/supabaseClient';
 import InventoryList from './components/InventoryList';
+import CategoriesManagerModal from './components/CategoriesManagerModal';
 
 // Pill Selector for Light Mode
 const PillSelector = ({ label, options, selectedValue, onChange }) => (
@@ -329,9 +330,8 @@ const ManageProductsPage = () => {
   const [activeTab, setActiveTab] = useState('All'); // 'All', 'In Stock', 'Low Stock', 'Out of Stock'
   
   // Category Modal State
-  const [categoryModal, setCategoryModal] = useState({ isOpen: false, type: '', action: '', oldName: '', mainName: '' });
-  const [categoryInput, setCategoryInput] = useState('');
-
+    const [isCategoriesManagerOpen, setIsCategoriesManagerOpen] = useState(false);
+  
   const [filterBrand, setFilterBrand] = useState('All');
   const [filterGender, setFilterGender] = useState('All');
   const [filterHighlight, setFilterHighlight] = useState('All');
@@ -906,10 +906,7 @@ const ManageProductsPage = () => {
           ))}
         </div>
         <button 
-          onClick={() => {
-             setCategoryInput('');
-             setCategoryModal({ isOpen: true, type: 'main', action: 'add', oldName: '', mainName: '' });
-          }}
+          onClick={() => setIsCategoriesManagerOpen(true)}
           style={{
             padding: '8px',
             border: 'none',
@@ -961,26 +958,7 @@ const ManageProductsPage = () => {
           </button>
         ))}
 
-        {activeMainCategory !== 'All' && (
-          <button 
-            onClick={() => {
-              setCategoryInput('');
-              setCategoryModal({ isOpen: true, type: 'sub', action: 'add', oldName: '', mainName: activeMainCategory });
-            }}
-            style={{
-              padding: '0 0 12px 0',
-              border: 'none',
-              background: 'transparent',
-              color: '#888',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-            title="Manage Subcategories"
-          >
-            <Settings size={14} />
-          </button>
-        )}
+
         
         <div style={{ flexGrow: 1 }}></div>
         {/* Keep Sorting */}
@@ -996,46 +974,7 @@ const ManageProductsPage = () => {
         </select>
       </div>
       
-      {/* CATEGORY MODAL */}
-      {categoryModal.isOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', width: '400px', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600 }}>
-              {categoryModal.action === 'add' ? 'Add' : 'Edit'} {categoryModal.type === 'main' ? 'Category' : 'Subcategory'}
-            </h3>
-            <input 
-              type="text"
-              value={categoryInput}
-              onChange={(e) => setCategoryInput(e.target.value)}
-              placeholder="e.g. Vintage Collections"
-              autoFocus
-              style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '24px', outline: 'none' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
-                onClick={() => setCategoryModal({ isOpen: false, type: '', action: '', oldName: '', mainName: '' })}
-                style={{ padding: '8px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 500 }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  if (!categoryInput.trim()) return;
-                  if (categoryModal.type === 'main') {
-                    addCategory(categoryInput.trim());
-                  } else {
-                    addSubCategory(categoryModal.mainName, categoryInput.trim());
-                  }
-                  setCategoryModal({ isOpen: false, type: '', action: '', oldName: '', mainName: '' });
-                }}
-                className={styles.btnPrimary}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
             </div>
             {/* MEGA FILTER PANEL */}
@@ -1193,6 +1132,10 @@ const ManageProductsPage = () => {
     
 
 
+      <CategoriesManagerModal 
+        isOpen={isCategoriesManagerOpen} 
+        onClose={() => setIsCategoriesManagerOpen(false)} 
+      />
       <ProductEditorDrawer 
         isOpen={editorConfig.isOpen}
         onClose={() => setEditorConfig({ ...editorConfig, isOpen: false })}

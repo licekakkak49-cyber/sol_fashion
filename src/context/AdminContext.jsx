@@ -146,11 +146,21 @@ export const AdminProvider = ({ children }) => {
         const { data, error } = await supabase
           .from('store_settings')
           .select('setting_value')
-          .eq('key_name', 'categories')
+          .eq('key_name', 'categories_v2')
           .single();
         
-        if (data && data.setting_value) {
-          setCategories(data.setting_value);
+        if (data && data.setting_value && Array.isArray(data.setting_value)) {
+          const newCats = {};
+          data.setting_value.forEach(cat => {
+            newCats[cat.name] = cat.subcategories;
+          });
+          setCategories(newCats);
+        } else {
+          // Fallback to old
+          const { data: oldData } = await supabase.from('store_settings').select('setting_value').eq('key_name', 'categories').single();
+          if (oldData && oldData.setting_value) {
+            setCategories(oldData.setting_value);
+          }
         }
       } catch (err) {
         console.warn("Could not fetch categories from Supabase, using local fallback.");
@@ -167,11 +177,16 @@ export const AdminProvider = ({ children }) => {
     
     // Only push to Supabase if we have already loaded the real data from it
     if (categoriesLoaded) {
+      const orderedArray = Object.keys(categories).map(key => ({
+        name: key,
+        subcategories: categories[key]
+      }));
+
       supabase
         .from('store_settings')
         .upsert({ 
-          key_name: 'categories', 
-          setting_value: categories 
+          key_name: 'categories_v2', 
+          setting_value: orderedArray 
         })
         .then(({ error }) => {
           if (error) console.error("Error syncing categories to Supabase:", error);
@@ -216,6 +231,48 @@ export const AdminProvider = ({ children }) => {
     }));
     setProducts(prev => prev.map(p => (p.mainCategory === mainName && p.subCategory === oldSub) ? { ...p, subCategory: newSub } : p));
     return true;
+  };
+
+  const deleteCategory = (mainName) => {
+    setCategories(prev => {
+      const newP = { ...prev };
+      delete newP[mainName];
+      return newP;
+    });
+  };
+
+  const deleteSubCategory = (mainName, subName) => {
+    setCategories(prev => {
+      const newP = { ...prev };
+      if (newP[mainName]) {
+        newP[mainName] = newP[mainName].filter(sub => sub !== subName);
+      }
+      return newP;
+    });
+  };
+
+  const reorderCategories = (newOrderKeys) => {
+    setCategories(prev => {
+      const newP = {};
+      newOrderKeys.forEach(key => {
+        if (prev[key]) newP[key] = prev[key];
+      });
+      // Ensure any missing keys are appended at the end
+      Object.keys(prev).forEach(key => {
+        if (!newP[key]) newP[key] = prev[key];
+      });
+      return newP;
+    });
+  };
+
+  const reorderSubCategories = (mainName, newOrderArr) => {
+    setCategories(prev => {
+      const newP = { ...prev };
+      if (newP[mainName]) {
+        newP[mainName] = newOrderArr;
+      }
+      return newP;
+    });
   };
   const [contentArticles, setContentArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -750,6 +807,10 @@ export const AdminProvider = ({ children }) => {
     addSubCategory,
     editCategory,
     editSubCategory,
+    deleteCategory,
+    deleteSubCategory,
+    reorderCategories,
+    reorderSubCategories,
     addContentArticle,
     updateContentArticle,
     deleteContentArticle,

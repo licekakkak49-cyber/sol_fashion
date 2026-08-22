@@ -1,0 +1,197 @@
+.sidebarOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sidebarContainer {
+  width: 50vw;
+  height: 100vh;
+  background-color: #f6f5f3;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .sidebarOverlay {
+    align-items: flex-end;
+  }
+  .sidebarContainer {
+    width: 100vw;
+    height: 90vh;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 24px 0;
+  border-bottom: 1px solid transparent;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 0 20px 0;
+  }
+}
+
+.title {
+  font-family: 'Futura PT', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  /* text-transform removed */
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #111;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 24px;
+  padding: 0;
+  margin-bottom: 32px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    padding: 0;
+    gap: 16px;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+  }
+  .tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+}
+
+.tabBtn {
+  background: none;
+  border: none;
+  padding: 12px 0;
+  font-family: 'Futura PT', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #888;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  position: relative;
+  white-space: nowrap;
+}
+
+.activeTab {
+  color: #111;
+  font-weight: 400;
+}
+
+.activeTab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #111;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 32px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 0 0 24px 0;
+  }
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 40px;
+}
+
+.sizeTable {
+  width: 100%;
+  border-collapse: collapse;
+  /* min-width removed to let content dictate size */
+}
+
+.sizeTable th {
+  padding: 16px 12px;
+  text-align: center;
+  font-family: 'Futura PT', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #111;
+  border-bottom: 1px solid #e5e5e5;
+  white-space: nowrap;
+}
+
+.sizeTable td {
+  padding: 16px 8px;
+  text-align: center;
+  font-family: 'Futura PT', sans-serif;
+  font-size: 14px;
+  color: #888;
+  border-bottom: 1px solid #e5e5e5;
+  white-space: nowrap;
+}
+
+.sizeTable th:first-child,
+.sizeTable td:first-child {
+  text-align: left;
+  font-weight: 400;
+  color: #111;
+  border-right: 1px solid #999;
+  width: 100px;
+}
+
+.footerNote {
+  font-family: 'Futura PT', sans-serif;
+  font-size: 14px;
+  color: #888;
+  line-height: 1.5;
+  margin-top: auto;
+}
+
+.innerContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* removed */
+  /* removed */
+  padding: 40px;
+  height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .innerContainer {
+    padding: 24px;
+    height: 90vh;
+    max-width: 100%;
+  }
+}

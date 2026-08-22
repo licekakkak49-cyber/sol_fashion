@@ -497,7 +497,6 @@ export default function SetsManager({ handleEdit, activeMainCategory, activeSubC
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 600, margin: '0 0 4px 0' }}>Visual Set Builder</h2>
-          <p style={{ color: '#666', margin: 0, fontSize: '14px' }}>Build complete looks and campaigns by arranging placeholders and uploading images directly.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button 

@@ -7,6 +7,7 @@ import { useAdmin } from '../context/AdminContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import styles from './ProductDetailPage.module.css';
+import SizeGuideDrawer from '../components/SizeGuideDrawer';
 
 const MOCK_IMAGES = [
   "https://www.keringeyewear.com/dam/jcr:1b521430-17e7-4319-b734-ff8d48428ccd/KeringEyewear_Website_Thumbnails_thintanium_5350_K292_PGT%20(1).jpg",
@@ -45,7 +46,8 @@ const ProductDetailPage = () => {
     
     // Add resize listener to handle orientation changes
     window.addEventListener('resize', handleSimilarScroll);
-    return () => window.removeEventListener('resize', handleSimilarScroll);
+    
+return () => window.removeEventListener('resize', handleSimilarScroll);
   }, []);
 
   const scrollSimilar = (direction) => {
@@ -55,8 +57,21 @@ const ProductDetailPage = () => {
     }
   };
 
+  const [activeVariant, setActiveVariant] = useState(null);
+
+  useEffect(() => {
+    if (product?.colorVariants?.length > 0) {
+      const mainVar = product.colorVariants.find(v => v.isMain);
+      setActiveVariant(mainVar || product.colorVariants[0]);
+    }
+  }, [product]);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  
   const displayImages = product 
-    ? (product.hoverImage ? [product.image, product.hoverImage] : [product.image]) 
+    ? (activeVariant && activeVariant.images && activeVariant.images.length > 0
+        ? activeVariant.images
+        : [product.image, product.hoverImage, ...(product.galleryImages || [])].filter(Boolean)
+      )
     : MOCK_IMAGES;
   
   const { toggleWishlist, openWishlistPopup, isInWishlist } = useWishlist();
@@ -135,6 +150,24 @@ const ProductDetailPage = () => {
     return val % 1 !== 0 ? val.toFixed(1) + ' mm' : val + ' mm';
   };
 
+  const getAvailableSizes = () => {
+    if (!product) return ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    if (product.mainCategory === 'Ready to Wear' || product.mainCategory === 'Clothing') {
+      return ['XS', 'S', 'M', 'L', 'XL'];
+    }
+    if (product.mainCategory === 'Accessories & Shoes' && product.subCategory) {
+      if (['Sandals', 'Heels', 'Flats', 'Shoes'].includes(product.subCategory)) {
+        return ['35', '36', '37', '38', '39', '40', '41', '42'];
+      }
+      return ['One Size']; 
+    }
+    if (product.mainCategory === 'Bags') {
+      return ['One Size'];
+    }
+    return ['One Size'];
+  };
+  const availableSizes = getAvailableSizes();
+
   return (
     <div className={styles.page}>
       <div className={styles.layout}>
@@ -184,7 +217,7 @@ const ProductDetailPage = () => {
             <div className={styles.headerRow}>
               <div>
                 <h1 className={styles.title}>{product ? product.name : 'Mori 02(BR)'}</h1>
-                <p className={styles.subtitle}>Ruched fitted dress.</p>
+                {product?.subtitle && <p className={styles.subtitle}>{product.subtitle}</p>}
                 <p className={styles.price}>
                   {product ? product.price : '฿ 10,180.00'}
                 </p>
@@ -195,20 +228,28 @@ const ProductDetailPage = () => {
             </div>
 
             {/* Color Swatches */}
-            <div className={styles.colorSection}>
-              <div className={styles.colorHeader}>
-                <div className={styles.swatches}>
-                  <button className={`${styles.swatchWrapper} ${styles.activeSwatch}`}>
-                    <div className={styles.swatch} style={{ background: '#111' }} />
-                  </button>
-                  <button className={`${styles.swatchWrapper}`}>
-                    <div className={styles.swatch} style={{ background: '#fff', border: '1px solid #ddd' }} />
-                  </button>
+            {product?.color_variants && product.color_variants.length > 0 && (
+              <div className={styles.colorSection}>
+                <div className={styles.colorHeader}>
+                  <div className={styles.swatches}>
+                    {/* Default Product Color (if we want to show it) or just loop variants */}
+                    {/* For simplicity, we just loop the variants */}
+                    {product.color_variants.map((variant, idx) => (
+                      <button 
+                        key={idx}
+                        onClick={() => setActiveVariant(activeVariant === variant ? null : variant)}
+                        className={`${styles.swatchWrapper} ${activeVariant === variant ? styles.activeSwatch : ''}`}
+                        title={variant.name}
+                      >
+                        <div className={styles.swatch} style={{ background: variant.hex, border: variant.hex.toLowerCase() === '#ffffff' ? '1px solid #ddd' : 'none' }} />
+                      </button>
+                    ))}
+                  </div>
+                  <span className={styles.colorLabel}>{activeVariant ? activeVariant.name : 'Select a color'}</span>
                 </div>
-                <span className={styles.colorLabel}>Black</span>
+                <div className={styles.sectionDivider}></div>
               </div>
-              <div className={styles.sectionDivider}></div>
-            </div>
+            )}
 
             {/* Size Section */}
             <div className={styles.sizeSection}>
@@ -217,10 +258,10 @@ const ProductDetailPage = () => {
               <div className={styles.desktopSizeSection}>
                 <div className={styles.sizeHeader}>
                   <span className={styles.sizeLabel} style={sizeError ? { color: 'red' } : {}}>Size</span>
-                  <button className={styles.sizeGuideBtn}>Size guide</button>
+                  <button className={styles.sizeGuideBtn} onClick={() => setIsSizeGuideOpen(true)}>Size guide</button>
                 </div>
                 <div className={styles.sizeOptions}>
-                  {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
+                  {availableSizes.map(size => (
                     <button 
                       key={size} 
                       className={`${styles.sizeBtn} ${selectedSize === size ? styles.activeSizeBtn : ''}`}
@@ -254,7 +295,7 @@ const ProductDetailPage = () => {
                   </div>
                 </button>
                 <div className={styles.mobileSizeFooter}>
-                  <button className={styles.sizeGuideBtn}>Size guide</button>
+                  <button className={styles.sizeGuideBtn} onClick={() => setIsSizeGuideOpen(true)}>Size guide</button>
                 </div>
               </div>
             </div>
@@ -295,13 +336,8 @@ const ProductDetailPage = () => {
                 <div className={`${styles.accordionContentWrapper} ${expandedSections['DETAILS'] ? styles.expandedContent : ''}`}>
                   <div className={styles.accordionContent}>
                     <div className={styles.accordionContentInner}>
-                      <p>Crafted with precision, this signature piece is designed for both comfort and understated elegance.</p>
-                      <br />
-                      <p>
-                        • Premium quality fabric<br/>
-                        • True to size fit<br/>
-                        • Dry clean only<br/>
-                        • Made in Italy
+                      <p style={{ whiteSpace: 'pre-wrap' }}>
+                        {product?.description || 'No details provided.'}
                       </p>
                     </div>
                   </div>
@@ -426,26 +462,37 @@ const ProductDetailPage = () => {
                 </button>
               </div>
               <div className={styles.mobileSizeDrawerContent}>
-                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-                  <button 
-                    key={size}
-                    className={`${styles.mobileSizeOption} ${selectedSize === size ? styles.mobileSizeOptionSelected : ''}`}
-                    onClick={() => {
-                      setSelectedSize(size);
-                      setIsMobileSizeDrawerOpen(false);
-                    }}
-                  >
-                    <span>{size}</span>
-                    {selectedSize === size && <span>✓</span>}
-                  </button>
-                ))}
+                {availableSizes.map((size) => {
+
+                        const hasVariant = !!activeVariant;
+                        const isOutOfStock = hasVariant && (!activeVariant.stock || !activeVariant.stock[size] || activeVariant.stock[size] < 1);
+                        return (
+                          <button 
+                            key={size}
+                            className={`${styles.mobileSizeOption} ${selectedSize === size ? styles.mobileSelected : ''} ${isOutOfStock ? styles.disabledSizeBtn : ''}`}
+                            onClick={() => {
+                              if (isOutOfStock) return;
+                              setSelectedSize(size);
+                              setSizeError(false);
+                              setIsMobileSizeDrawerOpen(false);
+                            }}
+                            disabled={isOutOfStock}
+                          >
+                            <span style={{ textDecoration: isOutOfStock ? 'line-through' : 'none' }}>{size}</span>
+                            {isOutOfStock && <span style={{fontSize: '12px', color: '#999', marginLeft: 'auto'}}>Out of stock</span>}
+                          </button>
+                        );
+                  })}
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SizeGuideDrawer isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
     </div>
   );
 };
+
 
 export default ProductDetailPage;

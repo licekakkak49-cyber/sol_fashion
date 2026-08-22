@@ -50,14 +50,14 @@ const shoeSizes = ['35', '36', '37', '38', '39', '40', '41', '42'].map(c => ({ l
 const heelHeights = ['Flat', '55mm', '85mm', '100mm'].map(c => ({ label: c, value: c }));
 const accSizes = ['One Size', 'S', 'M', 'L'].map(c => ({ label: c, value: c }));
 const materials = ['Cotton', 'Silk', 'Leather', 'Calfskin', 'Suede', 'Canvas', 'Nylon'].map(c => ({ label: c, value: c }));
-const highlightOptions = [{label: 'New Arrival', value: 'New Arrival'}, {label: 'Best Seller', value: 'Best Seller'}];
+const highlightOptions = [{label: 'New', value: 'new'}];
 
 export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialData, categories, brands, config }) {
   const [formData, setFormData] = useState({
-    name: '', brandId: '', price: '', sku: '', stock: '', description: '',
+    name: '', subtitle: '', brandId: '', price: '', sku: '', stock: '', description: '',
     mainCategory: '', subCategory: '', size: '', fit: '', material: '', modelInfo: '', careInstructions: '',
     dimLength: '', dimHeight: '', dimWidth: '', strapDrop: '', hardware: '', heelHeight: '', highlight: [],
-    coverImage: '', hoverImage: '', galleryImages: []
+    coverImage: '', hoverImage: '', galleryImages: [], colorVariants: []
   });
 
   const [cropState, setCropState] = useState({ src: null, target: null }); // target: 'cover' | 'hover'
@@ -80,21 +80,57 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         gallImgs = gallImgs.filter(img => img !== coverImg);
       }
 
+      // Auto-migrate legacy images into variants
+      let variants = Array.isArray(initialData.colorVariants) ? initialData.colorVariants : [];
+      if (variants.length === 0 && (coverImg || gallImgs.length > 0)) {
+        variants = [{
+          id: Date.now(),
+          name: 'Original',
+          hex: '#000000',
+          isMain: true,
+          stock: {},
+          images: [coverImg, hoverImg, ...gallImgs].filter(Boolean)
+        }];
+      } else {
+        variants = variants.map(v => {
+          if (!v.images && v.image) v.images = [v.image];
+          if (!v.images) v.images = [];
+          return v;
+        });
+      }
+
       setFormData({
         ...initialData,
         name: initialData.name || '',
+        subtitle: initialData.subtitle || '',
         price: initialData.price || '',
         stock: initialData.stock || '',
         mainCategory: initialData.mainCategory || (config?.defaultMainCategory || ''),
         subCategory: initialData.subCategory || (config?.defaultSubCategory || ''),
-        highlight: Array.isArray(initialData.highlight) ? initialData.highlight : [],
-        coverImage: coverImg,
-        hoverImage: hoverImg,
-        galleryImages: gallImgs
+        highlight: Array.isArray(initialData.tags) ? initialData.tags : (Array.isArray(initialData.highlight) ? initialData.highlight : []),
+        colorVariants: variants
       });
       setError('');
     }
   }, [isOpen, initialData, config]);
+
+  
+  const getAvailableSizes = () => {
+    if (!formData.mainCategory) return ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    if (formData.mainCategory === 'Ready to Wear' || formData.mainCategory === 'Clothing') {
+      return ['XS', 'S', 'M', 'L', 'XL'];
+    }
+    if (formData.mainCategory === 'Accessories & Shoes' && formData.subCategory) {
+      if (['Sandals', 'Heels', 'Flats', 'Shoes'].includes(formData.subCategory)) {
+        return ['35', '36', '37', '38', '39', '40', '41', '42'];
+      }
+      return ['One Size']; 
+    }
+    if (formData.mainCategory === 'Bags') {
+      return ['One Size'];
+    }
+    return ['One Size'];
+  };
 
   const handleChange = (field, val) => {
     setFormData(prev => ({ ...prev, [field]: val }));
@@ -130,12 +166,23 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         galleryUrls.push(await uploadImageToSupabase(img, 'gallery'));
       }
 
+      // Upload variant images
+      const uploadedVariants = [];
+      for (const variant of (formData.colorVariants || [])) {
+        let varUrl = variant.image;
+        if (varUrl && varUrl.startsWith('data:image')) {
+          varUrl = await uploadImageToSupabase(varUrl, 'variants');
+        }
+        uploadedVariants.push({ ...variant, image: varUrl });
+      }
+
       // Construct final payload
       const payload = {
         ...formData,
         coverImage: coverUrl,
         hoverImage: hoverUrl,
         galleryImages: galleryUrls,
+        colorVariants: uploadedVariants,
         status: parseInt(formData.stock) > 0 ? 'In Stock' : 'Out of Stock',
         image: coverUrl,
         images: [coverUrl, ...galleryUrls], // For legacy support
@@ -174,47 +221,124 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
           
           {error && <div style={{ padding: '12px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', color: '#d97706', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}><AlertTriangle size={16} />{error}</div>}
 
-          {/* Images Section */}
+          {/* Categories */}
+          {/* Color Variants Section */}
           <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>Images</h3>
-            
-            {/* Card Images (3:4) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-              <div>
-                <label style={labelStyle}>Cover Image (3:4) *</label>
-                <div style={{ ...uploadBoxStyle, aspectRatio: '3/4', border: formData.coverImage ? 'none' : '1px dashed #ccc' }} onClick={() => fileInputRefCover.current.click()}>
-                  {formData.coverImage ? <img src={formData.coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Cover" /> : <div style={{ textAlign: 'center', color: '#999' }}><Plus size={24} /><div style={{ fontSize: '11px', marginTop: '4px' }}>Upload Cover</div></div>}
-                  <input type="file" ref={fileInputRefCover} accept="image/*" onChange={(e) => handleFileChange(e, 'cover')} style={{ display: 'none' }} />
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>Hover Packshot (3:4)</label>
-                <div style={{ ...uploadBoxStyle, aspectRatio: '3/4', border: formData.hoverImage ? 'none' : '1px dashed #ccc' }} onClick={() => fileInputRefHover.current.click()}>
-                  {formData.hoverImage ? <img src={formData.hoverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Hover" /> : <div style={{ textAlign: 'center', color: '#999' }}><Plus size={24} /><div style={{ fontSize: '11px', marginTop: '4px' }}>Upload Hover</div></div>}
-                  <input type="file" ref={fileInputRefHover} accept="image/*" onChange={(e) => handleFileChange(e, 'hover')} style={{ display: 'none' }} />
-                </div>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>Color Variants</h3>
+              <button 
+                onClick={() => handleChange('colorVariants', [...(formData.colorVariants || []), { id: Date.now(), name: '', hex: '#000000', images: [], isMain: (formData.colorVariants || []).length === 0, stock: {} }])}
+                style={{ background: '#111', color: '#fff', border: 'none', borderRadius: '100px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Plus size={14} /> Add Color
+              </button>
             </div>
-
-            {/* Gallery Images */}
-            <div>
-              <label style={labelStyle}>Gallery Images (Any Size)</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                {formData.galleryImages.map((img, idx) => (
-                  <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden' }}>
-                    <img src={img} alt="Gallery" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button onClick={() => handleChange('galleryImages', formData.galleryImages.filter((_, i) => i !== idx))} style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', padding: '4px', cursor: 'pointer' }}><X size={12} /></button>
+            
+            {(formData.colorVariants || []).length === 0 ? null : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {(formData.colorVariants || []).map((variant, idx) => (
+                  <div key={variant.id || idx} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', background: '#fff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600 }}>Variant #{idx + 1}</span>
+                      <button 
+                        onClick={() => handleChange('colorVariants', formData.colorVariants.filter((_, i) => i !== idx))}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div>
+                        <label style={labelStyle}>Color Name</label>
+                        <input type="text" value={variant.name} onChange={(e) => {
+                          const newV = [...formData.colorVariants];
+                          newV[idx].name = e.target.value;
+                          handleChange('colorVariants', newV);
+                        }} style={inputStyle} placeholder="e.g. Midnight Blue" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Hex Code</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input type="color" value={variant.hex} onChange={(e) => {
+                            const newV = [...formData.colorVariants];
+                            newV[idx].hex = e.target.value;
+                            handleChange('colorVariants', newV);
+                          }} style={{ width: '36px', height: '36px', padding: 0, border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                          <input type="text" value={variant.hex} onChange={(e) => {
+                            const newV = [...formData.colorVariants];
+                            newV[idx].hex = e.target.value;
+                            handleChange('colorVariants', newV);
+                          }} style={{ ...inputStyle, flex: 1 }} />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div style={{ width: '200px' }}>
+                        <label style={labelStyle}>Variant Images</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {(variant.images || []).map((img, imgIdx) => (
+                            <div key={imgIdx} style={{ position: 'relative', width: '60px', height: '80px', borderRadius: '4px', overflow: 'hidden' }}>
+                              <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Variant img" />
+                              <button onClick={() => {
+                                const newV = [...formData.colorVariants];
+                                newV[idx].images = newV[idx].images.filter((_, i) => i !== imgIdx);
+                                handleChange('colorVariants', newV);
+                              }} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer' }}><X size={10} /></button>
+                              {imgIdx === 0 && <span style={{position:'absolute', bottom: 0, left:0, width:'100%', background:'rgba(0,0,0,0.6)', color:'#fff', fontSize:'9px', textAlign:'center'}}>Cover</span>}
+                              {imgIdx === 1 && <span style={{position:'absolute', bottom: 0, left:0, width:'100%', background:'rgba(0,0,0,0.6)', color:'#fff', fontSize:'9px', textAlign:'center'}}>Hover</span>}
+                            </div>
+                          ))}
+                          <label htmlFor={`variant-${idx}-upload`} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '60px', height: '80px', background: '#f9fafb', border: '1px dashed #ccc', borderRadius: '4px', cursor: 'pointer' }}>
+                            <UploadCloud size={16} color="#888" />
+                          </label>
+                          <input type="file" accept="image/*" id={`variant-${idx}-upload`} style={{ display: 'none' }} onChange={(e) => handleFileChange(e, `variant-${idx}`)} />
+                        </div>
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                          <input 
+                            type="radio" 
+                            id={`main-${idx}`}
+                            name="mainColor" 
+                            checked={variant.isMain || false} 
+                            onChange={() => {
+                              const newV = [...formData.colorVariants].map((v, i) => ({...v, isMain: i === idx}));
+                              handleChange('colorVariants', newV);
+                            }}
+                          />
+                          <label htmlFor={`main-${idx}`} style={{ fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>Set as Main Default Color</label>
+                        </div>
+                        
+                        <label style={labelStyle}>Stock by Size</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {getAvailableSizes().map(size => (
+                            <div key={size} style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '60px' }}>
+                              <span style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>{size}</span>
+                              <input 
+                                type="number" 
+                                min="0" 
+                                value={variant.stock?.[size] || 0} 
+                                onChange={(e) => {
+                                  const newV = [...formData.colorVariants];
+                                  if (!newV[idx].stock) newV[idx].stock = {};
+                                  newV[idx].stock[size] = parseInt(e.target.value) || 0;
+                                  handleChange('colorVariants', newV);
+                                }}
+                                style={{ ...inputStyle, padding: '8px', textAlign: 'center' }} 
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
-                <div style={{ ...uploadBoxStyle, aspectRatio: '1' }} onClick={() => fileInputRefGallery.current.click()}>
-                  <Plus size={20} color="#999" />
-                  <input type="file" ref={fileInputRefGallery} accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} style={{ display: 'none' }} />
-                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Categories */}
           <div>
             <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>Categorization</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -230,6 +354,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
             <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>Basic Info</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div><label style={labelStyle}>Product Name *</label><input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} style={inputStyle} placeholder="e.g. Silk Blouse" /></div>
+              <div><label style={labelStyle}>Subtitle</label><input type="text" value={formData.subtitle} onChange={(e) => handleChange('subtitle', e.target.value)} style={inputStyle} placeholder="e.g. Ruched fitted dress" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div><label style={labelStyle}>Price (฿) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} /></div>
                 <div><label style={labelStyle}>SKU</label><input type="text" value={formData.sku} onChange={(e) => handleChange('sku', e.target.value)} style={inputStyle} /></div>
@@ -311,9 +436,13 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
           allowAspectChange={cropState.target === 'gallery'}
           showFocusBox={false}
           onCropComplete={(croppedBase64) => {
-            if (cropState.target === 'cover') handleChange('coverImage', croppedBase64);
-            if (cropState.target === 'hover') handleChange('hoverImage', croppedBase64);
-            if (cropState.target === 'gallery') handleChange('galleryImages', [...formData.galleryImages, croppedBase64]);
+            if (cropState.target.startsWith('variant-')) {
+              const vIndex = parseInt(cropState.target.split('-')[1], 10);
+              const newVariants = [...(formData.colorVariants || [])];
+              if (!newVariants[vIndex].images) newVariants[vIndex].images = [];
+              newVariants[vIndex].images.push(croppedBase64);
+              handleChange('colorVariants', newVariants);
+            }
             setCropState({ src: null, target: null });
           }}
           onCancel={() => setCropState({ src: null, target: null })}

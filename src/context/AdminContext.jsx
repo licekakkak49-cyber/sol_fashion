@@ -210,7 +210,10 @@ export const AdminProvider = ({ children }) => {
           hoverImage: p.hover_image_url,
           galleryImages: p.gallery_images_urls || [],
           layoutSize: p.layout_size,
-          heelHeight: p.heel_height
+          heelHeight: p.heel_height,
+          subtitle: p.subtitle || '',
+          colorVariants: p.color_variants || [],
+          colors: (p.color_variants || []).map(v => v.hex).filter(Boolean)
         })));
       }
 

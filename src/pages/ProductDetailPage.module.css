@@ -865,3 +865,12 @@
   }
 }
 
+
+.disabledSizeBtn {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  text-decoration: line-through;
+  background-color: #f9f9f9 !important;
+  color: #ccc !important;
+  border-color: #eee !important;
+}

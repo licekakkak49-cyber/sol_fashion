@@ -10,17 +10,36 @@ const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, fill 
   </svg>
 );
 
-const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [], selectedColor, extraColorsCount, minimal = false, hideBookmark = false, isLarge = false, overlayMode = false }) => {
+const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [], colorVariants = [], selectedColor, extraColorsCount, minimal = false, hideBookmark = false, isLarge = false, overlayMode = false }) => {
   const { toggleWishlist, openWishlistPopup, isInWishlist } = useWishlist();
   const [manualFlip, setManualFlip] = React.useState(null); // null, true, false
+  const [activeVariantIdx, setActiveVariantIdx] = React.useState(() => {
+    if (!colorVariants || colorVariants.length === 0) return -1;
+    const mainIdx = colorVariants.findIndex(v => v.isMain);
+    return mainIdx >= 0 ? mainIdx : 0;
+  });
   
   const isSaved = isInWishlist(id);
 
-  const images = hoverImage ? [image, hoverImage] : [image];
+
+  let currentImage = image;
+  let currentHoverImage = hoverImage;
+  
+  if (activeVariantIdx >= 0 && colorVariants[activeVariantIdx]?.images?.length > 0) {
+    currentImage = colorVariants[activeVariantIdx].images[0];
+    currentHoverImage = colorVariants[activeVariantIdx].images[1] || null;
+  } else if (activeVariantIdx >= 0 && colorVariants[activeVariantIdx]?.image) {
+    // Legacy support
+    currentImage = colorVariants[activeVariantIdx].image;
+    currentHoverImage = null;
+  }
+
+  const images = currentHoverImage ? [currentImage, currentHoverImage] : [currentImage];
+
 
   const handleBookmarkClick = (e) => {
     e.preventDefault();
-    const product = { id, image, name, price };
+    const product = { id, image: currentImage, name, price };
     toggleWishlist(product);
     if (!isSaved) {
       openWishlistPopup(product);
@@ -29,12 +48,12 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
 
   const nextImage = (e) => {
     e.preventDefault();
-    if (hoverImage) setManualFlip(true);
+    if (currentHoverImage) setManualFlip(true);
   };
 
   const prevImage = (e) => {
     e.preventDefault();
-    if (hoverImage) setManualFlip(false);
+    if (currentHoverImage) setManualFlip(false);
   };
 
   let touchStartX = 0;
@@ -93,8 +112,9 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
                     {colors.map((c, i) => (
                       <div 
                         key={i} 
-                        className={`${styles.colorSquare} ${c === selectedColor ? styles.selectedColor : ''}`} 
-                        style={{ backgroundColor: c }}
+                        onClick={(e) => { e.preventDefault(); setActiveVariantIdx(activeVariantIdx === i ? -1 : i); }}
+                        className={`${styles.colorSquare} ${(activeVariantIdx === i || (activeVariantIdx === -1 && c === selectedColor)) ? styles.selectedColor : ''}`} 
+                        style={{ backgroundColor: c, cursor: 'pointer' }}
                       />
                     ))}
                     {extraColorsCount > 0 && (

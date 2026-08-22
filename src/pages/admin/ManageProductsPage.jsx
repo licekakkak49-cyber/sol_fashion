@@ -404,6 +404,7 @@ const ManageProductsPage = () => {
     
     const dbPayload = {
       name: payload.name,
+      subtitle: payload.subtitle || null,
       price: payload.price,
       main_category: payload.mainCategory,
       sub_category: payload.subCategory,
@@ -417,7 +418,9 @@ const ManageProductsPage = () => {
       size: payload.size,
       fit: payload.fit,
       hardware: payload.hardware,
-      heel_height: payload.heelHeight
+      heel_height: payload.heelHeight,
+      tags: payload.highlight || [],
+      color_variants: payload.colorVariants || []
     };
     
     try {
@@ -1003,17 +1006,7 @@ const ManageProductsPage = () => {
 
         
         <div style={{ flexGrow: 1 }}></div>
-        {/* Keep Sorting */}
-        <select 
-          value={sortBy} 
-          onChange={(e) => setSortBy(e.target.value)}
-          style={{ marginBottom: '12px', padding: '8px 16px', border: 'none', borderRadius: '100px', fontSize: '13px', outline: 'none', background: '#F3F4F6', color: '#111', cursor: 'pointer', fontWeight: 500 }}
-        >
-          <option value="Newest">Sort: Newest</option>
-          <option value="Oldest">Sort: Oldest</option>
-          <option value="Name A-Z">Sort: Name A-Z</option>
-          <option value="Name Z-A">Sort: Name Z-A</option>
-        </select>
+
       </div>
       
       

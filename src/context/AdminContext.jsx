@@ -5,129 +5,18 @@ const AdminContext = createContext();
 
 export const useAdmin = () => useContext(AdminContext);
 
-const MOCK_PRODUCTS = [
-  {"id": "1", "name": "Classic Mini Tote", "price": 8697, "stock": 8, "mainCategory": "Bags", "subCategory": "Bags", "status": "active", "layoutSize": "large", "image": "https://alemais.com/cdn/shop/files/7988D_6000x.jpg?v=1786473375", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "2", "name": "Canvas Shoulder Bag", "price": 1948, "stock": 4, "mainCategory": "Bags", "subCategory": "Bags", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/Disruptor_-_2_rows_3.jpg?v=1786331368&width=2000", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "3", "name": "Leather Tote", "price": 1477, "stock": 0, "mainCategory": "Bags", "subCategory": "Bags", "status": "draft", "layoutSize": "large", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-top-winifred-lace-blouse-1253883444_6000x.jpg?v=1786474157", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "4", "name": "Everyday Crossbody", "price": 7463, "stock": 29, "mainCategory": "Bags", "subCategory": "Bags", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8230A-1_6000x.jpg?v=1783657629", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "5", "name": "Woven Beach Tote", "price": 7742, "stock": 35, "mainCategory": "Bags", "subCategory": "Bags", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-jacket-spur-denim-jacket-1253883487_6000x.jpg?v=1786475956", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "6", "name": "Quilted Mini Bag", "price": 8078, "stock": 34, "mainCategory": "Bags", "subCategory": "Bags", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8076D_c7fc4759-d747-4c18-bf25-389f7b0219b0_6000x.jpg?v=1786332923", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "7", "name": "Slouchy Shoulder Bag", "price": 1935, "stock": 32, "mainCategory": "Bags", "subCategory": "Bags", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8116S_2b259435-913b-40d0-820f-da3729472494_6000x.jpg?v=1786333610", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "8", "name": "Strappy Heels", "price": 4469, "stock": 6, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8115T_49da3fae-0b9d-4d8e-b663-0f16b8c34c71_6000x.jpg?v=1786332736", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "9", "name": "Ballet Flats", "price": 8776, "stock": 0, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "active", "layoutSize": "small", "image": "https://cdn.shopify.com/s/files/1/0457/2990/6847/files/8084D_1200x.jpg?v=1784181396", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "10", "name": "Chunky Sneakers", "price": 6489, "stock": 31, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-pant-spur-denim-cropped-jean-1253882886_6000x.jpg?v=1786476495", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "11", "name": "Ankle Boots", "price": 2944, "stock": 0, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-jacket-spur-denim-jacket-1253883487_6000x.jpg?v=1786475956", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "12", "name": "Platform Sneakers", "price": 7470, "stock": 5, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8115T_49da3fae-0b9d-4d8e-b663-0f16b8c34c71_6000x.jpg?v=1786332736", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "13", "name": "Suede Knee Boots", "price": 6667, "stock": 0, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-pant-spur-denim-cropped-jean-1253882886_6000x.jpg?v=1786476495", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "14", "name": "Pointed Toe Flats", "price": 1202, "stock": 38, "mainCategory": "Shoes", "subCategory": "Shoes", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8075D_8cd95c7d-e125-4db9-a3e2-98804190e2d3_6000x.jpg?v=1786073558", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "15", "name": "Floral Midi Dress", "price": 2493, "stock": 19, "mainCategory": "Ready-to-Wear", "subCategory": "Maxi Dress", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8116S_2b259435-913b-40d0-820f-da3729472494_6000x.jpg?v=1786333610", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "16", "name": "Silk Slip Dress", "price": 5192, "stock": 0, "mainCategory": "Ready-to-Wear", "subCategory": "Maxi Dress", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/7988D_6000x.jpg?v=1786473375", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "17", "name": "Ribbed Knit Top", "price": 6825, "stock": 21, "mainCategory": "Ready-to-Wear", "subCategory": "Shirt", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8230A-1_6000x.jpg?v=1783657629", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "18", "name": "Linen Button Down", "price": 8164, "stock": 38, "mainCategory": "Ready-to-Wear", "subCategory": "Shirt", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8076D_c7fc4759-d747-4c18-bf25-389f7b0219b0_6000x.jpg?v=1786332923", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "19", "name": "Pleated Maxi Skirt", "price": 3613, "stock": 23, "mainCategory": "Ready-to-Wear", "subCategory": "Skirt", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8075D_8cd95c7d-e125-4db9-a3e2-98804190e2d3_6000x.jpg?v=1786073558", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "20", "name": "Denim Mini Skirt", "price": 1650, "stock": 7, "mainCategory": "Ready-to-Wear", "subCategory": "Skirt", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8115T_49da3fae-0b9d-4d8e-b663-0f16b8c34c71_6000x.jpg?v=1786332736", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "21", "name": "Oversized Blazer", "price": 7377, "stock": 0, "mainCategory": "Ready-to-Wear", "subCategory": "Shirt", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8115T_49da3fae-0b9d-4d8e-b663-0f16b8c34c71_6000x.jpg?v=1786332736", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "22", "name": "Trench Coat", "price": 2636, "stock": 32, "mainCategory": "Ready-to-Wear", "subCategory": "Shirt", "status": "active", "layoutSize": "large", "image": "https://alemais.com/cdn/shop/files/8076D_c7fc4759-d747-4c18-bf25-389f7b0219b0_6000x.jpg?v=1786332923", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "23", "name": "Cat Eye Sunglasses", "price": 3679, "stock": 0, "mainCategory": "Accessories", "subCategory": "Others", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-top-winifred-lace-blouse-1253883444_6000x.jpg?v=1786474157", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "24", "name": "Oversized Aviators", "price": 2739, "stock": 4, "mainCategory": "Accessories", "subCategory": "Others", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-jacket-spur-denim-jacket-1253883487_6000x.jpg?v=1786475956", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "25", "name": "Gold Hoop Earrings", "price": 2646, "stock": 38, "mainCategory": "Accessories", "subCategory": "Others", "status": "draft", "layoutSize": "large", "image": "https://alemais.com/cdn/shop/files/8116S_2b259435-913b-40d0-820f-da3729472494_6000x.jpg?v=1786333610", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "26", "name": "Layered Necklace", "price": 3971, "stock": 0, "mainCategory": "Accessories", "subCategory": "Others", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-top-winifred-lace-blouse-1253883444_6000x.jpg?v=1786474157", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "27", "name": "Straw Sun Hat", "price": 3871, "stock": 0, "mainCategory": "Accessories", "subCategory": "Head Piece", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/alemais-sustainable-pant-spur-denim-cropped-jean-1253882886_6000x.jpg?v=1786476495", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "28", "name": "Leather Waist Belt", "price": 7192, "stock": 8, "mainCategory": "Accessories", "subCategory": "Others", "status": "draft", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8230A-1_6000x.jpg?v=1783657629", "uploadDate": "2026-08-20T10:00:00.000Z"},
-  {"id": "29", "name": "Classic Buckle Belt", "price": 4782, "stock": 29, "mainCategory": "Accessories", "subCategory": "Others", "status": "active", "layoutSize": "small", "image": "https://alemais.com/cdn/shop/files/8076D_c7fc4759-d747-4c18-bf25-389f7b0219b0_6000x.jpg?v=1786332923", "uploadDate": "2026-08-20T10:00:00.000Z"},
-];
+const MOCK_PRODUCTS = [];
 
 
 export const AdminProvider = ({ children }) => {
   const [brands, setBrands] = useState([]);
   
-  const [sets, setSets] = useState(() => {
-    const saved = localStorage.getItem('sol_sets_v1');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [sets, setSets] = useState([]);
 
-  useEffect(() => {
-    localStorage.setItem('sol_sets_v1', JSON.stringify(sets));
-  }, [sets]);
 
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('sol_products_v6');
-    let parsed = saved ? JSON.parse(saved) : MOCK_PRODUCTS;
-    
-    // Auto-inject the new items if they don't exist yet
-    if (!parsed.find(p => p.id === '8')) {
-      const existingIds = parsed.map(p => p.id);
-      const newMocks = MOCK_PRODUCTS.filter(p => !existingIds.includes(p.id));
-      parsed = [...parsed, ...newMocks];
-    }
 
-    // Auto-inject demo tags
-    parsed = parsed.map(p => {
-      const newP = { ...p };
-      
-      if (!newP.tags) newP.tags = [];
-      
-      if (['1', '2'].includes(p.id)) {
-        if (!newP.tags.includes('NEW')) newP.tags.push('NEW');
-      } else {
-        // Randomly assign NEW to about 40% of the rest
-        if (Math.random() < 0.4 && !newP.tags.includes('NEW')) {
-          newP.tags.push('NEW');
-        }
-      }
-      
-      if (p.id === '2') {
-        newP.colors = ['#8b5a2b', '#000000', '#d4af37', '#f5f5dc', '#ffc0cb'];
-        newP.selectedColor = '#f5f5dc';
-        newP.extraColorsCount = 2;
-      }
-      
-      // Randomly inject colors into some other products
-      if (['4', '7'].includes(p.id)) {
-        newP.colors = ['#000000', '#ffffff'];
-        newP.selectedColor = '#000000';
-      }
-      
-      if (p.id === '5') {
-        newP.colors = ['#ff0000', '#00ff00', '#0000ff'];
-        newP.selectedColor = '#ff0000';
-        newP.extraColorsCount = 1;
-      }
+  const [products, setProducts] = useState([]);
 
-      if (['8', '11'].includes(p.id)) {
-        newP.colors = ['#e8e2d6'];
-        newP.selectedColor = '#e8e2d6';
-      }
-
-      // Assign categories for testing
-      if (!newP.mainCategory) {
-        const defaultCats = {
-          'Bags': ['Mini Bags', 'Shoulder Bags', 'Totes', 'Crossbody'],
-          'Shoes': ['Heels', 'Flats', 'Sneakers', 'Boots'],
-          'Ready-to-Wear': ['Dresses', 'Tops', 'Skirts', 'Outerwear'],
-          'Accessories': ['Sunglasses', 'Jewelry', 'Hats', 'Belts']
-        };
-        const mainKeys = Object.keys(defaultCats);
-        let randomMain = mainKeys[Math.floor(Math.random() * mainKeys.length)];
-        
-        // Let's manually map some known mock products for better realism
-        if (p.name.includes('Bag') || p.name.includes('basket')) randomMain = 'Bags';
-        else if (p.name.includes('bikini') || p.name.includes('Dress') || p.name.includes('skirt') || p.name.includes('Skirt')) randomMain = 'Ready-to-Wear';
-        else if (p.name.includes('sunglasses')) randomMain = 'Accessories';
-        else if (p.name.includes('Mules')) randomMain = 'Shoes';
-
-        newP.mainCategory = randomMain;
-        
-        const subs = defaultCats[randomMain];
-        newP.subCategory = subs[Math.floor(Math.random() * subs.length)];
-      }
-      
-      return newP;
-    });
-    
-    return parsed;
-  });
-  
   const [categories, setCategories] = useState(() => {
     const saved = localStorage.getItem('sol_categories_v3');
     return saved ? JSON.parse(saved) : {
@@ -317,6 +206,7 @@ export const AdminProvider = ({ children }) => {
           mainCategory: p.main_category,
           subCategory: p.sub_category,
           coverImage: p.cover_image_url,
+          image: p.cover_image_url,
           hoverImage: p.hover_image_url,
           galleryImages: p.gallery_images_urls || [],
           layoutSize: p.layout_size,
@@ -370,9 +260,7 @@ export const AdminProvider = ({ children }) => {
     fetchAllData();
   }, []);
 
-  useEffect(() => {
-    try { localStorage.setItem('sol_products_v6', JSON.stringify(products)); } catch (e) { console.error('LocalStorage Quota Exceeded:', e); alert('Storage limit reached! Please delete some old products to free up space.'); }
-  }, [products]);
+
 
   const addBrand = async (brand) => {
     const newId = Date.now().toString();

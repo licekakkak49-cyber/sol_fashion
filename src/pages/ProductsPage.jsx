@@ -49,10 +49,18 @@ const ProductsPage = ({ previewSets = null }) => {
 
   const filteredProducts = useMemo(() => {
     return (products || []).filter(product => {
+      // 0. Status check (exclude drafts)
+      const pStatus = (product.status || 'draft').toLowerCase();
+      if (!previewSets && pStatus === 'draft') return false;
+
       // 1. Navigation & Category Pill Filtering
-      if (mainParam && mainParam !== 'New In' && mainParam !== 'Explore') {
+      if (mainParam === 'New In' || activeCategory === 'New In') {
+        const hasNew = product.tags && (product.tags.includes('new') || product.tags.includes('New In'));
+        if (!hasNew) return false;
+      } else if (mainParam && mainParam !== 'Explore') {
         if (product.mainCategory !== mainParam) return false;
       }
+      
       if (activeCategory && activeCategory !== 'View all' && activeCategory !== 'New In') {
         if (product.subCategory !== activeCategory) return false;
       }
@@ -72,61 +80,128 @@ const ProductsPage = ({ previewSets = null }) => {
   const displayGroups = useMemo(() => {
     const buildRows = (items) => {
       const rows = [];
-      let currentBlock = [];
-      let currentCapacity = 4;
-      let currentBlocksInRow = [];
-      let currentRowType = null;
-
-      const pushCurrentBlock = () => {
-        if (currentBlock.length > 0) {
-          currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
-          currentBlock = [];
-          currentCapacity = 4;
+      let i = 0;
+      
+      while (i < items.length) {
+        const getLayoutSize = (item) => item.layoutSize || (item.isLarge ? 'large' : 'small');
+        
+        // Pattern 1: 4 smalls + 1 large (Large on right)
+        if (
+          i + 4 < items.length &&
+          getLayoutSize(items[i]) === 'small' &&
+          getLayoutSize(items[i+1]) === 'small' &&
+          (
+            (getLayoutSize(items[i+2]) === 'small' && getLayoutSize(items[i+3]) === 'small' && getLayoutSize(items[i+4]) === 'large') ||
+            (getLayoutSize(items[i+2]) === 'large' && getLayoutSize(items[i+3]) === 'small' && getLayoutSize(items[i+4]) === 'small')
+          )
+        ) {
+          const smalls = [items[i], items[i+1], items[i+2], items[i+3], items[i+4]].filter(item => getLayoutSize(item) === 'small');
+          const large = [items[i], items[i+1], items[i+2], items[i+3], items[i+4]].find(item => getLayoutSize(item) === 'large');
+          
+          rows.push({
+            type: 'standard',
+            blocks: [
+              { type: 'standard', items: smalls },
+              { type: 'standard', items: [large] }
+            ]
+          });
+          i += 5;
         }
-        
-        const maxBlocks = currentRowType === 'wide' ? 1 : 2;
-        
-        if (currentBlocksInRow.length === maxBlocks) {
-          rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
-          currentBlocksInRow = [];
-          currentRowType = null;
+        // Pattern 2: 1 large + 4 smalls (Large on left)
+        else if (
+          i + 4 < items.length &&
+          getLayoutSize(items[i]) === 'large' &&
+          getLayoutSize(items[i+1]) === 'small' &&
+          getLayoutSize(items[i+2]) === 'small' &&
+          getLayoutSize(items[i+3]) === 'small' &&
+          getLayoutSize(items[i+4]) === 'small'
+        ) {
+          rows.push({
+            type: 'standard',
+            blocks: [
+              { type: 'standard', items: [items[i]] },
+              { type: 'standard', items: [items[i+1], items[i+2], items[i+3], items[i+4]] }
+            ]
+          });
+          i += 5;
         }
-      };
-
-      items.forEach(product => {
-        const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
-        const productType = layoutSize === 'wide' ? 'wide' : 'standard';
-        const requiredCapacity = layoutSize === 'large' ? 4 : 1;
-        
-        if (currentRowType !== null && currentRowType !== productType) {
-          pushCurrentBlock();
-          if (currentBlocksInRow.length > 0) {
-            rows.push({ type: currentRowType, blocks: currentBlocksInRow });
-            currentBlocksInRow = [];
+        // Pattern 3: 4 smalls (Row)
+        else if (
+          i + 3 < items.length &&
+          getLayoutSize(items[i]) === 'small' &&
+          getLayoutSize(items[i+1]) === 'small' &&
+          getLayoutSize(items[i+2]) === 'small' &&
+          getLayoutSize(items[i+3]) === 'small'
+        ) {
+          rows.push({
+            type: 'standard',
+            blocks: [
+              { type: 'standard', items: [items[i], items[i+1], items[i+2], items[i+3]] }
+            ]
+          });
+          i += 4;
+        }
+        // Wide support
+        else if (getLayoutSize(items[i]) === 'wide') {
+          rows.push({
+            type: 'wide',
+            blocks: [{ type: 'wide', items: [items[i]] }]
+          });
+          i++;
+        }
+        // Fallback: Pack remaining items greedily (like old algorithm but strictly enforcing capacity)
+        else {
+          const blocks = [];
+          let currentBlock = [];
+          let currentCapacity = 4;
+          
+          while (i < items.length && blocks.length < 2) {
+            const size = getLayoutSize(items[i]);
+            if (size === 'wide') break; // break out to handle wide in next iteration
+            
+            const req = size === 'large' ? 4 : 1;
+            
+            if (req > currentCapacity && currentBlock.length > 0) {
+              blocks.push({ type: 'standard', items: currentBlock });
+              currentBlock = [];
+              currentCapacity = 4;
+              if (blocks.length === 2) break; // Row is full
+            }
+            
+            if (req === 4) { // large item takes whole block
+              if (currentBlock.length > 0) {
+                blocks.push({ type: 'standard', items: currentBlock });
+                currentBlock = [];
+                currentCapacity = 4;
+              }
+              if (blocks.length < 2) {
+                blocks.push({ type: 'standard', items: [items[i]] });
+                i++;
+              }
+              if (blocks.length === 2) break;
+              continue;
+            } else {
+              currentBlock.push(items[i]);
+              currentCapacity -= req;
+              i++;
+              
+              if (currentCapacity === 0) {
+                blocks.push({ type: 'standard', items: currentBlock });
+                currentBlock = [];
+                currentCapacity = 4;
+              }
+            }
+          }
+          
+          if (currentBlock.length > 0 && blocks.length < 2) {
+            blocks.push({ type: 'standard', items: currentBlock });
+          }
+          
+          if (blocks.length > 0) {
+            rows.push({ type: 'standard', blocks });
           }
         }
-        
-        currentRowType = productType;
-        
-        if (requiredCapacity > currentCapacity && currentBlock.length > 0) {
-          pushCurrentBlock();
-        }
-
-        currentBlock.push(product);
-        currentCapacity -= requiredCapacity;
-
-        if (currentCapacity === 0) {
-          pushCurrentBlock();
-        }
-      });
-
-      if (currentBlock.length > 0) {
-        currentBlocksInRow.push({ type: currentRowType || 'standard', items: currentBlock });
       }
-      if (currentBlocksInRow.length > 0) {
-        rows.push({ type: currentRowType || 'standard', blocks: currentBlocksInRow });
-      }
-
       return rows;
     };
 
@@ -134,9 +209,16 @@ const ProductsPage = ({ previewSets = null }) => {
     const activeSets = (sets || []).filter(s => {
        // 1. Navigation & Category Pill Filtering
        if (!previewSets) {
-         if (mainParam && mainParam !== 'New In' && mainParam !== 'Explore') {
+         if (mainParam === 'New In' || activeCategory === 'New In') {
+            const hasNewProd = (s.items || []).some(setItem => {
+               const p = (products || []).find(prod => prod.id === setItem.productId);
+               return p && p.tags && (p.tags.includes('new') || p.tags.includes('New In'));
+            });
+            if (!hasNewProd) return false;
+         } else if (mainParam && mainParam !== 'Explore') {
            if (s.mainCategory !== mainParam) return false;
          }
+         
          if (activeCategory && activeCategory !== 'View all' && activeCategory !== 'New In') {
            if (s.subCategory !== activeCategory) return false;
          }
@@ -157,7 +239,8 @@ const ProductsPage = ({ previewSets = null }) => {
 
     activeSets.forEach(set => {
        const setItems = (set.items || []).map(setItem => {
-          const product = filteredProducts.find(p => p.id === setItem.productId);
+          // Look up in ALL products to ensure we show the WHOLE set, even if some parts aren't "New"
+          const product = (products || []).find(p => p.id === setItem.productId);
           if (product) {
              return { ...product, layoutSize: setItem.layoutSize };
           }
@@ -184,9 +267,20 @@ const ProductsPage = ({ previewSets = null }) => {
        }
     });
 
+    // Gather ALL product IDs that belong to ANY set (published, draft, or filtered out)
+    const allAssignedProductIds = new Set();
+    (sets || []).forEach(s => {
+       (s.items || []).forEach(item => {
+          if (!item.isPlaceholder && item.productId) {
+             allAssignedProductIds.add(item.productId);
+          }
+       });
+    });
+
     const unassignedItems = [];
     for (let product of filteredProducts) {
-       if (!assignedProductIds.has(product.id) && displayProductCount < visibleCount) {
+       // Only show products that are NOT in ANY set
+       if (!allAssignedProductIds.has(product.id) && displayProductCount < visibleCount) {
           unassignedItems.push(product);
           displayProductCount++;
        }

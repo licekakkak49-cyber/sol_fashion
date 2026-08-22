@@ -43,18 +43,23 @@ const SetAccordion = ({ set, products, updateSet, deleteSet, removeProductFromSe
          i + 4 < setProducts.length &&
          setProducts[i].layoutSize === 'small' &&
          setProducts[i+1].layoutSize === 'small' &&
-         setProducts[i+2].layoutSize === 'small' &&
-         setProducts[i+3].layoutSize === 'small' &&
-         setProducts[i+4].layoutSize === 'large'
+         (
+           (setProducts[i+2].layoutSize === 'small' && setProducts[i+3].layoutSize === 'small' && setProducts[i+4].layoutSize === 'large') ||
+           (setProducts[i+2].layoutSize === 'large' && setProducts[i+3].layoutSize === 'small' && setProducts[i+4].layoutSize === 'small')
+         )
        ) {
-          blockMarkers.push({ y: currentY, startIndex: i, length: 5, type: '4+1' });
-          layout.push({ i: setProducts[i].id,   x: 0, y: currentY, w: 1, h: 1 });
-          layout.push({ i: setProducts[i+1].id, x: 1, y: currentY, w: 1, h: 1 });
-          layout.push({ i: setProducts[i+2].id, x: 0, y: currentY+1, w: 1, h: 1 });
-          layout.push({ i: setProducts[i+3].id, x: 1, y: currentY+1, w: 1, h: 1 });
-          layout.push({ i: setProducts[i+4].id, x: 2, y: currentY, w: 2, h: 2 });
+          const blockItems = [setProducts[i], setProducts[i+1], setProducts[i+2], setProducts[i+3], setProducts[i+4]];
+          const smalls = blockItems.filter(p => p.layoutSize === 'small');
+          const large = blockItems.find(p => p.layoutSize === 'large');
           
-          for(let j=0; j<5; j++) renderItems.push({ isPlaceholder: setProducts[i+j].isPlaceholder, product: setProducts[i+j] });
+          blockMarkers.push({ y: currentY, startIndex: i, length: 5, type: '4+1' });
+          layout.push({ i: smalls[0].id, x: 0, y: currentY, w: 1, h: 1 });
+          layout.push({ i: smalls[1].id, x: 1, y: currentY, w: 1, h: 1 });
+          layout.push({ i: smalls[2].id, x: 0, y: currentY+1, w: 1, h: 1 });
+          layout.push({ i: smalls[3].id, x: 1, y: currentY+1, w: 1, h: 1 });
+          layout.push({ i: large.id, x: 2, y: currentY, w: 2, h: 2 });
+          
+          for(let j=0; j<5; j++) renderItems.push({ isPlaceholder: blockItems[j].isPlaceholder, product: blockItems[j] });
           i += 5;
           currentY += 2;
        }

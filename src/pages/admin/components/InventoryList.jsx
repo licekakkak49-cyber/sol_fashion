@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Edit2, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Package } from 'lucide-react';
 
-export default function InventoryList({ products, handleEdit, handleDelete }) {
+export default function InventoryList({ products, handleEdit, handleDelete, toggleProductStatus }) {
   const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
 
   const sortedProducts = useMemo(() => {
@@ -115,7 +115,9 @@ export default function InventoryList({ products, handleEdit, handleDelete }) {
                   </span>
                 </td>
                 <td style={{ padding: '16px' }}>
-                  <span style={{ 
+                  <span 
+                    onClick={(e) => { e.stopPropagation(); if (toggleProductStatus) toggleProductStatus(product); }}
+                    style={{ 
                     display: 'inline-flex', 
                     alignItems: 'center', 
                     padding: '4px 10px', 
@@ -124,9 +126,11 @@ export default function InventoryList({ products, handleEdit, handleDelete }) {
                     fontWeight: 600,
                     background: product.status === 'active' ? '#e0e7ff' : '#f3f4f6',
                     color: product.status === 'active' ? '#4f46e5' : '#4b5563',
-                    textTransform: 'capitalize'
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    transition: 'all 0.2s'
                   }}>
-                    {product.status || 'draft'}
+                    {product.status === 'active' ? 'Published' : 'Draft'}
                   </span>
                 </td>
                 <td style={{ padding: '16px', textAlign: 'right' }}>

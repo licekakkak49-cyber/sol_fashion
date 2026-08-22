@@ -193,13 +193,49 @@ const ManageProductsPage = () => {
     
     // Background DB update
     const { error } = await supabase.from('sets').update(dbUpdate).eq('id', setId);
+    
+    // Cascade status to all products in the set
+    if (updatedData.status !== undefined) {
+      const setToUpdate = sets.find(s => s.id === setId);
+      if (setToUpdate && setToUpdate.items) {
+        const productIds = setToUpdate.items
+          .filter(item => !item.isPlaceholder && item.productId)
+          .map(item => item.productId);
+          
+        if (productIds.length > 0) {
+          const newProductStatus = updatedData.status === 'published' ? 'active' : 'draft';
+          await supabase.from('products').update({ status: newProductStatus }).in('id', productIds);
+          // Optimistically update products state
+          setProducts(prev => prev.map(p => productIds.includes(p.id) ? { ...p, status: newProductStatus } : p));
+        }
+      }
+    }
+
     if (error) {
       console.error("Update set error:", error);
       fetchData(); // Rollback if error
+    } else if (updatedData.status !== undefined) {
+      // Re-fetch to ensure product list updates properly
+      fetchData();
     }
   };
 
   const deleteSet = async (setId) => {
+    if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเซ็ตนี้ รวมถึง 'สินค้าทั้งหมด' ที่อยู่ในเซ็ต? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
+      return;
+    }
+
+    const setToDelete = sets.find(s => s.id === setId);
+    if (setToDelete && setToDelete.items) {
+      const productIdsToDelete = setToDelete.items
+        .filter(item => !item.isPlaceholder && item.productId)
+        .map(item => item.productId);
+      
+      if (productIdsToDelete.length > 0) {
+        await supabase.from('products').delete().in('id', productIdsToDelete);
+      }
+    }
+
     await supabase.from('sets').delete().eq('id', setId);
     fetchData();
   };
@@ -266,6 +302,12 @@ const ManageProductsPage = () => {
     }));
   };
   
+  const toggleProductStatus = async (product) => {
+    const newStatus = (product.status || 'draft').toLowerCase() === 'draft' ? 'active' : 'draft';
+    await supabase.from('products').update({ status: newStatus }).eq('id', product.id);
+    fetchData(); // Refresh list
+  };
+
   const deleteProduct = async (id) => {
     await supabase.from('products').delete().eq('id', id);
     fetchData();
@@ -1105,6 +1147,7 @@ const ManageProductsPage = () => {
             products={filteredProducts} 
             handleEdit={handleEdit} 
             handleDelete={deleteProduct} 
+            toggleProductStatus={toggleProductStatus}
           />
         ) : !activeSubCategory || activeSubCategory === 'All' ? (
           <div style={{ padding: '64px', textAlign: 'center', color: '#888' }}>

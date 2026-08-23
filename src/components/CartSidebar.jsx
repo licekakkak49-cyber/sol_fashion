@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
@@ -7,6 +8,12 @@ import styles from './CartSidebar.module.css';
 
 const CartSidebar = () => {
   const { isCartOpen, closeCart, cartItems, removeFromCart, updateQuantity, cartTotal, formatPrice } = useCart();
+  const navigate = useNavigate();
+  
+  const handleCheckout = () => {
+    closeCart();
+    navigate('/checkout');
+  };
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -93,7 +100,7 @@ const CartSidebar = () => {
                         <div className={styles.itemDetails}>
                           <div className={styles.itemHeaderRow}>
                             <h3 className={styles.itemName}>{item.name}</h3>
-                            <span className={styles.itemPrice}>{item.price}</span>
+                            <span className={styles.itemPrice}>{formatPrice(item.price)}</span>
                           </div>
                           <div className={styles.itemMeta}>
                             {/* We don't have color in product object right now, hardcoding mock color if needed, or omit */}
@@ -150,7 +157,7 @@ const CartSidebar = () => {
                     </div>
                   </div>
                   
-                  <button className={styles.checkoutBtn}>
+                  <button className={styles.checkoutBtn} onClick={handleCheckout}>
                     PROCEED TO CHECKOUT
                   </button>
                   

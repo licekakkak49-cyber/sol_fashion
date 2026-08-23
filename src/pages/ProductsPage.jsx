@@ -68,8 +68,25 @@ const ProductsPage = ({ previewSets = null }) => {
       // 2. Sidebar Filters
       for (const [category, values] of Object.entries(selectedFilters)) {
         if (values.length > 0) {
-          if (!values.includes(product[category])) {
-            return false;
+          if (category === 'size') {
+            const hasSize = (product.colorVariants || []).some(v => 
+              v.stock && Object.entries(v.stock).some(([sz, qty]) => values.includes(sz) && parseInt(qty) > 0)
+            );
+            if (!hasSize) return false;
+          } else if (category === 'color') {
+            const hasColor = (product.colorVariants || []).some(v => {
+              if (!values.includes(v.name)) return false;
+              return v.stock && Object.values(v.stock).some(qty => parseInt(qty) > 0);
+            });
+            if (!hasColor) return false;
+          } else if (category === 'category') {
+            if (!values.includes(product.mainCategory) && !values.includes(product.subCategory)) return false;
+          } else if (category === 'line') {
+            const hasLine = (product.tags || []).some(t => values.includes(t));
+            if (!hasLine) return false;
+          } else {
+            // fallback
+            if (!values.includes(product[category])) return false;
           }
         }
       }
@@ -444,6 +461,7 @@ const ProductsPage = ({ previewSets = null }) => {
         <GlobalFilterPanel 
           isOpen={isFilterOpen}
           selectedFilters={selectedFilters}
+          products={products}
           onFilterChange={handleFilterChange}
           sortBy={sortBy}
           onSortChange={setSortBy}

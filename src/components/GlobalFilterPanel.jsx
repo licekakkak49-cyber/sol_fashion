@@ -25,10 +25,59 @@ const FILTER_DATA = {
   line: ['Le Chouchou', 'L\'Amour', 'Les Sculptures', 'Le Raphia', 'La Montagne', 'Le Splash']
 };
 
-const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCount, onClose, removeFilter, onClearAll }) => {
+const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCount, onClose, removeFilter, onClearAll, products = [] }) => {
   const [openSection, setOpenSection] = useState('COLOR');
 
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Dynamically extract available options from products
+  const { dynamicFilterData, colorMap } = React.useMemo(() => {
+    const available = { color: new Set(), size: new Set(), category: new Set(), line: new Set() };
+    const mapOfColors = {};
+    
+    products.forEach(p => {
+      if (p.mainCategory) available.category.add(p.mainCategory);
+      if (p.subCategory) available.category.add(p.subCategory);
+      
+      if (p.tags && Array.isArray(p.tags)) {
+        p.tags.forEach(t => available.line.add(t));
+      }
+      
+      (p.colorVariants || []).forEach(v => {
+        let hasAnyStock = false;
+        if (v.stock) {
+          Object.entries(v.stock).forEach(([sz, qty]) => {
+            if (parseInt(qty) > 0) {
+              available.size.add(sz);
+              hasAnyStock = true;
+            }
+          });
+        }
+        
+        // Only show color if it actually has stock
+        if (v.name && hasAnyStock) {
+          available.color.add(v.name);
+          if (!mapOfColors[v.name] && v.hex) {
+            mapOfColors[v.name] = v.hex;
+          }
+        }
+      });
+    });
+
+    const result = {
+      color: FILTER_DATA.color.filter(c => available.color.has(c)),
+      size: FILTER_DATA.size.filter(s => available.size.has(s)),
+      category: FILTER_DATA.category.filter(c => available.category.has(c)),
+      line: FILTER_DATA.line.filter(l => available.line.has(l))
+    };
+    
+    available.color.forEach(c => { if (!result.color.includes(c)) result.color.push(c); });
+    available.size.forEach(s => { if (!result.size.includes(s)) result.size.push(s); });
+    available.category.forEach(c => { if (!result.category.includes(c)) result.category.push(c); });
+    available.line.forEach(l => { if (!result.line.includes(l)) result.line.push(l); });
+
+    return { dynamicFilterData: result, colorMap: mapOfColors };
+  }, [products]);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
@@ -42,14 +91,18 @@ const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCo
   };
 
   const getDotColor = (colorName) => {
-    const map = {
+    // Return backend hex first, fallback to basic CSS color
+    if (colorMap[colorName]) return colorMap[colorName];
+    
+    // Fallback for defaults if somehow missing
+    const fallbackMap = {
       'Beige': '#e8dec9', 'Black': '#000000', 'Blue': '#1c39bb',
       'Brown': '#5c4033', 'Gold': '#d4af37', 'Green': '#228b22',
       'Grey': '#808080', 'Navy': '#000080', 'Orange': '#ffa500',
       'Pink': '#ffc0cb', 'Red': '#ff0000', 'Silver': '#c0c0c0',
       'White': '#ffffff', 'Yellow': '#ffd700'
     };
-    return map[colorName] || colorName.toLowerCase();
+    return fallbackMap[colorName] || colorName.toLowerCase();
   };
 
   const renderColorOptions = (category, data) => (
@@ -150,7 +203,7 @@ const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCo
                         transition={{ duration: 0.3 }}
                       >
                         <div className={styles.accordionInner}>
-                          {renderColorOptions('color', FILTER_DATA.color)}
+                          {renderColorOptions('color', dynamicFilterData.color)}
                         </div>
                       </motion.div>
                     )}
@@ -172,7 +225,7 @@ const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCo
                         transition={{ duration: 0.3 }}
                       >
                         <div className={styles.accordionInner}>
-                          {renderBoxOptions('size', FILTER_DATA.size, true)}
+                          {renderBoxOptions('size', dynamicFilterData.size, true)}
                         </div>
                       </motion.div>
                     )}
@@ -194,13 +247,14 @@ const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCo
                         transition={{ duration: 0.3 }}
                       >
                         <div className={styles.accordionInner}>
-                          {renderBoxOptions('category', FILTER_DATA.category)}
+                          {renderBoxOptions('category', dynamicFilterData.category)}
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
+                {dynamicFilterData.line && dynamicFilterData.line.length > 0 && (
                 <div className={styles.accordionItem}>
                   <button className={styles.accordionHeader} onClick={() => toggleSection('LINE')}>
                     <span>LINE</span>
@@ -216,17 +270,33 @@ const GlobalFilterPanel = ({ isOpen, selectedFilters, onFilterChange, filteredCo
                         transition={{ duration: 0.3 }}
                       >
                         <div className={styles.accordionInner}>
-                          {renderBoxOptions('line', FILTER_DATA.line)}
+                          {renderBoxOptions('line', dynamicFilterData.line)}
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
+                )}
               </div>
               </div>
             </div>
 
             <div className={styles.footer}>
+              {Object.keys(selectedFilters || {}).some(k => selectedFilters[k] && selectedFilters[k].length > 0) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+                  {Object.entries(selectedFilters || {}).flatMap(([cat, vals]) => 
+                    vals.map(val => (
+                      <span 
+                        key={`${cat}-${val}`} 
+                        onClick={() => removeFilter(cat, val)}
+                        style={{ fontFamily: '"Futura PT", "Helvetica Neue", Arial, sans-serif', fontSize: '12px', fontWeight: 400, letterSpacing: '0.05em', color: 'rgb(30, 30, 30)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase' }}
+                      >
+                        {val} <X size={12} strokeWidth={2} color="#999" style={{ transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#111'} onMouseOut={(e) => e.currentTarget.style.color = '#999'} />
+                      </span>
+                    ))
+                  )}
+                </div>
+              )}
               <div className={styles.innerContent} style={{ display: 'flex', gap: '6px', width: '100%' }}>
                 <button className={styles.resetBtn} onClick={onClearAll}>
                 RESET

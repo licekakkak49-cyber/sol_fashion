@@ -137,6 +137,7 @@ const ManageProductsPage = () => {
         hoverImage: p.hover_image_url,
         galleryImages: p.gallery_images_urls,
         layoutSize: p.layout_size,
+        colorVariants: p.color_variants,
         heelHeight: p.heel_height,
         image: p.cover_image_url
       }));
@@ -397,6 +398,28 @@ const ManageProductsPage = () => {
       initialData: product,
       targetSetId: setId
     });
+  };
+
+  const handleFastUpdate = async (payload) => {
+    if (!payload.id) return;
+    try {
+      const dbPayload = {
+        stock: payload.stock,
+        status: payload.status,
+        color_variants: payload.colorVariants
+      };
+      
+      const { error } = await supabase
+        .from('products')
+        .update(dbPayload)
+        .eq('id', payload.id);
+        
+      if (error) throw error;
+      fetchData(); // Reload inventory list
+    } catch (err) {
+      console.error('Error fast updating product:', err);
+      alert('Failed to update stock. See console for details.');
+    }
   };
 
   const handleSaveProduct = async (payload) => {
@@ -1141,6 +1164,7 @@ const ManageProductsPage = () => {
             handleEdit={handleEdit} 
             handleDelete={deleteProduct} 
             toggleProductStatus={toggleProductStatus}
+            handleFastUpdate={handleFastUpdate}
           />
         ) : !activeSubCategory || activeSubCategory === 'All' ? (
           <div style={{ padding: '64px', textAlign: 'center', color: '#888' }}>

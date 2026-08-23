@@ -164,6 +164,8 @@ export const AdminProvider = ({ children }) => {
     });
   };
   const [contentArticles, setContentArticles] = useState([]);
+  const [homepageModules, setHomepageModules] = useState([]);
+  const [homepageGridItems, setHomepageGridItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Basic Admin Auth State
@@ -228,7 +230,21 @@ export const AdminProvider = ({ children }) => {
         })));
       }
 
+
+      // Fetch Homepage Grid Items
+      const { data: gridData } = await supabase.from('homepage_grid_items').select('*').order('grid_index', { ascending: true });
+      if (gridData) {
+        setHomepageGridItems(gridData.map(item => ({
+          id: item.id,
+          layoutSize: item.layout_size,
+          contentType: item.content_type,
+          contentData: item.content_data || {},
+          gridIndex: item.grid_index
+        })));
+      }
+
       // 3. Fetch Articles & Modules
+
       const { data: articlesData } = await supabase.from('content_articles').select(`
         *,
         content_modules (*)
@@ -666,12 +682,137 @@ export const AdminProvider = ({ children }) => {
     return true;
   };
 
+
+  
+  const addHomepageGridItem = async (item) => {
+    const newId = crypto.randomUUID();
+    const dbItem = {
+      id: newId,
+      layout_size: item.layoutSize || '1x1',
+      content_type: item.contentType || 'placeholder',
+      content_data: item.contentData || {},
+      grid_index: item.gridIndex || homepageGridItems.length
+    };
+    
+    const { error } = await supabase.from('homepage_grid_items').insert([dbItem]);
+    if (!error) {
+      setHomepageGridItems(prev => [...prev, {
+        id: newId,
+        layoutSize: dbItem.layout_size,
+        contentType: dbItem.content_type,
+        contentData: dbItem.content_data,
+        gridIndex: dbItem.grid_index
+      }]);
+    } else {
+      console.error("Error adding grid item:", error);
+    }
+  };
+
+  const updateHomepageGridItem = async (id, updates) => {
+    const dbUpdates = {};
+    if (updates.layoutSize !== undefined) dbUpdates.layout_size = updates.layoutSize;
+    if (updates.contentType !== undefined) dbUpdates.content_type = updates.contentType;
+    if (updates.contentData !== undefined) dbUpdates.content_data = updates.contentData;
+    if (updates.gridIndex !== undefined) dbUpdates.grid_index = updates.gridIndex;
+
+    setHomepageGridItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+    const { error } = await supabase.from('homepage_grid_items').update(dbUpdates).eq('id', id);
+    if (error) console.error("Error updating grid item:", error);
+  };
+
+  const deleteHomepageGridItem = async (id) => {
+    setHomepageGridItems(prev => prev.filter(item => item.id !== id));
+    await supabase.from('homepage_grid_items').delete().eq('id', id);
+  };
+
+  const updateGridOrder = async (newItemsOrder) => {
+    setHomepageGridItems(newItemsOrder);
+    
+    // Bulk update positions and layout_size
+    for (let i = 0; i < newItemsOrder.length; i++) {
+      await supabase.from('homepage_grid_items').update({ 
+        grid_index: i,
+        layout_size: newItemsOrder[i].layoutSize 
+      }).eq('id', newItemsOrder[i].id);
+    }
+  };
+
+  const updateHomepageModule = async (id, updatedFields) => {
+    const dbUpdate = {};
+    if (updatedFields.data !== undefined) dbUpdate.data = updatedFields.data;
+    if (updatedFields.isVisible !== undefined) dbUpdate.is_visible = updatedFields.isVisible;
+    if (updatedFields.displayOrder !== undefined) dbUpdate.display_order = updatedFields.displayOrder;
+    if (updatedFields.type !== undefined) dbUpdate.type = updatedFields.type;
+
+    const { error } = await supabase.from('homepage_modules').update(dbUpdate).eq('id', id);
+    if (!error) {
+      setHomepageModules(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
+    } else {
+      console.error("Error updating homepage module:", error);
+    }
+  };
+
+  const addHomepageModule = async (module) => {
+    const newId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+    const dbModule = {
+      id: newId,
+      type: module.type,
+      data: module.data || {},
+      is_visible: module.isVisible !== false,
+      display_order: module.displayOrder || homepageModules.length
+    };
+    
+    const { error } = await supabase.from('homepage_modules').insert([dbModule]);
+    if (!error) {
+      setHomepageModules(prev => [...prev, {
+        id: newId,
+        type: dbModule.type,
+        data: dbModule.data,
+        isVisible: dbModule.is_visible,
+        displayOrder: dbModule.display_order
+      }]);
+    } else {
+      console.error("Error adding homepage module:", error);
+    }
+  };
+
+  const deleteHomepageModule = async (id) => {
+    const { error } = await supabase.from('homepage_modules').delete().eq('id', id);
+    if (!error) {
+      setHomepageModules(prev => prev.filter(m => m.id !== id));
+    } else {
+      console.error("Error deleting homepage module:", error);
+    }
+  };
+
+  const reorderHomepageModules = async (newModulesArray) => {
+    // Optimistic update
+    setHomepageModules(newModulesArray);
+    
+    // Update DB
+    for (let i = 0; i < newModulesArray.length; i++) {
+      await supabase.from('homepage_modules')
+        .update({ display_order: i })
+        .eq('id', newModulesArray[i].id);
+    }
+  };
+
   const value = {
 
     brands,
     products,
     sets,
     contentArticles,
+    homepageModules,
+    homepageGridItems,
+    addHomepageGridItem,
+    updateHomepageGridItem,
+    deleteHomepageGridItem,
+    updateGridOrder,
+    updateHomepageModule,
+    addHomepageModule,
+    deleteHomepageModule,
+    reorderHomepageModules,
     loading,
     isAdminAuthenticated,
     loginAdmin,

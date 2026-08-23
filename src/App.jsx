@@ -18,12 +18,14 @@ import WishlistPopup from './components/WishlistPopup';
 import CartSidebar from './components/CartSidebar';
 import LoginDrawer from './components/LoginDrawer';
 import StorePage from './pages/StorePage';
+import CheckoutPage from './pages/CheckoutPage';
 import SearchDrawer from './components/SearchDrawer';
 import AdminLayout from './pages/admin/AdminLayout';
 import ManageBrandsPage from './pages/admin/ManageBrandsPage';
 import ManageProductsPage from './pages/admin/ManageProductsPage';
 import ManageContentPage from './pages/admin/ManageContentPage';
 import ManageContentEditor from './pages/admin/ManageContentEditor';
+import ManageHomepagePage from './pages/admin/ManageHomepagePage';
 import { useAdmin } from './context/AdminContext';
 import './App.css';
 
@@ -35,6 +37,7 @@ function App() {
   const isAdmin = location.pathname.startsWith('/admin');
   const isHomePage = location.pathname === '/';
   const isMinimalFooterPage = isHomePage || location.pathname === '/experience' || location.pathname.startsWith('/experience/') || location.pathname === '/products' || location.pathname.startsWith('/product/') || location.pathname.startsWith('/brand/') || location.pathname === '/story' || location.pathname === '/account' || location.pathname === '/store';
+  const isCheckoutPage = location.pathname === '/checkout';
 
   // Handle opening login drawer from redirect
   React.useEffect(() => {
@@ -55,6 +58,7 @@ function App() {
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/products" replace />} />
+          <Route path="homepage" element={<ManageHomepagePage />} />
           <Route path="brands" element={<ManageBrandsPage />} />
           <Route path="products" element={<ManageProductsPage />} />
           <Route path="bespoke" element={<ManageContentPage category="bespoke" pageTitle="Bespoke Experience" pageSubtitle="Manage and organize bespoke editorial pages." />} />
@@ -72,7 +76,7 @@ function App() {
 
   return (
     <>
-      <Nav isHomePage={isHomePage} onOpenLogin={() => setIsLoginOpen(true)} onOpenSearch={() => setIsSearchOpen(true)} />
+      {!isCheckoutPage && <Nav isHomePage={isHomePage} onOpenLogin={() => setIsLoginOpen(true)} onOpenSearch={() => setIsSearchOpen(true)} />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -88,9 +92,10 @@ function App() {
           <Route path="/story/:id" element={<BespokeDetailPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/store" element={<StorePage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
         </Routes>
       </main>
-      {isMinimalFooterPage ? <MinimalFooter /> : <Footer />}
+      {!isCheckoutPage && (isMinimalFooterPage ? <MinimalFooter /> : <Footer />)}
       <WishlistModal />
       <WishlistPopup />
       <CartSidebar />

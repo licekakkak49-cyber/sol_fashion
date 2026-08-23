@@ -1,0 +1,1009 @@
+
+
+
+
+.mobileOnly {
+  display: none;
+}
+.desktopOnly {
+  display: inline;
+}
+.checkoutContainer {
+  display: flex;
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  background-color: #fff;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  color: rgb(30, 30, 30);
+  overflow: hidden;
+}
+
+
+.closeBtn {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgb(30, 30, 30);
+  padding: 5px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.closeBtn:hover {
+  transform: rotate(90deg);
+}
+
+/* LEFT COLUMN */
+.leftCol {
+  flex: 0 0 60%;
+  padding: 24px 80px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  margin-bottom: 60px;
+}
+
+.textLogo {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: rgb(30, 30, 30);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.tagline {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #8E9196;
+  font-style: italic;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* PROGRESS BAR */
+.progressContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.step {
+  flex: 1;
+  cursor: pointer;
+  text-align: center;
+  padding-bottom: 20px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #999;
+  letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.stepActive {
+  color: rgb(30, 30, 30);
+}
+
+.stepActive span:last-child {
+  font-weight: 400;
+}
+
+.stepActive::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: rgb(30, 30, 30);
+}
+
+/* EMAIL FIELD (Matched from LoginDrawer) */
+.emailInput {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  background: #e8f0fe; /* Kept the light blue from ref image */
+  padding: 10px 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgb(30, 30, 30);
+  outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: 0.03em;
+  margin-bottom: 40px;
+}
+
+.emailInput::placeholder {
+  color: #555;
+}
+
+.emailInput:focus {
+  border-bottom: 1px solid rgb(30, 30, 30);
+}
+
+/* BUTTONS (Matched from LoginDrawer) */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.actionBlock {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.actionRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.btnSolid {
+  flex: 1;
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+  border: 1px solid rgb(30, 30, 30);
+  padding: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnSolid:hover {
+  background-color: #fff;
+  color: rgb(30, 30, 30);
+}
+
+.btnOutline {
+  flex: 1;
+  background-color: transparent;
+  color: rgb(30, 30, 30);
+  border: 1px solid rgb(30, 30, 30);
+  padding: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnOutline:hover {
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+}
+
+.helpText {
+  font-size: 12px;
+  font-weight: 400;
+  color: #555;
+  margin-bottom: 60px;
+  letter-spacing: 0.03em;
+}
+
+.separator {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 16px;
+  letter-spacing: 0.03em;
+}
+
+.googleBtn {
+  width: 100%;
+  background-color: transparent;
+  border: 1px solid rgb(30, 30, 30);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgb(30, 30, 30);
+}
+
+.googleBtn:hover {
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+}
+
+
+.stepContainer {
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.formGroup {
+  margin-bottom: 32px;
+}
+
+.formLabel {
+  display: block;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgb(150, 150, 150);
+  margin-bottom: 16px;
+  letter-spacing: 0.1em;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgb(30, 30, 30);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+}
+
+.customRadio {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgb(30, 30, 30);
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  background: transparent;
+}
+
+.customRadio:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  background: rgb(30, 30, 30);
+  border-radius: 50%;
+}
+
+.formRow {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.formField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.formRow .formField {
+  margin-bottom: 0;
+}
+
+.staticLabel {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgb(150, 150, 150);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+
+.textInput, .selectInput {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  background: transparent;
+  padding: 8px 0;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: rgb(30, 30, 30);
+  outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: 0.03em;
+}
+
+.textInput:focus, .selectInput:focus {
+  border-bottom: 1px solid rgb(30, 30, 30);
+}
+
+.selectInput {
+  appearance: none;
+  cursor: pointer;
+}
+
+.checkboxGroup {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.checkboxTitle {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(30, 30, 30);
+  letter-spacing: 0.03em;
+}
+
+.checkboxSubtext {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  color: rgb(150, 150, 150);
+  padding-left: 28px;
+  letter-spacing: 0.03em;
+}
+
+.deliveryBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 24px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.deliveryBox:hover {
+  border-color: rgb(30, 30, 30);
+}
+
+.deliveryBoxLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.deliveryDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deliveryTitle {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgb(30, 30, 30);
+  letter-spacing: 0.03em;
+}
+
+.deliverySubtext {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: rgb(150, 150, 150);
+  letter-spacing: 0.03em;
+}
+
+.deliveryPrice {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgb(30, 30, 30);
+  letter-spacing: 0.1em;
+}
+
+.btnSolidFull {
+  width: 100%;
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+  border: 1px solid rgb(30, 30, 30);
+  padding: 16px;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnSolidFull:hover {
+  background-color: #fff;
+  color: rgb(30, 30, 30);
+}
+
+
+.reviewSection {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  padding: 32px 0;
+}
+
+.reviewSection:first-child {
+  padding-top: 0;
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.reviewTitle {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(30, 30, 30);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.editLink {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  color: rgb(30, 30, 30);
+  text-decoration: underline;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+
+.reviewText {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: rgb(150, 150, 150);
+  line-height: 1.6;
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.reviewSubtext {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: rgb(150, 150, 150);
+  margin: 4px 0 0 0;
+  letter-spacing: 0.03em;
+}
+
+.deliveryReview {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.paymentSection {
+  padding-top: 32px;
+}
+
+
+
+
+
+
+
+.paymentMethodName {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgb(30, 30, 30);
+  letter-spacing: 0.03em;
+}
+
+/* RIGHT COLUMN */
+.rightCol {
+  flex: 0 0 40%;
+  background-color: #fff;
+  border-left: 1px solid #eee;
+  padding: 24px 60px 0 60px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.summaryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.summaryTitle {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
+.editCart {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgb(30, 30, 30);
+  text-decoration: underline;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+
+.cartItemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.itemTop {
+  display: flex;
+  gap: 20px;
+}
+
+.itemImage {
+  width: 120px;
+  height: auto;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  background-color: transparent;
+}
+
+.itemDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 0;
+}
+
+.itemHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.itemName {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  margin: 0;
+  flex: 1;
+  letter-spacing: 0.03em;
+}
+
+.itemPrice {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #555;
+  margin: 0;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.itemMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metaText {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.deliveryEstimate {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  margin: 0 0 60px 0;
+  color: rgb(30, 30, 30);
+  letter-spacing: 0.03em;
+}
+
+.totalsSection {
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  background-color: #fff;
+  padding-top: 24px;
+  padding-bottom: 40px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.subtotalRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  margin: 0;
+  color: rgb(30, 30, 30);
+  margin-bottom: 16px;
+  letter-spacing: 0.03em;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 24px;
+}
+
+.totalLabel {
+  display: flex;
+  flex-direction: column;
+}
+
+.totalTitle {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: uppercase;
+  margin: 0 0 4px 0;
+  letter-spacing: 0.1em;
+}
+
+.vatText {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: #555;
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.totalPrice {
+  font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Accordions */
+.accordion {
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding: 16px 0;
+}
+
+.accordion:last-child {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.accordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgb(30, 30, 30);
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+
+.accordionContent {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+}
+
+.contactLinks {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.contactLink {
+  color: rgb(30, 30, 30);
+  text-decoration: underline;
+  font-weight: 400;
+}
+
+.cartLargeList {
+  display: flex;
+  flex-direction: column;
+}
+
+.cartLargeItem {
+  display: flex;
+  gap: 40px;
+}
+
+.cartLargeImg {
+  width: 220px;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+}
+
+.cartLargeDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cartLargeName {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.cartLargePrice {
+  font-size: 14px;
+  
+}
+
+.cartLargeVariant {
+  font-size: 13px;
+  color: #444;
+  
+}
+
+.cartLargeQtyBox {
+  margin-top: 4px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.05em;
+}
+
+.cartLargeActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: auto;
+  letter-spacing: 0.05em;
+}
+
+/* OVERRIDES FOR PAYMENT BOX */
+.paymentBox {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 24px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.paymentBoxExpanded {
+  border-color: rgb(30, 30, 30);
+}
+
+.paymentBox:hover {
+  border-color: rgb(30, 30, 30);
+}
+
+.paymentBoxLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.paymentForm {
+  width: 100%;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.cardIcons {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cardIcons img {
+  height: 12px;
+  width: auto;
+  object-fit: contain;
+}
+
+
+
+.cartLargeHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cartLargeMeta {
+  margin-bottom: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Similar to CartSidebar meta gap */
+  margin-top: 24px; /* Gap between header and meta */
+}
+.cartLargeDelivery {
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+}
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .checkoutContainer {
+    flex-direction: column;
+  }
+  .leftCol {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 16px 10px;
+  }
+  .rightCol {
+    display: none;
+  }
+  .step1Active .rightCol {
+    display: flex;
+    order: 2;
+    height: auto;
+    overflow-y: visible;
+    border-left: none;
+    border-top: 1px solid #eee;
+    padding: 24px 10px;
+  }
+  .step1Active .leftCol {
+    height: auto;
+    overflow-y: visible;
+  }
+  .step1Active {
+    overflow-y: auto;
+  }
+  
+
+  .hideOnMobile {
+    display: none !important;
+  }
+  .cartLargeImg {
+    width: 130px !important;
+    height: auto !important;
+    aspect-ratio: 4/5 !important;
+    object-fit: cover;
+  }
+  .cartLargeItem {
+    gap: 16px !important;
+  }
+  .cartLargeName {
+    font-size: 12px !important;
+    font-weight: 400 !important;
+  }
+  .cartLargePrice {
+    color: #555 !important;
+  }
+  .cartLargePrice, .cartLargeVariant, .cartLargeQtyBox, .editLink {
+    font-size: 11px !important;
+    letter-spacing: 0.03em !important;
+  }
+  .cartLargeMeta {
+    gap: 4px !important;
+    margin-top: 16px !important;
+  }
+  .cartLargeDetails {
+    padding: 12px 0 !important;
+  }
+  .cartItemsList {
+    gap: 24px !important;
+  }
+  .cartLargeDelivery {
+    font-size: 11px !important;
+    margin-top: 12px !important;
+  }
+  
+  /* Make mobile Step 1 Totals exactly like Cart Sidebar */
+  .step1Active .totalsSection {
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
+    border-top: 1px solid #eee !important;
+  }
+  .step1Active .totalRow {
+    align-items: flex-end;
+  }
+  .step1Active .totalTitle {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+  }
+  .step1Active .vatText {
+    font-size: 10px !important;
+    color: #666 !important;
+  }
+  .step1Active .totalPrice {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+  }
+  .step1Active .btnSolidFull {
+    margin-top: 24px !important;
+    font-size: 11px !important;
+    letter-spacing: 0.1em !important;
+  }
+  
+  .progressContainer {
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 24px;
+    padding-bottom: 0;
+    margin-bottom: 24px;
+  }
+  .step {
+    padding-bottom: 12px;
+  }
+  
+  
+
+
+.mobileOnly {
+    display: inline;
+  }
+  .desktopOnly {
+    display: none;
+  }
+
+  .progressContainer::-webkit-scrollbar {
+    display: none;
+  }
+  .step {
+    flex: 0 0 auto;
+  }
+}
+
+
+
+

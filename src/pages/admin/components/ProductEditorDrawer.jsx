@@ -82,7 +82,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
 
       // Auto-migrate legacy images into variants
       let variants = Array.isArray(initialData.colorVariants) ? initialData.colorVariants : [];
-      if (variants.length === 0 && (coverImg || gallImgs.length > 0)) {
+      if (variants.length === 0) {
         variants = [{
           id: Date.now(),
           name: 'Original',
@@ -152,40 +152,60 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
     if (!formData.name.trim()) return setError('⚠️ Product Name is required.');
     if (!formData.price) return setError('⚠️ Price is required.');
     if (!formData.mainCategory) return setError('⚠️ Main Category is required.');
-    if (!formData.coverImage) return setError('⚠️ Cover Image (3:4) is required.');
+    const mainVariant = (formData.colorVariants || []).find(v => v.isMain) || (formData.colorVariants || [])[0];
+    const hasCover = mainVariant && mainVariant.images && mainVariant.images.length > 0;
+    if (!hasCover) return setError('⚠️ Cover Image for the Main Color is required.');
 
     setIsUploading(true);
     setError('');
     
     try {
-      const coverUrl = await uploadImageToSupabase(formData.coverImage, 'covers');
-      const hoverUrl = formData.hoverImage ? await uploadImageToSupabase(formData.hoverImage, 'hovers') : '';
-      
-      const galleryUrls = [];
-      for (const img of formData.galleryImages) {
-        galleryUrls.push(await uploadImageToSupabase(img, 'gallery'));
-      }
+
 
       // Upload variant images
       const uploadedVariants = [];
       for (const variant of (formData.colorVariants || [])) {
-        let varUrl = variant.image;
-        if (varUrl && varUrl.startsWith('data:image')) {
-          varUrl = await uploadImageToSupabase(varUrl, 'variants');
+        const uploadedImages = [];
+        for (const img of (variant.images || [])) {
+          if (img.startsWith('data:image')) {
+            uploadedImages.push(await uploadImageToSupabase(img, 'variants'));
+          } else {
+            uploadedImages.push(img);
+          }
         }
-        uploadedVariants.push({ ...variant, image: varUrl });
+        uploadedVariants.push({ ...variant, images: uploadedImages });
+      }
+
+      // Extract main images for legacy compatibility
+      let finalCoverUrl = '';
+      let finalHoverUrl = '';
+      let finalGalleryUrls = [];
+      const mainVariant = uploadedVariants.find(v => v.isMain) || uploadedVariants[0];
+      if (mainVariant && mainVariant.images && mainVariant.images.length > 0) {
+        finalCoverUrl = mainVariant.images[0] || '';
+        finalHoverUrl = mainVariant.images[1] || '';
+        finalGalleryUrls = mainVariant.images.slice(2);
+      }
+
+      // Calculate total stock from variants
+      let totalStock = 0;
+      for (const v of uploadedVariants) {
+        if (v.stock) {
+          totalStock += Object.values(v.stock).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+        }
       }
 
       // Construct final payload
       const payload = {
         ...formData,
-        coverImage: coverUrl,
-        hoverImage: hoverUrl,
-        galleryImages: galleryUrls,
+        stock: totalStock,
+        coverImage: finalCoverUrl,
+        hoverImage: finalHoverUrl,
+        galleryImages: finalGalleryUrls,
         colorVariants: uploadedVariants,
-        status: parseInt(formData.stock) > 0 ? 'In Stock' : 'Out of Stock',
-        image: coverUrl,
-        images: [coverUrl, ...galleryUrls], // For legacy support
+        status: totalStock > 0 ? 'In Stock' : 'Out of Stock',
+        image: finalCoverUrl,
+        images: [finalCoverUrl, finalHoverUrl, ...finalGalleryUrls].filter(Boolean), // For legacy support
         id: initialData?.id
       };
 
@@ -273,30 +293,30 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', marginBottom: '16px' }}>
-                      <div style={{ width: '200px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div style={{ flex: '1 1 auto', minWidth: '320px' }}>
                         <label style={labelStyle}>Variant Images</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                           {(variant.images || []).map((img, imgIdx) => (
-                            <div key={imgIdx} style={{ position: 'relative', width: '60px', height: '80px', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div key={imgIdx} style={{ position: 'relative', width: '100px', height: '133px', borderRadius: '4px', overflow: 'hidden' }}>
                               <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Variant img" />
                               <button onClick={() => {
                                 const newV = [...formData.colorVariants];
                                 newV[idx].images = newV[idx].images.filter((_, i) => i !== imgIdx);
                                 handleChange('colorVariants', newV);
                               }} style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', padding: '2px', cursor: 'pointer' }}><X size={10} /></button>
-                              {imgIdx === 0 && <span style={{position:'absolute', bottom: 0, left:0, width:'100%', background:'rgba(0,0,0,0.6)', color:'#fff', fontSize:'9px', textAlign:'center'}}>Cover</span>}
-                              {imgIdx === 1 && <span style={{position:'absolute', bottom: 0, left:0, width:'100%', background:'rgba(0,0,0,0.6)', color:'#fff', fontSize:'9px', textAlign:'center'}}>Hover</span>}
+                              {imgIdx === 0 && <span style={{position:'absolute', bottom: 0, left:0, width:'100%', background:'rgba(0,0,0,0.6)', color:'#fff', fontSize:'11px', padding:'2px', textAlign:'center'}}>Cover</span>}
+                              {imgIdx === 1 && <span style={{position:'absolute', bottom: 0, left:0, width:'100%', background:'rgba(0,0,0,0.6)', color:'#fff', fontSize:'11px', padding:'2px', textAlign:'center'}}>Hover</span>}
                             </div>
                           ))}
-                          <label htmlFor={`variant-${idx}-upload`} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '60px', height: '80px', background: '#f9fafb', border: '1px dashed #ccc', borderRadius: '4px', cursor: 'pointer' }}>
+                          <label htmlFor={`variant-${idx}-upload`} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100px', height: '133px', background: '#f9fafb', border: '1px dashed #ccc', borderRadius: '4px', cursor: 'pointer' }}>
                             <UploadCloud size={16} color="#888" />
                           </label>
                           <input type="file" accept="image/*" id={`variant-${idx}-upload`} style={{ display: 'none' }} onChange={(e) => handleFileChange(e, `variant-${idx}`)} />
                         </div>
                       </div>
                       
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: '1 1 auto', minWidth: '300px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                           <input 
                             type="radio" 
@@ -359,7 +379,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
                 <div><label style={labelStyle}>Price (฿) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} /></div>
                 <div><label style={labelStyle}>SKU</label><input type="text" value={formData.sku} onChange={(e) => handleChange('sku', e.target.value)} style={inputStyle} /></div>
               </div>
-              <div><label style={labelStyle}>Stock Quantity</label><input type="number" value={formData.stock} onChange={(e) => handleChange('stock', e.target.value)} style={inputStyle} /></div>
+              
               <div><label style={labelStyle}>Description</label><textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} style={{ ...inputStyle, minHeight: '80px' }} /></div>
             </div>
           </div>

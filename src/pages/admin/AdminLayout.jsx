@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink, Link } from 'react-router-dom';
-import { Package, Tag, Settings, LogOut, Hexagon, PanelTop, Eye, BookOpen } from 'lucide-react';
+import { Globe, Package, Tag, Settings, LogOut, Hexagon, PanelTop, Eye, BookOpen } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 
 const AdminLayout = () => {
@@ -62,6 +62,10 @@ const AdminLayout = () => {
             {({ isActive }) => (
               <BookOpen size={20} strokeWidth={isActive ? 2 : 1.5} fill={isActive ? "currentColor" : "none"} />
             )}
+          </NavLink>
+          <NavLink to="/admin/homepage" className={({isActive}) => `${styles.navLink} ${isActive ? styles.active : ''}`}>
+            <Globe size={18} />
+            <span>Homepage</span>
           </NavLink>
         </nav>
 

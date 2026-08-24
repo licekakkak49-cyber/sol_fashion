@@ -728,11 +728,12 @@ export const AdminProvider = ({ children }) => {
   const updateGridOrder = async (newItemsOrder) => {
     setHomepageGridItems(newItemsOrder);
     
-    // Bulk update positions and layout_size
+    // Bulk update positions, layout_size, and content_data
     for (let i = 0; i < newItemsOrder.length; i++) {
       await supabase.from('homepage_grid_items').update({ 
         grid_index: i,
-        layout_size: newItemsOrder[i].layoutSize 
+        layout_size: newItemsOrder[i].layoutSize,
+        content_data: newItemsOrder[i].contentData
       }).eq('id', newItemsOrder[i].id);
     }
   };

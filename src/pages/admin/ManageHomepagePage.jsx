@@ -4,6 +4,7 @@ import { Plus, Trash2, Edit2, Layout, Settings, AlignLeft, AlignRight } from 'lu
 import { Responsive, WidthProvider } from 'react-grid-layout/legacy';
 import styles from './AdminLayout.module.css';
 import HomepageEditorDrawer from './components/HomepageEditorDrawer';
+import HomepagePreviewModal from './components/HomepagePreviewModal';
 import TextBlock from '../../components/HomepageBlocks/TextBlock';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -14,6 +15,7 @@ export default function ManageHomepagePage() {
   const [rowHeight, setRowHeight] = useState(250);
   const [editorConfig, setEditorConfig] = useState({ isOpen: false, item: null });
   const [isReseeding, setIsReseeding] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const sortedItems = [...homepageGridItems].sort((a, b) => a.grid_index - b.grid_index);
   const items = sortedItems;
@@ -40,8 +42,8 @@ const handleBlockClick = (item) => {
   const handleSaveBlock = async (updatedData) => {
     if (editorConfig.item) {
       await updateHomepageGridItem(editorConfig.item.id, {
-        content_type: updatedData.contentType,
-        content_data: updatedData.contentData
+        contentType: updatedData.contentType,
+        contentData: updatedData.contentData
       });
     }
   };
@@ -184,8 +186,8 @@ const handleBlockClick = (item) => {
     return {
       id: item.id,
       layoutSize: (item.layoutSize || item.layout_size),
-      contentType: item.content_type,
-      contentData: item.content_data || {}
+      contentType: item.contentType || item.content_type,
+      contentData: item.contentData || item.content_data || {}
     };
   });
 
@@ -331,6 +333,19 @@ const handleBlockClick = (item) => {
         onSave={handleSaveBlock}
         initialData={editorConfig.item}
       />
+
+      {isPreviewOpen && (
+        <HomepagePreviewModal 
+          items={sortedItems.map(item => ({
+            id: item.id,
+            layout_size: item.layoutSize || item.layout_size,
+            content_type: item.contentType || item.content_type,
+            content_data: item.contentData || item.content_data || {},
+            grid_index: item.gridIndex || item.grid_index
+          }))}
+          onClose={() => setIsPreviewOpen(false)} 
+        />
+      )}
     </div>
   );
 }

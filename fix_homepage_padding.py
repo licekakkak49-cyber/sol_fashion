@@ -1,4 +1,15 @@
+import re
 
+with open('src/pages/HomePage.jsx', 'r') as f:
+    content = f.read()
+
+content = content.replace("paddingLeft: row.isIndented ? '25%' : '12px',", "paddingLeft: row.isIndented ? '25%' : undefined,")
+
+with open('src/pages/HomePage.jsx', 'w') as f:
+    f.write(content)
+
+with open('src/pages/HomePage.module.css', 'w') as f:
+    f.write("""
 .homepageGridWrapper {
   --grid-gap: 6px;
   --page-padding: 20px;
@@ -56,3 +67,6 @@
   .span3, .span4 { grid-column: span 2; }
   .span2 { grid-column: span 2; }
 }
+""")
+
+print("Done")

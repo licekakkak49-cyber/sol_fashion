@@ -61,7 +61,7 @@ const HomePage = ({ previewItems }) => {
             key={row.id} 
             className={styles.homepageGrid} 
             style={{ 
-               paddingLeft: row.isIndented ? '25%' : '12px',
+               paddingLeft: row.isIndented ? '25%' : undefined,
                transition: 'padding 0.3s ease'
             }}
           >

@@ -119,16 +119,16 @@ const handleBlockClick = (item) => {
       if (!origItem) return null;
       const layoutInfo = layoutMap[lItem.i];
       
-      let newContentData = { ...(origItem.content_data || {}) };
+      let newContentData = { ...(origItem.contentData || origItem.content_data || {}) };
       if (layoutInfo) {
          newContentData.logicalRowId = layoutInfo.rowId;
       }
 
-      if (origItem.grid_index !== index || JSON.stringify(origItem.content_data) !== JSON.stringify(newContentData)) {
+      if (origItem.gridIndex !== index || JSON.stringify(origItem.contentData || origItem.content_data) !== JSON.stringify(newContentData)) {
         return { 
           id: origItem.id,
           layoutSize: (origItem.layoutSize || origItem.layout_size),
-          contentType: origItem.content_type,
+          contentType: origItem.contentType || origItem.content_type,
           contentData: newContentData 
         };
       }
@@ -168,15 +168,15 @@ const handleBlockClick = (item) => {
            return {
               id: item.id,
               layoutSize: (item.layoutSize || item.layout_size),
-              contentType: item.content_type,
-              contentData: { ...(item.content_data || {}), isIndented: !row.isIndented }
+              contentType: item.contentType || item.content_type,
+              contentData: { ...(item.contentData || item.content_data || {}), isIndented: !row.isIndented }
            };
         }
         return {
            id: item.id,
            layoutSize: (item.layoutSize || item.layout_size),
-           contentType: item.content_type,
-           contentData: item.content_data || {}
+           contentType: item.contentType || item.content_type,
+           contentData: item.contentData || item.content_data || {}
         };
      });
      updateGridOrder(newItems);
@@ -274,56 +274,67 @@ const handleBlockClick = (item) => {
               isResizable={false}
             >
               {renderItems.map((item) => {
-                const isPlaceholder = item.contentType === 'placeholder';
+                const isPlaceholder = item.contentType === 'placeholder' || (item.contentType === 'image' && !item.contentData?.imageUrl) || (item.contentType === 'product' && !item.contentData?.productId);
                 
                 return (
                   <div key={item.id} data-grid-id={item.id}>
-                    <div 
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        background: isPlaceholder ? '#fef3c7' : item.contentType === 'spacer' ? 'repeating-linear-gradient(45deg, #f9fafb, #f9fafb 10px, #f3f4f6 10px, #f3f4f6 20px)' : '#fff',
-                        border: '2px dashed #e5e7eb',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        position: 'relative',
-                        cursor: 'pointer'
-                      }}
-                      onClick={(e) => { 
-                         e.stopPropagation();
-                         if (item.contentType !== 'spacer') {
-                             handleBlockClick(item);
-                         }
-                      }}
-                    >
-                      {item.contentType === 'spacer' ? (
-                         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                           <span style={{ fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Empty Vertical Space</span>
-                         </div>
-                      ) : item.contentType === 'text' ? (
-                        <div style={{ pointerEvents: 'none', height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                           <TextBlock data={item.contentData} isPreview={true} />
-                        </div>
-                      ) : item.contentType === 'image' && item.contentData?.imageUrl ? (
-                        <img src={item.contentData.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Block" draggable={false} />
-                      ) : (
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 500, marginTop: '4px' }}>
-                            {item.layoutSize === '4x2' ? '4x2 (Hero/Banner)' : 
-                             item.layoutSize === '4x1' && item.contentType === 'text' ? '4x1 (Text)' :
-                             item.layoutSize === '4x1' && item.contentType === 'spacer' ? '4x1 (Space)' :
-                             item.layoutSize === '2x2' ? '2x2 (Large)' : '1x1 (Small)'}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); deleteHomepageGridItem(item.id); }}
-                        style={{ position: 'absolute', top: 12, right: 12, background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 4, zIndex: 10 }}
+                    {isPlaceholder ? (
+                      <div 
+                        className={styles.ghostSlot} 
+                        onClick={() => handleBlockClick(item)}
+                        style={{ position: 'relative' }}
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); deleteHomepageGridItem(item.id); }}
+                          style={{ position: 'absolute', top: 12, right: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer', color: '#ef4444', padding: '6px', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                          title="Delete Block"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <Plus className={styles.ghostSlotIcon} size={32} style={{ marginBottom: '8px' }} />
+                        <span style={{ fontSize: '12px', fontWeight: 500, marginTop: '4px', textAlign: 'center' }}>
+                          {item.layoutSize === '4x2' ? '4x2 (Hero/Banner)' : 
+                           item.layoutSize === '4x1' && item.contentType === 'text' ? '4x1 (Text)' :
+                           item.layoutSize === '4x1' && item.contentType === 'spacer' ? '4x1 (Space)' :
+                           item.layoutSize === '2x2' ? '2x2 (Large)' : '1x1 (Small)'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className={styles.productCard} style={item.contentType === 'text' ? { border: '1px solid #e5e7eb' } : {}}>
+                        {item.contentType === 'spacer' ? (
+                           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'repeating-linear-gradient(45deg, #f9fafb, #f9fafb 10px, #f3f4f6 10px, #f3f4f6 20px)' }}>
+                             <span style={{ fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Empty Vertical Space</span>
+                           </div>
+                        ) : item.contentType === 'text' ? (
+                          <div style={{ pointerEvents: 'none', height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+                             <TextBlock data={item.contentData} isPreview={true} />
+                          </div>
+                        ) : item.contentType === 'image' && item.contentData?.imageUrl ? (
+                          <img src={item.contentData.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Block" draggable={false} />
+                        ) : null}
+                        
+                        <div className={styles.productOverlay}>
+                          <div className={styles.overlayActions}>
+                            {item.contentType !== 'spacer' && (
+                              <button 
+                                className={styles.overlayActionBtn}
+                                onClick={(e) => { e.stopPropagation(); handleBlockClick(item); }}
+                                title="Edit Block"
+                              >
+                                <Edit2 size={14} className={styles.overlayEditBtn} />
+                              </button>
+                            )}
+                            <button 
+                              className={styles.overlayActionBtn}
+                              onClick={(e) => { e.stopPropagation(); deleteHomepageGridItem(item.id); }}
+                              title="Delete Block"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

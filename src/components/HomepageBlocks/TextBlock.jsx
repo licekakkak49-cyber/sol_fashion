@@ -10,7 +10,7 @@ const TextBlock = ({ data, isPreview }) => {
       flexDirection: 'column', 
       justifyContent: 'center', 
       alignItems: align === 'left' ? 'flex-start' : 'center',
-      padding: isPreview ? '0' : '72px 0px', 
+      minHeight: '100px', 
       textAlign: align,
       width: '100%',
       backgroundColor: 'transparent'
@@ -18,9 +18,9 @@ const TextBlock = ({ data, isPreview }) => {
       {data?.title && (
         <h2 style={{ 
           fontSize: '28px', 
-          margin: '0 0 16px 0', 
+          margin: '0 0 8px 0', 
           fontWeight: 400, 
-          fontFamily: 'var(--font-sans)',
+          fontFamily: "'Futura PT', 'Helvetica Neue', Arial, sans-serif",
           color: '#111'
         }}>
           {data.title}
@@ -31,7 +31,7 @@ const TextBlock = ({ data, isPreview }) => {
         <Link 
           to={data.linkUrl || '#'} 
           style={{ 
-            fontSize: '11px', 
+            fontSize: '15px', fontFamily: "'Futura PT', 'Helvetica Neue', Arial, sans-serif", 
             textTransform: 'uppercase', 
             letterSpacing: '0.05em', 
             color: '#111', 

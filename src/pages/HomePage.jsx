@@ -72,6 +72,7 @@ const HomePage = ({ previewItems }) => {
 
               if (item.layout_size === '2x2') { w = 2; h = 2; }
               if (item.layout_size === '4x2') { w = 4; h = 2; }
+              if (item.layout_size === '4x1') { w = 4; h = 1; }
               
               if (item.content_type === 'image' && item.layout_size === '4x2') { Component = HeroBlock; }
               else if (item.content_type === 'image') { Component = ImageBlock; }
@@ -96,7 +97,7 @@ const HomePage = ({ previewItems }) => {
                   style={{
                     gridColumn: `span ${w}`,
                     gridRow: `span ${h}`,
-                    aspectRatio: w === 4 && h === 2 ? '3/2' : '3/4',
+                    aspectRatio: (displayClass === styles.fullWidth || item.content_type === 'text' || item.content_type === 'spacer') ? undefined : (w === 4 && h === 2 ? '3/2' : '3/4'),
                     overflow: 'hidden'
                   }}
                 >

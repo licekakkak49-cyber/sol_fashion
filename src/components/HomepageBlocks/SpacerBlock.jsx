@@ -3,7 +3,7 @@ import React from 'react';
 const SpacerBlock = ({ data }) => {
   return (
     <div style={{ 
-      minHeight: data?.height || '144px', 
+      minHeight: data?.height || '100px', 
       width: '100%',
     }} />
   );

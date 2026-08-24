@@ -52,13 +52,13 @@
 .leftContent {
   display: flex;
   align-items: baseline;
-  gap: 40px;
+  gap: 48px;
 }
 
 .logoContainer {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 20px;
   text-decoration: none;
 }
 
@@ -365,7 +365,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
   align-items: flex-start;
 }
 
@@ -422,7 +422,7 @@
     height: 36px;
   }
   .iconGroup {
-    gap: 16px;
+    gap: 20px;
   }
   .menuContainer {
     grid-template-columns: 1fr;
@@ -577,7 +577,7 @@
 .mobileMenuFooter {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   margin-top: 20px;
   padding: 0 16px;
 }
@@ -627,7 +627,7 @@
 .mobileFooterBottomLinks {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
   margin-top: 10px;
 }
 
@@ -673,7 +673,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   align-items: flex-start;
 }
 
@@ -703,4 +703,24 @@
 
 .megaMenuList li a:hover::after {
   transform: scaleX(1);
+}
+
+.imgLogo {
+  height: 32px;
+  transform: scale(3) translateY(1px);
+  transform-origin: center center;
+  width: auto;
+  display: block;
+  transition: filter 0.3s ease;
+}
+
+.whiteFilter {
+  filter: invert(1) brightness(100);
+}
+
+@media (max-width: 768px) {
+  .imgLogo {
+    height: 24px;
+    transform: scale(3) translateY(1px);
+  }
 }

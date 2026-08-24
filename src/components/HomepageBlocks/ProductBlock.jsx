@@ -29,7 +29,7 @@ const ProductBlock = ({ data }) => {
   if (!product) return <div style={{ aspectRatio: '4/5', background: '#f9fafb' }}></div>;
 
   return (
-    <div style={{ padding: '0 8px' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <ProductCard 
         id={product.id}
         image={product.image}
@@ -37,7 +37,9 @@ const ProductBlock = ({ data }) => {
         name={product.name}
         price={product.price}
         colors={product.colors}
+        tags={['NEW']}
         isLarge={false}
+        overlayMode={true}
       />
     </div>
   );

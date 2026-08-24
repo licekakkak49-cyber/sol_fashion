@@ -152,7 +152,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
         <div className={styles.left}>
           <div className={styles.leftContent}>
             <Link to="/" className={styles.logoContainer}>
-              <span className={styles.textLogo}>SOL</span>
+              <img src="https://dpxkmjupcwgmyjhbdexz.supabase.co/storage/v1/object/public/product-images/homepage/SOL-Photoroom%20(3).svg" alt="SOL" className={`${styles.imgLogo} ${useWhiteText ? styles.whiteFilter : ''}`} />
               <span className={styles.tagline}>Let your SOL shine</span>
             </Link>
             <ul className={styles.navLinks}>
@@ -212,7 +212,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
                 {/* Mobile Header: Logo and Close */}
                 <div className={styles.mobileMenuHeader}>
                   <Link to="/" className={styles.logoContainer} onClick={toggleMenu}>
-                    <span className={styles.textLogo}>SOL</span>
+                    <img src="https://dpxkmjupcwgmyjhbdexz.supabase.co/storage/v1/object/public/product-images/homepage/SOL-Photoroom%20(3).svg" alt="SOL" className={`${styles.imgLogo} ${useWhiteText ? styles.whiteFilter : ''}`} />
                     <span className={styles.tagline}>Let your SOL shine</span>
                   </Link>
                   <button className={styles.mobileCloseBtn} onClick={toggleMenu}>

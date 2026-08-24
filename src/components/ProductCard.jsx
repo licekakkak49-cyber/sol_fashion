@@ -70,7 +70,7 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
       className={styles.cardLink}
       onMouseLeave={() => setManualFlip(null)}
     >
-      <div className={styles.card}>
+      <div className={`${styles.card} ${overlayMode ? styles.isOverlayMode : ''}`}>
         <div 
           className={`${styles.imageContainer} ${isLarge ? styles.largeImageContainer : ''} ${hoverImage ? styles.hasHoverImage : ''}`}
           onTouchStart={handleTouchStart}

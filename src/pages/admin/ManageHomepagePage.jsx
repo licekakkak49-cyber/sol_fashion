@@ -10,7 +10,7 @@ import TextBlock from '../../components/HomepageBlocks/TextBlock';
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function ManageHomepagePage() {
-  const { homepageGridItems, addHomepageGridItem, updateHomepageGridItem, deleteHomepageGridItem, updateGridOrder } = useAdmin();
+  const { homepageGridItems, addHomepageGridItem, updateHomepageGridItem, deleteHomepageGridItem, updateGridOrder, products } = useAdmin();
   
   const [rowHeight, setRowHeight] = useState(250);
   const [editorConfig, setEditorConfig] = useState({ isOpen: false, item: null });
@@ -311,6 +311,8 @@ const handleBlockClick = (item) => {
                           </div>
                         ) : item.contentType === 'image' && item.contentData?.imageUrl ? (
                           <img src={item.contentData.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Block" draggable={false} />
+                        ) : item.contentType === 'product' && item.contentData?.productId ? (
+                          <img src={products?.find(p => p.id === item.contentData.productId)?.image || 'https://via.placeholder.com/150'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Product Block" draggable={false} />
                         ) : null}
                         
                         <div className={styles.productOverlay}>

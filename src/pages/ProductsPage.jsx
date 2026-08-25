@@ -287,6 +287,9 @@ const ProductsPage = ({ previewSets = null }) => {
     // Gather ALL product IDs that belong to ANY set (published, draft, or filtered out)
     const allAssignedProductIds = new Set();
     (sets || []).forEach(s => {
+       const isDraft = (s.status || 'draft').toLowerCase() === 'draft';
+       if (!previewSets && isDraft) return; // Do not swallow products if the set is a draft!
+       
        (s.items || []).forEach(item => {
           if (!item.isPlaceholder && item.productId) {
              allAssignedProductIds.add(item.productId);

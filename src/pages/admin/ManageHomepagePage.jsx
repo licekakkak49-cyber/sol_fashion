@@ -17,7 +17,7 @@ export default function ManageHomepagePage() {
   const [isReseeding, setIsReseeding] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const sortedItems = [...homepageGridItems].sort((a, b) => a.grid_index - b.grid_index);
+  const sortedItems = [...homepageGridItems].sort((a, b) => a.gridIndex - b.gridIndex);
   const items = sortedItems;
 
   const handleAddBlock = (size, type = 'placeholder') => {
@@ -162,6 +162,24 @@ const handleBlockClick = (item) => {
      row.isIndented = firstItem?.content_data?.isIndented || false;
   });
 
+  const handleMoveRowUp = (rowIndex) => {
+     if (rowIndex === 0) return;
+     const rows = logicalRowsUI.map(r => r.items.map(id => sortedItems.find(item => item.id === id)));
+     const temp = rows[rowIndex];
+     rows[rowIndex] = rows[rowIndex - 1];
+     rows[rowIndex - 1] = temp;
+     updateGridOrder(rows.flat());
+  };
+
+  const handleMoveRowDown = (rowIndex) => {
+     if (rowIndex === logicalRowsUI.length - 1) return;
+     const rows = logicalRowsUI.map(r => r.items.map(id => sortedItems.find(item => item.id === id)));
+     const temp = rows[rowIndex];
+     rows[rowIndex] = rows[rowIndex + 1];
+     rows[rowIndex + 1] = temp;
+     updateGridOrder(rows.flat());
+  };
+
   const handleToggleIndent = (row) => {
      const newItems = sortedItems.map(item => {
         if (row.items.includes(item.id)) {
@@ -217,24 +235,43 @@ const handleBlockClick = (item) => {
         </div>
 
         <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px',  }}>
-          <div style={{ margin: '-12px' }}>
+          <div style={{ margin: '-12px', position: 'relative', paddingLeft: '160px' }}>
             
             {/* Row Controls */}
-            {logicalRowsUI.map(row => (
+            {logicalRowsUI.map((row, i) => (
                <div 
                  key={row.id}
                  style={{
                    position: 'absolute',
-                   left: '-140px',
+                   left: '10px',
                    top: `${row.minY * rowHeight + row.minY * 12}px`,
-                   width: '120px',
+                   width: '180px',
                    zIndex: 10,
                    display: 'flex',
                    alignItems: 'flex-start',
                    justifyContent: 'flex-end',
-                   paddingTop: '20px'
+                   paddingTop: '20px',
+                   gap: '8px'
                  }}
                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <button 
+                      onClick={() => handleMoveRowUp(i)}
+                      disabled={i === 0}
+                      style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '4px', padding: '2px 6px', cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.3 : 1 }}
+                      title="Move Row Up"
+                    >
+                      ↑
+                    </button>
+                    <button 
+                      onClick={() => handleMoveRowDown(i)}
+                      disabled={i === logicalRowsUI.length - 1}
+                      style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '4px', padding: '2px 6px', cursor: i === logicalRowsUI.length - 1 ? 'not-allowed' : 'pointer', opacity: i === logicalRowsUI.length - 1 ? 0.3 : 1 }}
+                      title="Move Row Down"
+                    >
+                      ↓
+                    </button>
+                  </div>
                   <button
                      onClick={() => handleToggleIndent(row)}
                      style={{
@@ -313,7 +350,11 @@ const handleBlockClick = (item) => {
                           <img src={item.contentData.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Block" draggable={false} />
                         ) : item.contentType === 'product' && item.contentData?.productId ? (
                           <img src={products?.find(p => p.id === item.contentData.productId)?.image || 'https://via.placeholder.com/150'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Product Block" draggable={false} />
-                        ) : null}
+                        ) : (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', border: '1px dashed #d1d5db' }}>
+                             <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>{item.contentType}</span>
+                          </div>
+                        )}
                         
                         <div className={styles.productOverlay}>
                           <div className={styles.overlayActions}>

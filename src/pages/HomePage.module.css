@@ -17,8 +17,6 @@
   gap: var(--grid-gap);
   padding: 0 var(--page-padding);
   width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
 }
 
 .span1 { grid-column: span 1; }

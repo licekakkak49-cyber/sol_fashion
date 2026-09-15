@@ -20,12 +20,13 @@ const LoginDrawer = ({ isOpen, onClose }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
+    const formData = new FormData(e.target);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    const firstName = formData.get('firstName');
+    const lastName = formData.get('lastName');
     
     if (activeTab === 'login') {
-      const formData = new FormData(e.target);
-      const email = formData.get('email');
-      const password = formData.get('password');
-      
       if (loginAdmin(email, password)) {
         onClose();
         navigate('/admin');
@@ -33,6 +34,11 @@ const LoginDrawer = ({ isOpen, onClose }) => {
       }
     }
     
+    // Save customer session info
+    if (email) localStorage.setItem('sol_customer_email', email);
+    if (firstName) localStorage.setItem('sol_customer_first_name', firstName);
+    if (lastName) localStorage.setItem('sol_customer_last_name', lastName);
+
     onClose();
     navigate('/account');
   };

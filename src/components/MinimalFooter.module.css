@@ -142,7 +142,13 @@
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: flex-end;
+  align-items: center;
+}
+
+.logoImg {
+  height: 36px;
+  width: auto;
+  display: block;
 }
 
 .logo {

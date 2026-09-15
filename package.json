@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.10.0",
+    "@stripe/stripe-js": "^9.16.0",
     "@supabase/supabase-js": "^2.112.3",
     "dotenv": "^17.4.2",
     "framer-motion": "^12.41.0",

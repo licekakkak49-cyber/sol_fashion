@@ -59,6 +59,47 @@
   flex-grow: 1;
 }
 
+.videoWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+}
+
+.videoControlBtn {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.15s ease, background-color 0.2s ease;
+}
+
+.videoControlBtn:hover {
+  opacity: 1;
+  transform: scale(1.08);
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.videoMuteBtn {
+  left: auto;
+  right: 16px;
+}
+
 .image {
   width: 100%;
   height: 100%;

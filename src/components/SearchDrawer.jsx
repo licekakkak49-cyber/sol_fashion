@@ -103,9 +103,9 @@ const SearchDrawer = ({ isOpen, onClose }) => {
       }
     }
     if (sortBy === 'price-asc') {
-      result = [...result].sort((a, b) => parseFloat(a.price.replace(/[^0-9.]/g, '')) - parseFloat(b.price.replace(/[^0-9.]/g, '')));
+      result = [...result].sort((a, b) => parseFloat(String(a.price || 0).replace(/[^0-9.]/g, '')) - parseFloat(String(b.price || 0).replace(/[^0-9.]/g, '')));
     } else if (sortBy === 'price-desc') {
-      result = [...result].sort((a, b) => parseFloat(b.price.replace(/[^0-9.]/g, '')) - parseFloat(a.price.replace(/[^0-9.]/g, '')));
+      result = [...result].sort((a, b) => parseFloat(String(b.price || 0).replace(/[^0-9.]/g, '')) - parseFloat(String(a.price || 0).replace(/[^0-9.]/g, '')));
     }
     return result;
   }, [finalResults, selectedFilters, sortBy]);

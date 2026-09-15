@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
+import { formatCurrency } from '../utils/formatCurrency';
+import { isVideoMedia } from '../utils/supabaseStorage';
 import styles from './ProductCard.module.css';
 
 const HeartIcon = ({ size = 20, color = "currentColor", strokeWidth = 1.2, fill = "none", className = "" }) => (
@@ -21,6 +23,32 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
   
   const isSaved = isInWishlist(id);
 
+  // Video controls state for large 2x2 cards
+  const isVideo = isLarge && isVideoMedia(image);
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const togglePlay = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const toggleMute = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
 
   let currentImage = image;
   let currentHoverImage = hoverImage;
@@ -36,10 +64,9 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
 
   const images = currentHoverImage ? [currentImage, currentHoverImage] : [currentImage];
 
-
   const handleBookmarkClick = (e) => {
     e.preventDefault();
-    const product = { id, image: currentImage, name, price };
+    const product = { id, image: currentImage, name, price: formatCurrency(price) };
     toggleWishlist(product);
     if (!isSaved) {
       openWishlistPopup(product);
@@ -72,13 +99,66 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
     >
       <div className={`${styles.card} ${overlayMode ? styles.isOverlayMode : ''}`}>
         <div 
-          className={`${styles.imageContainer} ${isLarge ? styles.largeImageContainer : ''} ${hoverImage ? styles.hasHoverImage : ''}`}
+          className={`${styles.imageContainer} ${isLarge ? styles.largeImageContainer : ''} ${hoverImage && !isVideo ? styles.hasHoverImage : ''}`}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <img src={image} alt={name} className={`${styles.image} ${manualFlip === true ? styles.forceHide : ''} ${manualFlip === false ? styles.forceShow : ''}`} />
-          {hoverImage && (
-            <img src={hoverImage} alt={`${name} hover`} className={`${styles.hoverImage} ${manualFlip === true ? styles.forceShow : ''} ${manualFlip === false ? styles.forceHide : ''}`} />
+          {isVideo ? (
+            <div className={styles.videoWrapper}>
+              <video
+                ref={videoRef}
+                src={image}
+                autoPlay
+                loop
+                muted={isMuted}
+                playsInline
+                className={styles.image}
+                style={{ objectFit: 'cover' }}
+              />
+              
+              {/* Subtle bottom gradient to guarantee button contrast */}
+              <div 
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '40%',
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 100%)',
+                  pointerEvents: 'none',
+                  zIndex: 1
+                }}
+              />
+
+              {/* Minimal Bottom-Left Play/Pause */}
+              <button
+                type="button"
+                onClick={togglePlay}
+                className={styles.videoControlBtn}
+                aria-label={isPlaying ? 'Pause Video' : 'Play Video'}
+                title={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause size={14} /> : <Play size={14} style={{ marginLeft: '1px' }} />}
+              </button>
+
+              {/* Minimal Bottom-Right Mute/Unmute */}
+              <button
+                type="button"
+                onClick={toggleMute}
+                className={`${styles.videoControlBtn} ${styles.videoMuteBtn}`}
+                aria-label={isMuted ? 'Unmute Video' : 'Mute Video'}
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+              </button>
+            </div>
+          ) : (
+            <>
+              <img src={image} alt={name} className={`${styles.image} ${manualFlip === true ? styles.forceHide : ''} ${manualFlip === false ? styles.forceShow : ''}`} />
+              {hoverImage && (
+                <img src={hoverImage} alt={`${name} hover`} className={`${styles.hoverImage} ${manualFlip === true ? styles.forceShow : ''} ${manualFlip === false ? styles.forceHide : ''}`} />
+              )}
+            </>
           )}
           
           {tags && tags.length > 0 && (
@@ -88,7 +168,7 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
               ))}
             </div>
           )}
-          {!minimal && images.length > 1 && (
+          {!minimal && !isVideo && images.length > 1 && (
             <div className={styles.carouselArrows}>
               <button className={styles.arrowBtn} aria-label="Previous image" onClick={prevImage}>
                 <ChevronLeft size={20} strokeWidth={1} />
@@ -125,7 +205,7 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
               </div>
               <div className={styles.priceRow}>
                 <p className={styles.price}>
-                  {price}
+                  {formatCurrency(price)}
                 </p>
               </div>
               {tags && tags.length > 0 && (

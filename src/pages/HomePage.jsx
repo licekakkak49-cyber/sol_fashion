@@ -16,25 +16,61 @@ const HomePage = ({ previewItems }) => {
 
   useEffect(() => {
     if (previewItems) {
-      setItems(previewItems);
+      setItems(previewItems.map(item => ({
+        ...item,
+        layout_size: item.layout_size || item.layoutSize || '1x1',
+        content_type: item.content_type || item.contentType || 'placeholder',
+        content_data: item.content_data || item.contentData || {}
+      })));
       setLoading(false);
       return;
     }
     
     const fetchItems = async () => {
+      try {
+        // 1. Try to load published collection from store_settings (homepage_collections_v1)
+        const { data: settingData } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('key_name', 'homepage_collections_v1')
+          .maybeSingle();
+
+        if (settingData && Array.isArray(settingData.setting_value) && settingData.setting_value.length > 0) {
+          const publishedCol = settingData.setting_value.find(c => c.status === 'published');
+          if (publishedCol && Array.isArray(publishedCol.items) && publishedCol.items.length > 0) {
+            setItems(publishedCol.items.map(item => ({
+              ...item,
+              layout_size: item.layout_size || item.layoutSize || '1x1',
+              content_type: item.content_type || item.contentType || 'placeholder',
+              content_data: item.content_data || item.contentData || {}
+            })));
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (colErr) {
+        console.warn("Could not fetch published collection, falling back to homepage_grid_items:", colErr);
+      }
+
+      // 2. Fallback to homepage_grid_items table
       const { data, error } = await supabase
         .from('homepage_grid_items')
         .select('*')
         .order('grid_index', { ascending: true });
         
       if (data) {
-        setItems(data);
+        setItems(data.map(item => ({
+          ...item,
+          layout_size: item.layout_size || item.layoutSize || '1x1',
+          content_type: item.content_type || item.contentType || 'placeholder',
+          content_data: item.content_data || item.contentData || {}
+        })));
       }
       setLoading(false);
     };
     
     fetchItems();
-  }, []);
+  }, [previewItems]);
 
   if (loading) {
     return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
@@ -43,14 +79,15 @@ const HomePage = ({ previewItems }) => {
   // Calculate Logical Rows
   const rows = [];
   items.forEach(item => {
-    const rowId = item.content_data?.logicalRowId || `default-${item.id}`;
+    const cData = item.content_data || item.contentData || {};
+    const rowId = cData.logicalRowId || `default-${item.id}`;
     let row = rows.find(r => r.id === rowId);
     if (!row) {
-      row = { id: rowId, items: [], isIndented: item.content_data?.isIndented || false };
+      row = { id: rowId, items: [], isIndented: cData.isIndented || false };
       rows.push(row);
     }
     row.items.push(item);
-    if (item.content_data?.isIndented) row.isIndented = true;
+    if (cData.isIndented) row.isIndented = true;
   });
 
   return (
@@ -61,8 +98,8 @@ const HomePage = ({ previewItems }) => {
             key={row.id} 
             className={styles.homepageGrid} 
             style={{ 
-               paddingLeft: row.isIndented ? '25%' : undefined,
-               transition: 'padding 0.3s ease'
+               paddingLeft: row.isIndented ? '10%' : undefined,
+               transition: 'padding-left 0.3s ease'
             }}
           >
             {row.items.map((item) => {
@@ -70,22 +107,26 @@ const HomePage = ({ previewItems }) => {
               let w = 1;
               let h = 1;
 
-              if (item.layout_size === '2x2') { w = 2; h = 2; }
-              if (item.layout_size === '4x2') { w = 4; h = 2; }
-              if (item.layout_size === '4x1') { w = 4; h = 1; }
-              
-              if (item.content_type === 'image' && item.layout_size === '4x2') { Component = HeroBlock; }
-              else if (item.content_type === 'image') { Component = ImageBlock; }
-              else if (item.content_type === 'product') { Component = ProductBlock; }
-              else if (item.content_type === 'text') { Component = TextBlock; }
-              else if (item.content_type === 'spacer') { Component = SpacerBlock; }
-              else if (item.content_type === 'collection-highlight') { Component = CollectionHighlight; }
+              const lSize = item.layout_size || item.layoutSize || '1x1';
+              const cType = item.content_type || item.contentType || 'placeholder';
+              const cData = item.content_data || item.contentData || {};
 
-              if (!Component || item.content_type === 'placeholder') return null;
+              if (lSize === '2x2') { w = 2; h = 2; }
+              if (lSize === '4x2') { w = 4; h = 2; }
+              if (lSize === '4x1') { w = 4; h = 1; }
+              
+              if (cType === 'image' && lSize === '4x2') { Component = HeroBlock; }
+              else if (cType === 'image') { Component = ImageBlock; }
+              else if (cType === 'product') { Component = ProductBlock; }
+              else if (cType === 'text') { Component = TextBlock; }
+              else if (cType === 'spacer') { Component = SpacerBlock; }
+              else if (cType === 'collection-highlight') { Component = CollectionHighlight; }
+
+              if (!Component || cType === 'placeholder') return null;
 
               let displayClass = '';
-              if (item.layout_size === '4x2') {
-                const mode = item.content_data?.displayMode || 'normal';
+              if (lSize === '4x2') {
+                const mode = cData.displayMode || 'normal';
                 if (mode === 'edge-to-edge') displayClass = styles.edgeToEdge;
                 if (mode === 'full-width') displayClass = styles.fullWidth;
               }
@@ -97,11 +138,11 @@ const HomePage = ({ previewItems }) => {
                   style={{
                     gridColumn: `span ${w}`,
                     gridRow: `span ${h}`,
-                    aspectRatio: (displayClass === styles.fullWidth || item.content_type === 'text' || item.content_type === 'spacer') ? undefined : (w === 4 && h === 2 ? '3/2' : '3/4'),
+                    aspectRatio: (displayClass === styles.fullWidth || cType === 'text' || cType === 'spacer') ? undefined : (w === 4 && h === 2 ? '3/2' : '3/4'),
                     overflow: 'hidden'
                   }}
                 >
-                  <Component data={item.content_data} />
+                  <Component data={cData} />
                 </div>
               );
             })}

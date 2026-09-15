@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/formatCurrency';
 import styles from './WishlistModal.module.css';
 
 const WishlistModal = () => {
@@ -136,7 +137,7 @@ const WishlistModal = () => {
                       <div className={styles.itemHeaderRow}>
                         <p className={styles.name}>{item.name}</p>
                         <p className={styles.price}>
-                          {item.price} {item.status && <span className={styles.statusError}>- {item.status}</span>}
+                          {formatCurrency(item.price)} {item.status && <span className={styles.statusError}>- {item.status}</span>}
                         </p>
                       </div>
                       

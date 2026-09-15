@@ -13,7 +13,15 @@ export const AdminProvider = ({ children }) => {
   
   const [sets, setSets] = useState([]);
 
-
+  const [homepageCollections, setHomepageCollections] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sol_homepage_collections_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [homepageCollectionsLoaded, setHomepageCollectionsLoaded] = useState(false);
 
   const [products, setProducts] = useState([]);
 
@@ -233,14 +241,46 @@ export const AdminProvider = ({ children }) => {
 
       // Fetch Homepage Grid Items
       const { data: gridData } = await supabase.from('homepage_grid_items').select('*').order('grid_index', { ascending: true });
-      if (gridData) {
-        setHomepageGridItems(gridData.map(item => ({
-          id: item.id,
-          layoutSize: item.layout_size,
-          contentType: item.content_type,
-          contentData: item.content_data || {},
-          gridIndex: item.grid_index
-        })));
+      const mappedGridItems = (gridData || []).map(item => ({
+        id: item.id,
+        layoutSize: item.layout_size,
+        contentType: item.content_type,
+        contentData: item.content_data || {},
+        gridIndex: item.grid_index
+      }));
+      setHomepageGridItems(mappedGridItems);
+
+      // Fetch Homepage Collections from store_settings
+      try {
+        const { data: colSetting } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('key_name', 'homepage_collections_v1')
+          .single();
+
+        if (colSetting && Array.isArray(colSetting.setting_value) && colSetting.setting_value.length > 0) {
+          setHomepageCollections(colSetting.setting_value);
+          localStorage.setItem('sol_homepage_collections_v1', JSON.stringify(colSetting.setting_value));
+        } else {
+          // Initialize default live collection from existing grid items
+          const initialCollection = [{
+            id: 'home-col-main',
+            name: 'Main Campaign (Live)',
+            status: 'published',
+            items: mappedGridItems || [],
+            updated_at: new Date().toISOString()
+          }];
+          setHomepageCollections(initialCollection);
+          localStorage.setItem('sol_homepage_collections_v1', JSON.stringify(initialCollection));
+          supabase
+            .from('store_settings')
+            .upsert({ key_name: 'homepage_collections_v1', setting_value: initialCollection })
+            .then(({ error }) => { if (error) console.error("Error initializing homepage collections:", error); });
+        }
+      } catch (colErr) {
+        console.warn("Could not fetch homepage collections:", colErr);
+      } finally {
+        setHomepageCollectionsLoaded(true);
       }
 
       // 3. Fetch Articles & Modules
@@ -387,11 +427,27 @@ export const AdminProvider = ({ children }) => {
     if (updatedData.subCategory !== undefined) dbUpdate.sub_category = updatedData.subCategory;
     if (updatedData.scheduledDate !== undefined) dbUpdate.scheduled_date = updatedData.scheduledDate;
 
+    if (updatedData.created_at !== undefined) dbUpdate.created_at = updatedData.created_at;
+
     if (Object.keys(dbUpdate).length > 0) {
       supabase.from('sets').update(dbUpdate).eq('id', id).then(({ error }) => {
         if (error) console.error("Error updating set:", error);
       });
     }
+  };
+
+  const reorderSets = (setIdA, setIdB, timeA, timeB) => {
+    setSets(prev => {
+      const idxA = prev.findIndex(s => s.id === setIdA);
+      const idxB = prev.findIndex(s => s.id === setIdB);
+      if (idxA === -1 || idxB === -1) return prev;
+
+      const newSets = [...prev];
+      newSets[idxA] = { ...newSets[idxA], created_at: timeA };
+      newSets[idxB] = { ...newSets[idxB], created_at: timeB };
+
+      return newSets.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+    });
   };
 
   const deleteSet = (id) => {
@@ -738,6 +794,114 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // Helper to persist homepage collections to state, localStorage, and store_settings in Supabase
+  const saveHomepageCollections = async (newCollections) => {
+    setHomepageCollections(newCollections);
+    try {
+      localStorage.setItem('sol_homepage_collections_v1', JSON.stringify(newCollections));
+    } catch (e) {}
+
+    const { error } = await supabase
+      .from('store_settings')
+      .upsert({ key_name: 'homepage_collections_v1', setting_value: newCollections });
+
+    if (error) {
+      console.error("Error saving homepage collections to Supabase:", error);
+    }
+  };
+
+  // Create a new Draft Homepage Collection (optionally cloning layout from another collection)
+  const createHomepageDraft = async (name, cloneFromId = null) => {
+    const newId = 'home-col-' + Date.now();
+    let initialItems = [];
+    if (cloneFromId) {
+      const sourceCol = homepageCollections.find(c => c.id === cloneFromId);
+      if (sourceCol && sourceCol.items) {
+        initialItems = JSON.parse(JSON.stringify(sourceCol.items));
+      }
+    } else if (homepageGridItems.length > 0) {
+      // Default fallback clone from current grid items
+      initialItems = JSON.parse(JSON.stringify(homepageGridItems));
+    }
+
+    const newCollection = {
+      id: newId,
+      name: name?.trim() || 'Untitled Draft',
+      status: 'draft',
+      items: initialItems,
+      updated_at: new Date().toISOString()
+    };
+
+    const updatedCollections = [...homepageCollections, newCollection];
+    await saveHomepageCollections(updatedCollections);
+    return newCollection;
+  };
+
+  // Publish a Homepage Collection (Enforces Single-Active Rule: ONLY 1 collection can be published)
+  const publishHomepageCollection = async (collectionId) => {
+    const targetCol = homepageCollections.find(c => c.id === collectionId);
+    if (!targetCol) return false;
+
+    // Set target to 'published', automatically relegate all others to 'draft'
+    const updatedCollections = homepageCollections.map(c => ({
+      ...c,
+      status: c.id === collectionId ? 'published' : 'draft',
+      updated_at: c.id === collectionId ? new Date().toISOString() : c.updated_at
+    }));
+
+    await saveHomepageCollections(updatedCollections);
+
+    // Sync published items to homepage_grid_items for backward compatibility
+    if (targetCol.items && targetCol.items.length > 0) {
+      try {
+        await supabase.from('homepage_grid_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const dbItems = targetCol.items.map((item, idx) => ({
+          id: item.id || crypto.randomUUID(),
+          layout_size: item.layoutSize || item.layout_size || '1x1',
+          content_type: item.contentType || item.content_type || 'placeholder',
+          content_data: item.contentData || item.content_data || {},
+          grid_index: idx
+        }));
+        await supabase.from('homepage_grid_items').insert(dbItems);
+        setHomepageGridItems(targetCol.items);
+      } catch (syncErr) {
+        console.warn("Could not sync to legacy homepage_grid_items:", syncErr);
+      }
+    }
+
+    return true;
+  };
+
+  // Update a Homepage Collection (rename, update items, layout changes)
+  const updateHomepageCollection = async (collectionId, updates) => {
+    const updatedCollections = homepageCollections.map(c => {
+      if (c.id !== collectionId) return c;
+      return {
+        ...c,
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+    });
+
+    await saveHomepageCollections(updatedCollections);
+
+    // If updating the currently published collection, keep homepageGridItems in sync
+    const updatedCol = updatedCollections.find(c => c.id === collectionId);
+    if (updatedCol && updatedCol.status === 'published' && updates.items) {
+      setHomepageGridItems(updates.items);
+    }
+  };
+
+  // Delete a Draft Homepage Collection (cannot delete the published one)
+  const deleteHomepageDraft = async (collectionId) => {
+    const targetCol = homepageCollections.find(c => c.id === collectionId);
+    if (!targetCol || targetCol.status === 'published') return false;
+
+    const updatedCollections = homepageCollections.filter(c => c.id !== collectionId);
+    await saveHomepageCollections(updatedCollections);
+    return true;
+  };
+
   const updateHomepageModule = async (id, updatedFields) => {
     const dbUpdate = {};
     if (updatedFields.data !== undefined) dbUpdate.data = updatedFields.data;
@@ -806,6 +970,12 @@ export const AdminProvider = ({ children }) => {
     contentArticles,
     homepageModules,
     homepageGridItems,
+    homepageCollections,
+    homepageCollectionsLoaded,
+    createHomepageDraft,
+    publishHomepageCollection,
+    updateHomepageCollection,
+    deleteHomepageDraft,
     addHomepageGridItem,
     updateHomepageGridItem,
     deleteHomepageGridItem,
@@ -822,6 +992,7 @@ export const AdminProvider = ({ children }) => {
     addSet,
     updateSet,
     deleteSet,
+    reorderSets,
     addProductToSet,
     removeProductFromSet,
     updateProductInSet,

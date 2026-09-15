@@ -134,21 +134,22 @@
 
 .itemName {
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 400;
   margin: 0;
   flex: 1;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
 }
 
 .itemPrice {
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
-  color: #555;
+  color: #444;
   margin: 0;
   white-space: nowrap;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 .itemMeta {
@@ -212,11 +213,11 @@
 
 .deliveryEstimate {
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   margin: 0;
-  color: rgb(30, 30, 30);
-  letter-spacing: 0.03em;
+  color: #555;
+  letter-spacing: 0.02em;
 }
 
 .footer {
@@ -263,9 +264,9 @@
 
 .checkoutBtn {
   width: 100%;
-  background-color: #1e1e1e;
+  background-color: rgb(30, 30, 30);
   color: #fff;
-  border: none;
+  border: 1px solid rgb(30, 30, 30);
   padding: 16px;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
   font-size: 11px;
@@ -274,11 +275,13 @@
   letter-spacing: 0.1em;
   cursor: pointer;
   margin-bottom: 8px;
-  transition: background-color 0.2s;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 .checkoutBtn:hover {
-  background-color: rgb(30, 30, 30);
+  background-color: #fff;
+  color: rgb(30, 30, 30);
+  border-color: rgb(30, 30, 30);
 }
 
 .applePayBtn {
@@ -330,6 +333,7 @@
 .viewCartBtn {
   width: 100%;
   background-color: transparent;
+  color: rgb(30, 30, 30);
   border: 1px solid rgb(30, 30, 30);
   padding: 16px;
   font-family: 'Futura PT', 'Helvetica Neue', Arial, sans-serif;
@@ -338,11 +342,13 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 .viewCartBtn:hover {
-  background-color: rgba(0,0,0,0.05);
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+  border-color: rgb(30, 30, 30);
 }
 
 .emptyState {

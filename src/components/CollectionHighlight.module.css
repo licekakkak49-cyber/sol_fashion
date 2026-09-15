@@ -28,6 +28,7 @@
 
 
 .link {
+  display: inline-block;
   font-size: 15px;
   font-weight: 400;
   color: rgb(30, 30, 30);
@@ -35,7 +36,6 @@
   padding-bottom: 2px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transition: opacity 0.2s;
   position: relative;
 }
 
@@ -55,10 +55,6 @@
 .link:hover::after {
   transform-origin: right;
   transform: scaleX(0);
-}
-
-.link:hover {
-  opacity: 0.7;
 }
 
 .grid {

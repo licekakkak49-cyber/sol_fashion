@@ -19,6 +19,7 @@ import CartSidebar from './components/CartSidebar';
 import LoginDrawer from './components/LoginDrawer';
 import StorePage from './pages/StorePage';
 import CheckoutPage from './pages/CheckoutPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
 import SearchDrawer from './components/SearchDrawer';
 import AdminLayout from './pages/admin/AdminLayout';
 import ManageBrandsPage from './pages/admin/ManageBrandsPage';
@@ -26,6 +27,7 @@ import ManageProductsPage from './pages/admin/ManageProductsPage';
 import ManageContentPage from './pages/admin/ManageContentPage';
 import ManageContentEditor from './pages/admin/ManageContentEditor';
 import ManageHomepagePage from './pages/admin/ManageHomepagePage';
+import ManageOrdersPage from './pages/admin/ManageOrdersPage';
 import { useAdmin } from './context/AdminContext';
 import './App.css';
 
@@ -37,7 +39,7 @@ function App() {
   const isAdmin = location.pathname.startsWith('/admin');
   const isHomePage = location.pathname === '/';
   const isMinimalFooterPage = isHomePage || location.pathname === '/experience' || location.pathname.startsWith('/experience/') || location.pathname === '/products' || location.pathname.startsWith('/product/') || location.pathname.startsWith('/brand/') || location.pathname === '/story' || location.pathname === '/account' || location.pathname === '/store';
-  const isCheckoutPage = location.pathname === '/checkout';
+  const isCheckoutPage = location.pathname === '/checkout' || location.pathname === '/order-success';
 
   // Handle opening login drawer from redirect
   React.useEffect(() => {
@@ -61,6 +63,7 @@ function App() {
           <Route path="homepage" element={<ManageHomepagePage />} />
           <Route path="brands" element={<ManageBrandsPage />} />
           <Route path="products" element={<ManageProductsPage />} />
+          <Route path="orders" element={<ManageOrdersPage />} />
           <Route path="bespoke" element={<ManageContentPage category="bespoke" pageTitle="Bespoke Experience" pageSubtitle="Manage and organize bespoke editorial pages." />} />
           <Route path="bespoke/:id" element={<ManageContentEditor category="bespoke" backUrl="/admin/bespoke" />} />
           
@@ -93,6 +96,7 @@ function App() {
           <Route path="/account" element={<AccountPage />} />
           <Route path="/store" element={<StorePage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-success" element={<OrderSuccessPage />} />
         </Routes>
       </main>
       {!isCheckoutPage && (isMinimalFooterPage ? <MinimalFooter /> : <Footer />)}

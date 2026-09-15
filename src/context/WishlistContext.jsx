@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const WishlistContext = createContext();
 
@@ -10,7 +10,23 @@ export const WishlistProvider = ({ children }) => {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isWishlistPopupOpen, setIsWishlistPopupOpen] = useState(false);
   const [lastAddedItem, setLastAddedItem] = useState(null);
-  const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sol_wishlist_items');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Persist to localStorage whenever wishlistItems changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('sol_wishlist_items', JSON.stringify(wishlistItems));
+    } catch (e) {
+      console.error('Failed to save wishlist to localStorage', e);
+    }
+  }, [wishlistItems]);
 
   const openWishlist = () => setIsWishlistOpen(true);
   const closeWishlist = () => setIsWishlistOpen(false);
@@ -32,6 +48,10 @@ export const WishlistProvider = ({ children }) => {
     });
   };
 
+  const removeFromWishlist = (productId) => {
+    setWishlistItems((prevItems) => prevItems.filter((item) => item.id !== productId));
+  };
+
   const isInWishlist = (productId) => {
     return wishlistItems.some((item) => item.id === productId);
   };
@@ -48,6 +68,7 @@ export const WishlistProvider = ({ children }) => {
         closeWishlistPopup,
         wishlistItems,
         toggleWishlist,
+        removeFromWishlist,
         isInWishlist,
       }}
     >

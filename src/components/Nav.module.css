@@ -27,7 +27,12 @@
   box-shadow: none !important;
 }
 
-/* When whiteText class is applied, change text/icons to white */
+/* Ambient gradient scrim when transparent on hero for crystal-clear readability */
+.transparent.whiteText {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%) !important;
+}
+
+/* When whiteText class is applied, change text/icons to white with soft, clean contrast shadow */
 .whiteText .textLogo,
 .whiteText .tagline,
 .whiteText .navLinks li a,
@@ -37,28 +42,41 @@
   color: #fff !important;
 }
 
+.whiteText .tagline {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.whiteText .navLinks li a {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.whiteText .cartBtn {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
 .whiteText .iconBtn svg,
 .whiteText .mobileMenuBtn svg {
   stroke: #fff !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 
 .left {
   display: flex;
   align-items: center;
   flex: 1;
-  height: 100%;
+  height: 80px;
 }
 
 .leftContent {
   display: flex;
-  align-items: baseline;
-  gap: 48px;
+  align-items: flex-end;
+  gap: 40px;
 }
 
 .logoContainer {
   display: flex;
-  align-items: baseline;
-  gap: 20px;
+  align-items: flex-end;
+  gap: 16px;
   text-decoration: none;
 }
 
@@ -80,12 +98,16 @@
   font-style: italic;
   letter-spacing: 0.1em;
   white-space: nowrap;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+  transform: translateY(-1px);
 }
 
 .navLinks {
   list-style: none;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 36px;
   margin: 0;
   padding: 0;
@@ -93,6 +115,8 @@
 
 .navLinks li {
   position: relative;
+  display: flex;
+  align-items: flex-end;
 }
 
 .navLinks li a {
@@ -105,8 +129,9 @@
   transition: opacity 0.2s ease;
   position: relative;
   display: inline-block;
-  padding-bottom: 2px;
   white-space: nowrap;
+  line-height: 1;
+  padding-bottom: 0;
 }
 
 .navLinks li a::after {
@@ -114,7 +139,7 @@
   position: absolute;
   width: 100%;
   height: 1px;
-  bottom: 0;
+  bottom: -4px;
   left: 0;
   background-color: currentColor;
   transform: scaleX(0);
@@ -706,21 +731,22 @@
 }
 
 .imgLogo {
-  height: 32px;
-  transform: scale(3) translateY(1px);
-  transform-origin: center center;
+  height: 38px;
   width: auto;
   display: block;
+  margin-bottom: 3px;
+  transform: translateY(-2px);
   transition: filter 0.3s ease;
 }
 
 .whiteFilter {
-  filter: invert(1) brightness(100);
+  filter: brightness(0) invert(1);
 }
 
 @media (max-width: 768px) {
   .imgLogo {
-    height: 24px;
-    transform: scale(3) translateY(1px);
+    height: 28px;
+    margin-bottom: 2px;
+    transform: translateY(-1px);
   }
 }

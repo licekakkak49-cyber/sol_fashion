@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { formatCurrency } from '../utils/formatCurrency';
 
 const CartContext = createContext();
 
@@ -70,11 +71,16 @@ export const CartProvider = ({ children }) => {
   }, 0);
 
   const formatPrice = (amount) => {
-    // Format to look like "6 185 USD"
-    return new Intl.NumberFormat('en-US', { 
-      maximumFractionDigits: 0,
-      useGrouping: true 
-    }).format(amount).replace(/,/g, ' ') + ' USD';
+    return formatCurrency(amount);
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    try {
+      localStorage.removeItem('cartItems');
+    } catch (e) {
+      console.error("Failed to clear cart items", e);
+    }
   };
 
   const value = {
@@ -85,6 +91,7 @@ export const CartProvider = ({ children }) => {
     addToCart,
     removeFromCart,
     updateQuantity,
+    clearCart,
     cartTotal,
     formatPrice
   };

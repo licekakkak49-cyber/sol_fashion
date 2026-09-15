@@ -132,13 +132,13 @@ const MinimalFooter = () => {
         </div>
         
         <div className={styles.center}>
-          <span className={styles.logo}>SOL</span>
+          <img src="/LOGO_SOL2.svg" alt="SOL" className={styles.logoImg} />
         </div>
 
         <div className={styles.right}>
           <div className={styles.rawSettings}>
             <button className={styles.rawSettingBtn}>
-              <span className={styles.rawUnderline}>Thailand (THB)</span>
+              <span className={styles.rawUnderline}>United States (USD)</span>
             </button>
             <span className={styles.rawDivider}>/</span>
             <button className={styles.rawSettingBtn}>

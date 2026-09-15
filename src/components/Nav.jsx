@@ -152,7 +152,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
         <div className={styles.left}>
           <div className={styles.leftContent}>
             <Link to="/" className={styles.logoContainer}>
-              <img src="https://dpxkmjupcwgmyjhbdexz.supabase.co/storage/v1/object/public/product-images/homepage/SOL-Photoroom%20(3).svg" alt="SOL" className={`${styles.imgLogo} ${useWhiteText ? styles.whiteFilter : ''}`} />
+              <img src="/LOGO_SOL2.svg" alt="SOL" className={`${styles.imgLogo} ${useWhiteText ? styles.whiteFilter : ''}`} />
               <span className={styles.tagline}>Let your SOL shine</span>
             </Link>
             <ul className={styles.navLinks}>
@@ -160,7 +160,6 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
               {Object.keys(categories).map(cat => (
                 <li key={cat}><Link to={`/products?main=${encodeURIComponent(cat)}`}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
               ))}
-              <li><Link to="/explore">Explore</Link></li>
             </ul>
           </div>
         </div>
@@ -212,7 +211,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
                 {/* Mobile Header: Logo and Close */}
                 <div className={styles.mobileMenuHeader}>
                   <Link to="/" className={styles.logoContainer} onClick={toggleMenu}>
-                    <img src="https://dpxkmjupcwgmyjhbdexz.supabase.co/storage/v1/object/public/product-images/homepage/SOL-Photoroom%20(3).svg" alt="SOL" className={`${styles.imgLogo} ${useWhiteText ? styles.whiteFilter : ''}`} />
+                    <img src="/LOGO_SOL2.svg" alt="SOL" className={styles.imgLogo} />
                     <span className={styles.tagline}>Let your SOL shine</span>
                   </Link>
                   <button className={styles.mobileCloseBtn} onClick={toggleMenu}>
@@ -231,7 +230,6 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
                   {Object.keys(categories).map(cat => (
                     <li key={cat}><Link to={`/products?main=${encodeURIComponent(cat)}`} onClick={toggleMenu}>{cat === 'Ready to Wear' ? 'Ready-to-Wear' : cat}</Link></li>
                   ))}
-                  <li><Link to="/explore" onClick={toggleMenu}>Explore</Link></li>
                 </ul>
 
                 {/* Mobile Footer Links */}
@@ -254,7 +252,7 @@ const Nav = ({ isHomePage = false, onOpenLogin, onOpenSearch }) => {
                   </button>
                   <div className={styles.mobileFooterBottomLinks}>
                     <button className={styles.mobileFooterBtnLine}>
-                      <span className={styles.underlineText}>Thailand (THB) / English</span>
+                      <span className={styles.underlineText}>United States (USD) / English</span>
                     </button>
                   </div>
                 </div>

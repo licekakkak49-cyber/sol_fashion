@@ -55,6 +55,7 @@ const highlightOptions = [{label: 'New', value: 'new'}];
 export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialData, categories, brands, config }) {
   const [formData, setFormData] = useState({
     name: '', subtitle: '', brandId: '', price: '', sku: '', stock: '', description: '',
+    status: 'active',
     mainCategory: '', subCategory: '', size: '', fit: '', material: '', modelInfo: '', careInstructions: '',
     dimLength: '', dimHeight: '', dimWidth: '', strapDrop: '', hardware: '', heelHeight: '', highlight: [],
     coverImage: '', hoverImage: '', galleryImages: [], colorVariants: []
@@ -105,6 +106,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         subtitle: initialData.subtitle || '',
         price: initialData.price || '',
         stock: initialData.stock || '',
+        status: (initialData.status || 'active').toLowerCase() === 'draft' ? 'draft' : 'active',
         mainCategory: initialData.mainCategory || (config?.defaultMainCategory || ''),
         subCategory: initialData.subCategory || (config?.defaultSubCategory || ''),
         highlight: Array.isArray(initialData.tags) ? initialData.tags : (Array.isArray(initialData.highlight) ? initialData.highlight : []),
@@ -203,7 +205,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         hoverImage: finalHoverUrl,
         galleryImages: finalGalleryUrls,
         colorVariants: uploadedVariants,
-        status: totalStock > 0 ? 'In Stock' : 'Out of Stock',
+        status: formData.status || 'active',
         image: finalCoverUrl,
         images: [finalCoverUrl, finalHoverUrl, ...finalGalleryUrls].filter(Boolean), // For legacy support
         id: initialData?.id
@@ -376,11 +378,61 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
               <div><label style={labelStyle}>Product Name *</label><input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} style={inputStyle} placeholder="e.g. Silk Blouse" /></div>
               <div><label style={labelStyle}>Subtitle</label><input type="text" value={formData.subtitle} onChange={(e) => handleChange('subtitle', e.target.value)} style={inputStyle} placeholder="e.g. Ruched fitted dress" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div><label style={labelStyle}>Price (฿) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} /></div>
+                <div><label style={labelStyle}>Price ($ USD) *</label><input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} style={inputStyle} /></div>
                 <div><label style={labelStyle}>SKU</label><input type="text" value={formData.sku} onChange={(e) => handleChange('sku', e.target.value)} style={inputStyle} /></div>
               </div>
               
               <div><label style={labelStyle}>Description</label><textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} style={{ ...inputStyle, minHeight: '80px' }} /></div>
+
+              <div>
+                <label style={labelStyle}>Status</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('status', 'active')}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: (formData.status === 'active' || formData.status === 'published') ? '1.5px solid #10b981' : '1px solid #e5e7eb',
+                      background: (formData.status === 'active' || formData.status === 'published') ? '#ecfdf5' : '#fff',
+                      color: (formData.status === 'active' || formData.status === 'published') ? '#065f46' : '#6b7280',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 0 2px rgba(16,185,129,0.2)' }} />
+                    Published
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('status', 'draft')}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: formData.status === 'draft' ? '1.5px solid #f59e0b' : '1px solid #e5e7eb',
+                      background: formData.status === 'draft' ? '#fffbeb' : '#fff',
+                      color: formData.status === 'draft' ? '#92400e' : '#6b7280',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 0 2px rgba(245,158,11,0.2)' }} />
+                    Draft
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

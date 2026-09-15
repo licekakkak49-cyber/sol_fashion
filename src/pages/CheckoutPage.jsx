@@ -1,26 +1,187 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { 
+  Elements, 
+  useStripe, 
+  useElements, 
+  CardNumberElement, 
+  CardExpiryElement, 
+  CardCvcElement 
+} from '@stripe/react-stripe-js';
+import { stripePromise, stripeElementOptions, isStripeConfigured } from '../lib/stripe';
+import { createOrderInSupabase } from '../services/orderService';
+import { getSavedAddresses } from '../services/addressService';
 import styles from './CheckoutPage.module.css';
 
-const CheckoutPage = () => {
+const CheckoutPageContent = () => {
   const navigate = useNavigate();
-  const { cartItems: cart, cartTotal, openCart: setIsCartOpen, formatPrice, updateQuantity, removeFromCart } = useCart();
-    const [email, setEmail] = useState('');
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const { 
+    cartItems: cart, 
+    cartTotal, 
+    openCart: setIsCartOpen, 
+    formatPrice, 
+    updateQuantity, 
+    removeFromCart, 
+    clearCart 
+  } = useCart();
+
+  const [email, setEmail] = useState('alizzlolp11@gmail.com');
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('cards');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Customer shipping details
+  const [gender, setGender] = useState('Mr');
+  const [firstName, setFirstName] = useState('Wannasin');
+  const [lastName, setLastName] = useState('Uthong');
+  const [country, setCountry] = useState('Thailand');
+  const [address, setAddress] = useState('Chonkasem 21, Muang, Surat Thani 84000');
+  const [prefix, setPrefix] = useState('+66');
+  const [phone, setPhone] = useState('0952066791');
+
+  // Card status (Real Stripe Elements or Simulation mode)
+  const [cardError, setCardError] = useState('');
+  const [cardBrand, setCardBrand] = useState('unknown');
+  const [mockCardNumber, setMockCardNumber] = useState('');
+  const [mockCardExpiry, setMockCardExpiry] = useState('');
+  const [mockCardCvc, setMockCardCvc] = useState('');
+
+  // Saved addresses from Address Book
+  const [savedAddresses, setSavedAddresses] = useState([]);
+
+  useEffect(() => {
+    getSavedAddresses(email).then(list => {
+      if (list && list.length > 0) {
+        setSavedAddresses(list);
+        const def = list.find(a => a.isDefault) || list[0];
+        if (def) {
+          if (def.firstName) setFirstName(def.firstName);
+          if (def.lastName) setLastName(def.lastName);
+          if (def.phone) {
+            const cleanPhone = def.phone.replace('+66', '').trim();
+            setPhone(cleanPhone);
+          }
+          if (def.addressLine) {
+            const fullAddr = `${def.addressLine}, ${def.city || ''} ${def.postalCode || ''}`.trim();
+            setAddress(fullAddr);
+          }
+          if (def.country) setCountry(def.country);
+        }
+      }
+    });
+  }, [email]);
+
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleEditCart = () => {
     setIsCartOpen(true);
   };
 
-  
   const getFutureDate = () => {
     const date = new Date();
     date.setDate(date.getDate() + 2); // Assume 2 days from now
     return date.toLocaleDateString('en-GB'); // DD/MM/YYYY
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!cart || cart.length === 0) return;
+    setIsSubmitting(true);
+    setCardError('');
+
+    let stripeDetails = null;
+
+    if (paymentMethod === 'cards') {
+      if (isStripeConfigured && stripe && elements) {
+        const cardNumberElement = elements.getElement(CardNumberElement);
+        if (cardNumberElement) {
+          const { error, paymentMethod: spm } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardNumberElement,
+            billing_details: {
+              name: `${firstName || 'Customer'} ${lastName || ''}`.trim(),
+              email: email,
+              phone: phone,
+              address: {
+                line1: address,
+                country: 'TH',
+              },
+            },
+          });
+
+          if (error) {
+            setCardError(error.message);
+            setIsSubmitting(false);
+            return;
+          }
+
+          if (spm) {
+            stripeDetails = {
+              id: spm.id,
+              brand: spm.card?.brand,
+              last4: spm.card?.last4,
+              expMonth: spm.card?.exp_month,
+              expYear: spm.card?.exp_year,
+            };
+          }
+        }
+      } else {
+        // Simulation mode verification
+        const rawNum = mockCardNumber.replace(/\s/g, '');
+        if (rawNum.length < 12) {
+          setCardError('Please enter card details or click Auto-Fill Test Card');
+          setIsSubmitting(false);
+          return;
+        }
+        stripeDetails = {
+          id: 'pm_sim_' + Math.random().toString(36).substring(2, 9),
+          brand: cardBrand !== 'unknown' ? cardBrand : 'visa',
+          last4: rawNum.slice(-4),
+          expMonth: mockCardExpiry.split('/')[0]?.trim() || '12',
+          expYear: mockCardExpiry.split('/')[1]?.trim() || '30',
+        };
+      }
+    }
+
+    // Build finalized order receipt payload
+    const orderNumber = `SOL-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    const orderData = {
+      orderNumber,
+      orderDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      deliveryDate: getFutureDate(),
+      customer: {
+        email: email || 'alizzlolp11@gmail.com',
+        firstName: firstName || 'Wannasin',
+        lastName: lastName || 'Uthong',
+        gender,
+        address: address || 'Chonkasem 21, Muang, Surat Thani 84000',
+        country: country || 'Thailand',
+        phone: `${prefix || '+66'} ${phone || '0952066791'}`,
+        deliveryMethod: 'Express (Free)',
+      },
+      items: [...cart],
+      paymentMethod,
+      stripeDetails,
+      totals: {
+        subtotal: cartTotal,
+        shipping: 0,
+        total: cartTotal,
+      },
+    };
+
+    // Save order & items to Supabase and deduct inventory
+    try {
+      await createOrderInSupabase({ orderData, cartItems: cart });
+    } catch (dbErr) {
+      console.error('Failed to persist order to database:', dbErr);
+    }
+
+    clearCart();
+    setIsSubmitting(false);
+    navigate('/order-success', { state: { order: orderData } });
   };
 
   return (
@@ -29,7 +190,7 @@ const CheckoutPage = () => {
       {/* LEFT COLUMN */}
       <div className={styles.leftCol}>
         <div className={styles.logoContainer} onClick={() => navigate('/')}>
-          <span className={styles.textLogo}>SOL</span>
+          <img src="/LOGO_SOL2.svg" alt="SOL" className={styles.imgLogo} />
           <span className={styles.tagline}>Let your SOL shine</span>
         </div>
 
@@ -38,57 +199,11 @@ const CheckoutPage = () => {
             <span>1 of 4</span>
             <span>Cart</span>
           </div>
-          <div className={`${styles.step} $        {step === 1 && (
-          <div className={styles.stepContainer}>
-            <h2 style={{ fontSize: '14px', fontWeight: '400', marginBottom: '24px' }}>Your products</h2>
-            <div className={styles.cartLargeList}>
-              {cart.map((item, idx) => (
-                <div key={idx} style={{ marginBottom: '40px' }}>
-                  <div className={styles.cartLargeItem}>
-                    <img src={item.image || item.variant?.images?.[0] || item.coverImage} alt={item.name} className={styles.cartLargeImg} />
-                    <div className={styles.cartLargeDetails}>
-                      <div className={styles.cartLargeHeaderRow}>
-                        <span className={styles.cartLargeName}>{item.name}</span>
-                        <span className={styles.cartLargePrice}>{formatPrice(item.price)}</span>
-                      </div>
-                      
-                      <div className={styles.cartLargeMeta}>
-                        <div className={styles.cartLargeVariant}>
-                          {item.variant?.name || 'Dark Brown'}
-                        </div>
-                        {(item.size || item.selectedSize) && (
-                          <div className={styles.cartLargeVariant}>
-                            Size {item.size || item.selectedSize}
-                          </div>
-                        )}
-                        
-                        <div className={styles.cartLargeQtyBox}>
-                          <span style={{cursor: 'pointer'}}>-</span>
-                          <span style={{margin: '0 16px', letterSpacing: '0.05em'}}>Qty {item.quantity}</span>
-                          <span style={{cursor: 'pointer'}}>+</span>
-                        </div>
-                      </div>
-
-                      <div className={styles.cartLargeActions} style={{ letterSpacing: '0.05em' }}>
-                        <span className={styles.editLink}>Edit</span>
-                        <span className={styles.editLink}>Remove</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className={styles.cartLargeDelivery}>
-                    Estimated delivery date: from {getFutureDate()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 2 ? styles.stepActive : ''}`} onClick={() => setStep(2)}>
+          <div className={`${styles.step} ${step === 2 ? styles.stepActive : ''}`} onClick={() => setStep(2)}>
             <span>2 of 4</span>
             <span>Personal details</span>
           </div>
-          <div className={`${styles.step} ${step === 3 ? styles.stepActive : ''}`}>
+          <div className={`${styles.step} ${step === 3 ? styles.stepActive : ''}`} onClick={() => setStep(3)}>
             <span>3 of 4</span>
             <span>Shipping details</span>
           </div>
@@ -99,7 +214,7 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-                {step === 1 && (
+        {step === 1 && (
           <div className={styles.stepContainer}>
             <h2 style={{ fontSize: '14px', fontWeight: '400', marginBottom: '24px' }}>Your products</h2>
             <div className={styles.cartLargeList}>
@@ -124,15 +239,15 @@ const CheckoutPage = () => {
                         )}
                         
                         <div className={styles.cartLargeQtyBox}>
-                          <span style={{cursor: 'pointer'}}>-</span>
+                          <span style={{cursor: 'pointer'}} onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}>-</span>
                           <span style={{margin: '0 16px', letterSpacing: '0.05em'}}>Qty {item.quantity}</span>
-                          <span style={{cursor: 'pointer'}}>+</span>
+                          <span style={{cursor: 'pointer'}} onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}>+</span>
                         </div>
                       </div>
 
                       <div className={styles.cartLargeActions} style={{ letterSpacing: '0.05em' }}>
-                        <span className={styles.editLink}>Edit</span>
-                        <span className={styles.editLink}>Remove</span>
+                        <span className={styles.editLink} onClick={handleEditCart}>Edit</span>
+                        <span className={styles.editLink} onClick={() => removeFromCart(item.id, item.size)}>Remove</span>
                       </div>
                     </div>
                   </div>
@@ -184,49 +299,121 @@ const CheckoutPage = () => {
 
         {step === 3 && (
           <div className={styles.stepContainer}>
+            {savedAddresses.length > 0 && (
+              <div style={{ marginBottom: '24px', padding: '16px', background: '#fafafa', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', display: 'block', marginBottom: '10px' }}>
+                  Use Saved Address
+                </span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {savedAddresses.map(sa => {
+                    const isSelected = address.includes(sa.addressLine);
+                    return (
+                      <button
+                        key={sa.id}
+                        type="button"
+                        onClick={() => {
+                          if (sa.firstName) setFirstName(sa.firstName);
+                          if (sa.lastName) setLastName(sa.lastName);
+                          if (sa.phone) setPhone(sa.phone.replace('+66', '').trim());
+                          if (sa.addressLine) setAddress(`${sa.addressLine}, ${sa.city || ''} ${sa.postalCode || ''}`.trim());
+                          if (sa.country) setCountry(sa.country);
+                        }}
+                        style={{
+                          padding: '8px 14px',
+                          fontSize: '11px',
+                          fontFamily: 'inherit',
+                          border: isSelected ? '1px solid #111' : '1px solid #ddd',
+                          background: isSelected ? '#111' : '#fff',
+                          color: isSelected ? '#fff' : '#333',
+                          cursor: 'pointer',
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {sa.title} {sa.isDefault ? '• Default' : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Gender *</label>
               <div className={styles.radioGroup}>
-                <label className={styles.radioLabel}><input type="radio" name="gender" value="Mrs" className={styles.customRadio} /> <span>Mrs</span></label>
-                <label className={styles.radioLabel}><input type="radio" name="gender" value="Mr" className={styles.customRadio} /> <span>Mr</span></label>
-                <label className={styles.radioLabel}><input type="radio" name="gender" value="Mx" className={styles.customRadio} /> <span>Mx</span></label>
-                <label className={styles.radioLabel}><input type="radio" name="gender" value="Prefer not to say" className={styles.customRadio} /> <span>I prefer not to say</span></label>
+                <label className={styles.radioLabel}><input type="radio" name="gender" value="Mrs" className={styles.customRadio} checked={gender === 'Mrs'} onChange={() => setGender('Mrs')} /> <span>Mrs</span></label>
+                <label className={styles.radioLabel}><input type="radio" name="gender" value="Mr" className={styles.customRadio} checked={gender === 'Mr'} onChange={() => setGender('Mr')} /> <span>Mr</span></label>
+                <label className={styles.radioLabel}><input type="radio" name="gender" value="Mx" className={styles.customRadio} checked={gender === 'Mx'} onChange={() => setGender('Mx')} /> <span>Mx</span></label>
+                <label className={styles.radioLabel}><input type="radio" name="gender" value="Prefer not to say" className={styles.customRadio} checked={gender === 'Prefer not to say'} onChange={() => setGender('Prefer not to say')} /> <span>I prefer not to say</span></label>
               </div>
             </div>
             
             <div className={styles.formRow}>
               <div className={styles.formField}>
                 <label className={styles.staticLabel}>First Name *</label>
-                <input type="text" className={styles.textInput} />
+                <input 
+                  type="text" 
+                  className={styles.textInput} 
+                  value={firstName} 
+                  onChange={(e) => setFirstName(e.target.value)} 
+                  placeholder="First name"
+                />
               </div>
               <div className={styles.formField}>
                 <label className={styles.staticLabel}>Last Name *</label>
-                <input type="text" className={styles.textInput} />
+                <input 
+                  type="text" 
+                  className={styles.textInput} 
+                  value={lastName} 
+                  onChange={(e) => setLastName(e.target.value)} 
+                  placeholder="Last name"
+                />
               </div>
             </div>
 
             <div className={styles.formField}>
               <label className={styles.staticLabel}>Country/Region *</label>
-              <select className={styles.selectInput}>
+              <select className={styles.selectInput} value={country} onChange={(e) => setCountry(e.target.value)}>
                 <option value="Thailand">Thailand</option>
+                <option value="United States">United States</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="Japan">Japan</option>
+                <option value="Singapore">Singapore</option>
               </select>
             </div>
 
             <div className={styles.formField}>
               <label className={styles.staticLabel}>Address 1 *</label>
-              <input type="text" className={styles.textInput} />
+              <input 
+                type="text" 
+                className={styles.textInput} 
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)} 
+                placeholder="Street address, building, district"
+              />
             </div>
 
             <div className={styles.formRow}>
               <div className={styles.formField} style={{ flex: '0 0 35%' }}>
                 <label className={styles.staticLabel}>Prefix</label>
-                <select className={styles.selectInput}>
+                <select className={styles.selectInput} value={prefix} onChange={(e) => setPrefix(e.target.value)}>
                   <option value="+66">Thailand +66</option>
+                  <option value="+1">United States +1</option>
+                  <option value="+44">United Kingdom +44</option>
+                  <option value="+81">Japan +81</option>
+                  <option value="+65">Singapore +65</option>
                 </select>
               </div>
               <div className={styles.formField}>
                 <label className={styles.staticLabel}>Phone Number *</label>
-                <input type="text" className={styles.textInput} />
+                <input 
+                  type="text" 
+                  className={styles.textInput} 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  placeholder="Phone number"
+                />
               </div>
             </div>
 
@@ -256,7 +443,7 @@ const CheckoutPage = () => {
                 <h3 className={styles.reviewTitle}>Personal details</h3>
                 <span className={styles.editLink} onClick={() => setStep(2)}>Edit details</span>
               </div>
-              <p className={styles.reviewText}>{email || 'alizzlolp11@gmail.com'}</p>
+              <p className={styles.reviewText}>{email || 'customer@sol-fashion.com'}</p>
             </div>
 
             <div className={styles.reviewSection}>
@@ -265,10 +452,10 @@ const CheckoutPage = () => {
                 <span className={styles.editLink} onClick={() => setStep(3)}>Update shipping details</span>
               </div>
               <p className={styles.reviewText}>
-                WANNASIN UTHONG<br/>
-                Chonkasem 21<br/>
-                muang 84000<br/>
-                +660952066791
+                {(firstName || 'Wannasin').toUpperCase()} {(lastName || 'Uthong').toUpperCase()}<br/>
+                {address || 'Chonkasem 21, Muang'}<br/>
+                {country || 'Thailand'}<br/>
+                {prefix || '+66'} {phone || '0952066791'}
               </p>
             </div>
 
@@ -288,14 +475,17 @@ const CheckoutPage = () => {
             <div className={styles.reviewSection}>
               <div className={styles.reviewHeader}>
                 <h3 className={styles.reviewTitle}>Billing Address</h3>
-                <span className={styles.editLink}>Update billing address</span>
+                <span className={styles.editLink} onClick={() => setStep(3)}>Update billing address</span>
               </div>
-              <p className={styles.reviewText}>WANNASIN UTHONG Chonkasem 21 muang 84000</p>
+              <p className={styles.reviewText}>
+                {(firstName || 'Wannasin').toUpperCase()} {(lastName || 'Uthong').toUpperCase()} {address || 'Chonkasem 21, Muang'}
+              </p>
             </div>
 
             <div className={styles.paymentSection}>
               <h3 className={styles.reviewTitle} style={{marginBottom: '24px'}}>Payment methods</h3>
               
+              {/* STRIPE CREDIT / DEBIT CARDS */}
               <div className={`${styles.paymentBox} ${paymentMethod === 'cards' ? styles.paymentBoxExpanded : ''}`} onClick={() => setPaymentMethod('cards')}>
                 <div className={styles.paymentBoxLeft}>
                   <input type="radio" name="payment" className={styles.customRadio} checked={paymentMethod === 'cards'} readOnly />
@@ -303,36 +493,190 @@ const CheckoutPage = () => {
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                     <line x1="1" y1="10" x2="23" y2="10"></line>
                   </svg>
-                  <span className={styles.paymentMethodName}>Cards</span>
+                  <span className={styles.paymentMethodName}>Credit / Debit Cards (Stripe)</span>
                 </div>
                 
                 {paymentMethod === 'cards' && (
-                  <div className={styles.paymentForm}>
-                    <div className={styles.formRow} style={{ marginTop: '32px' }}>
+                  <div className={styles.paymentForm} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.formRow} style={{ marginTop: '24px' }}>
+                      
+                      {/* Card Number */}
                       <div className={styles.formField} style={{ flex: 2 }}>
                         <label className={styles.staticLabel}>Card number</label>
-                        <div style={{ position: 'relative' }}>
-                          <input type="text" className={styles.textInput} style={{ paddingRight: '100px' }} />
-                                                                              <div className={styles.cardIcons}>
-                            <img src="https://www.jacquemus.com/on/demandware.static/Sites-Jacquemus-Site/-/default/dwb1b33da1/images/cardBrands/visa.svg" alt="Visa" />
-                            <img src="https://www.jacquemus.com/on/demandware.static/Sites-Jacquemus-Site/-/default/dw529ef188/images/cardBrands/mc.svg" alt="Mastercard" />
-                            <img src="https://www.jacquemus.com/on/demandware.static/Sites-Jacquemus-Site/-/default/dw0026e251/images/cardBrands/amex.svg" alt="Amex" />
+                        <div className={`${styles.stripeInputWrapper} ${cardError ? styles.stripeInputWrapperError : ''}`}>
+                          <div style={{ flex: 1 }}>
+                            {isStripeConfigured ? (
+                              <CardNumberElement 
+                                options={stripeElementOptions} 
+                                onChange={(e) => {
+                                  setCardError(e.error ? e.error.message : '');
+                                  if (e.brand) setCardBrand(e.brand);
+                                }}
+                              />
+                            ) : (
+                              <input 
+                                type="text"
+                                className={styles.stripeMockInput}
+                                placeholder="4242 4242 4242 4242"
+                                value={mockCardNumber}
+                                onChange={(e) => {
+                                  let val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                  const formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+                                  setMockCardNumber(formatted);
+                                  setCardError('');
+                                  if (val.startsWith('4')) setCardBrand('visa');
+                                  else if (/^5[1-5]/.test(val)) setCardBrand('mastercard');
+                                  else if (/^3[47]/.test(val)) setCardBrand('amex');
+                                  else setCardBrand('unknown');
+                                }}
+                                autoComplete="cc-number"
+                              />
+                            )}
+                          </div>
+                          <div className={styles.cardIcons}>
+                            <img 
+                              src="https://www.jacquemus.com/on/demandware.static/Sites-Jacquemus-Site/-/default/dwb1b33da1/images/cardBrands/visa.svg" 
+                              alt="Visa" 
+                              style={{ opacity: cardBrand === 'visa' || cardBrand === 'unknown' ? 1 : 0.3 }}
+                            />
+                            <img 
+                              src="https://www.jacquemus.com/on/demandware.static/Sites-Jacquemus-Site/-/default/dw529ef188/images/cardBrands/mc.svg" 
+                              alt="Mastercard" 
+                              style={{ opacity: cardBrand === 'mastercard' || cardBrand === 'unknown' ? 1 : 0.3 }}
+                            />
+                            <img 
+                              src="https://www.jacquemus.com/on/demandware.static/Sites-Jacquemus-Site/-/default/dw0026e251/images/cardBrands/amex.svg" 
+                              alt="Amex" 
+                              style={{ opacity: cardBrand === 'amex' || cardBrand === 'unknown' ? 1 : 0.3 }}
+                            />
                           </div>
                         </div>
                       </div>
+
+                      {/* Expiry */}
                       <div className={styles.formField} style={{ flex: 1 }}>
                         <label className={styles.staticLabel}>Expiration</label>
-                        <input type="text" className={styles.textInput} />
+                        <div className={styles.stripeInputWrapper}>
+                          <div style={{ flex: 1 }}>
+                            {isStripeConfigured ? (
+                              <CardExpiryElement 
+                                options={stripeElementOptions}
+                                onChange={(e) => setCardError(e.error ? e.error.message : '')}
+                              />
+                            ) : (
+                              <input 
+                                type="text"
+                                className={styles.stripeMockInput}
+                                placeholder="MM / YY"
+                                value={mockCardExpiry}
+                                onChange={(e) => {
+                                  let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                  if (val.length > 2) val = `${val.slice(0, 2)} / ${val.slice(2)}`;
+                                  setMockCardExpiry(val);
+                                  setCardError('');
+                                }}
+                                autoComplete="cc-exp"
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
+
+                      {/* CVC */}
                       <div className={styles.formField} style={{ flex: 1 }}>
                         <label className={styles.staticLabel}>CVC</label>
-                        <input type="text" className={styles.textInput} />
+                        <div className={styles.stripeInputWrapper}>
+                          <div style={{ flex: 1 }}>
+                            {isStripeConfigured ? (
+                              <CardCvcElement 
+                                options={stripeElementOptions}
+                                onChange={(e) => setCardError(e.error ? e.error.message : '')}
+                              />
+                            ) : (
+                              <input 
+                                type="text"
+                                className={styles.stripeMockInput}
+                                placeholder="CVC"
+                                value={mockCardCvc}
+                                onChange={(e) => {
+                                  let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                  setMockCardCvc(val);
+                                  setCardError('');
+                                }}
+                                autoComplete="cc-csc"
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
+
+                    </div>
+
+                    {/* Inline card error */}
+                    {cardError && (
+                      <div className={styles.cardErrorMessage}>
+                        {cardError}
+                      </div>
+                    )}
+
+                    {/* Test Card Quick Helper */}
+                    <div className={styles.testCardHint}>
+                      <span>
+                        {isStripeConfigured 
+                          ? 'Stripe Test Mode: Enter 4242 4242 4242 4242 to test without real money' 
+                          : 'Simulation Mode: Auto-fill test card to test complete checkout flow'}
+                      </span>
+                      <button 
+                        type="button" 
+                        className={styles.testCardBadge}
+                        onClick={() => {
+                          if (isStripeConfigured) {
+                            navigator.clipboard?.writeText('4242424242424242');
+                          } else {
+                            setMockCardNumber('4242 4242 4242 4242');
+                            setMockCardExpiry('12 / 30');
+                            setMockCardCvc('123');
+                            setCardBrand('visa');
+                            setCardError('');
+                          }
+                        }}
+                        title={isStripeConfigured ? "Copy test card number" : "Auto-fill test card"}
+                      >
+                        {isStripeConfigured ? "Copy Test Card" : "Auto-Fill Test Card"}
+                      </button>
+                    </div>
+
+                  </div>
+                )}
+              </div>
+
+              {/* PROMPTPAY */}
+              <div className={`${styles.paymentBox} ${paymentMethod === 'promptpay' ? styles.paymentBoxExpanded : ''}`} onClick={() => setPaymentMethod('promptpay')}>
+                <div className={styles.paymentBoxLeft}>
+                  <input type="radio" name="payment" className={styles.customRadio} checked={paymentMethod === 'promptpay'} readOnly />
+                  <span className={styles.promptpayBadge}>PromptPay</span>
+                  <span className={styles.paymentMethodName}>PromptPay QR (Thai Mobile Banking)</span>
+                </div>
+                {paymentMethod === 'promptpay' && (
+                  <div className={styles.paymentForm} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.promptpayBox}>
+                      <div className={styles.promptpayQrContainer}>
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=00020101021129370016A0000006770101110113006609520667915802TH5303764540${cartTotal}.005802TH6304`} 
+                          alt="PromptPay QR Code" 
+                          className={styles.promptpayQrImg}
+                        />
+                        <span className={styles.promptpayAmount}>{formatPrice(cartTotal)}</span>
+                      </div>
+                      <p className={styles.promptpayNotice}>
+                        Scan with K PLUS, SCB EASY, Krungthai NEXT, or any banking app in Thailand. Click <strong>PLACE ORDER</strong> to complete checkout.
+                      </p>
                     </div>
                   </div>
                 )}
               </div>
 
+              {/* APPLE PAY */}
               <div className={styles.paymentBox} onClick={() => setPaymentMethod('apple')}>
                 <div className={styles.paymentBoxLeft}>
                   <input type="radio" name="payment" className={styles.customRadio} checked={paymentMethod === 'apple'} readOnly />
@@ -341,6 +685,7 @@ const CheckoutPage = () => {
                 </div>
               </div>
 
+              {/* PAYPAL */}
               <div className={styles.paymentBox} onClick={() => setPaymentMethod('paypal')}>
                 <div className={styles.paymentBoxLeft}>
                   <input type="radio" name="payment" className={styles.customRadio} checked={paymentMethod === 'paypal'} readOnly />
@@ -350,7 +695,14 @@ const CheckoutPage = () => {
               </div>
             </div>
 
-            <button className={styles.btnSolidFull} style={{ marginTop: '40px' }}>PLACE ORDER</button>
+            <button 
+              className={styles.btnSolidFull} 
+              style={{ marginTop: '40px' }}
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting || cart.length === 0}
+            >
+              {isSubmitting ? 'PROCESSING PAYMENT...' : 'PLACE ORDER'}
+            </button>
           </div>
         )}
       </div>
@@ -443,6 +795,14 @@ const CheckoutPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const CheckoutPage = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutPageContent />
+    </Elements>
   );
 };
 

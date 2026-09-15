@@ -1,189 +1,778 @@
+/* ==============================================================================
+   SOL Fashion: Client Space (Account Page) - Jacquemus Luxury Minimalist
+   ============================================================================== */
+
 .pageContainer {
   min-height: 100vh;
-  padding-top: 80px; /* Space for Nav */
+  background-color: #ffffff;
+  padding-top: 60px;
+  padding-bottom: 120px;
+  font-family: 'Futura PT', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: rgb(30, 30, 30);
 }
 
-.header {
+.innerWrapper {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* Top Bar Navigation */
+.topNav {
   display: flex;
-  justify-content: flex-end;
-  padding: 20px 40px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 48px;
+}
+
+.backLink {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgb(30, 30, 30);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.backLink:hover {
+  opacity: 0.6;
 }
 
 .logoutBtn {
   background: none;
   border: none;
-  font-family: var(--font-sans, "Inter", sans-serif);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 500;
-  color: rgb(30, 30, 30);
+  color: #8E9196;
+  text-decoration: underline;
+  text-underline-offset: 4px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.2s;
 }
 
 .logoutBtn:hover {
-  opacity: 0.5;
+  color: rgb(30, 30, 30);
 }
 
-.mainContent {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 60px 16px;
+/* Hero Title Section */
+.heroHeader {
+  margin-bottom: 48px;
 }
 
-.greeting {
-  text-align: center;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 14px;
+.microLabel {
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 1px;
-  margin-bottom: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #8E9196;
+  margin-bottom: 8px;
+  display: block;
 }
 
-.section {
-  margin-bottom: 100px;
+.greetingTitle {
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: rgb(30, 30, 30);
+  text-transform: uppercase;
 }
 
-.sectionHeader {
+/* Editorial Sub-nav Tabs */
+.tabsBar {
+  display: flex;
+  gap: 36px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 48px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.tabsBar::-webkit-scrollbar {
+  display: none;
+}
+.tabsBar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tabBtn {
+  background: none;
+  border: none;
+  padding: 14px 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8E9196;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tabBtn:hover {
+  color: rgb(30, 30, 30);
+}
+
+.tabBtnActive {
+  color: rgb(30, 30, 30);
+  font-weight: 500;
+}
+
+.tabBtnActive::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: rgb(30, 30, 30);
+}
+
+.countBadge {
+  font-size: 10px;
+  font-weight: 400;
+  color: #8E9196;
+}
+
+/* Tab Panel Container */
+.tabPanel {
+  min-height: 380px;
+}
+
+/* ==============================================================================
+   TAB 1: ORDERS
+   ============================================================================== */
+.ordersList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.orderCard {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 28px 32px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: border-color 0.2s;
+}
+
+.orderCard:hover {
+  border-color: rgb(30, 30, 30);
+}
+
+.orderCardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 50px;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.sectionHeader h2 {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 11px;
-  font-weight: 500;
+.orderMetaLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orderNumber {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgb(30, 30, 30);
   margin: 0;
 }
 
-.sectionHeader h2 sup {
-  font-size: 8px;
-  margin-left: 2px;
+.orderDate {
+  font-size: 11px;
+  color: #8E9196;
+  margin: 0;
+  letter-spacing: 0.02em;
 }
 
-.moreBtn {
-  background: none;
-  border: none;
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
-  font-weight: 500;
+.orderStatusBadge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border: 1px solid rgb(30, 30, 30);
   color: rgb(30, 30, 30);
-  cursor: pointer;
-  padding: 0;
-}
-
-.moreBtn:hover {
-  text-decoration: underline;
-}
-
-.wishlistGrid {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  padding-bottom: 20px;
-}
-
-.wishlistGrid::-webkit-scrollbar {
-  height: 4px;
-}
-
-.wishlistGrid::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.wishlistGrid::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
+.statusProcessing {
+  border-color: #999;
+  color: #666;
 }
 
-.wishlistItem {
-  flex: 0 0 calc(20% - 16px);
-  min-width: 140px;
+.statusShipped {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.statusDelivered {
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+.orderCardBody {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.orderThumbnails {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.orderThumbWrapper {
+  position: relative;
+  width: 60px;
+  height: 80px;
+  background-color: #f7f7f7;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.orderThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.orderThumbQty {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
+.orderMetaRight {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.wishlistItem img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: contain;
+.orderTotalAmount {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.btnViewReceipt {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgb(30, 30, 30);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.btnViewReceipt:hover {
+  opacity: 0.6;
+}
+
+/* ==============================================================================
+   TAB 2: ADDRESS BOOK
+   ============================================================================== */
+.addressSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.sectionHeading {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.btnSolidSmall {
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+  border: 1px solid rgb(30, 30, 30);
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnSolidSmall:hover {
   background-color: transparent;
-  margin-bottom: 15px;
+  color: rgb(30, 30, 30);
 }
 
-.itemName {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
-  font-weight: 400;
-  margin: 0 0 5px 0;
+.addressesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
 }
 
-.itemPrice {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 10px;
-  font-weight: 400;
+.addressCard {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  transition: border-color 0.2s;
+}
+
+.addressCard:hover {
+  border-color: rgb(30, 30, 30);
+}
+
+.addressCardDefault {
+  border-color: rgb(30, 30, 30);
+}
+
+.addressCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.addressTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.defaultBadge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgb(30, 30, 30);
+  color: #fff;
+  padding: 3px 8px;
+}
+
+.addressDetails {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  margin-bottom: 20px;
+}
+
+.addressName {
+  color: rgb(30, 30, 30);
+  font-weight: 500;
+}
+
+.addressActions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 14px;
+}
+
+.addressActionLink {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  color: rgb(30, 30, 30);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.03em;
+}
+
+.addressActionLink:hover {
+  opacity: 0.6;
+}
+
+.addressActionLinkDanger {
+  color: #dc2626;
+}
+
+/* Address Form */
+.addressFormBox {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  background-color: #fafafa;
+  margin-bottom: 32px;
+}
+
+.formTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 24px 0;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputGroupFull {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formLabel {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #666;
+}
+
+.formInput {
+  width: 100%;
+  padding: 12px 14px;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-family: inherit;
+  font-size: 13px;
+  color: rgb(30, 30, 30);
+  outline: none;
+  transition: border-color 0.2s;
+  border-radius: 0;
+}
+
+.formInput:focus {
+  border-color: rgb(30, 30, 30);
+}
+
+.checkboxRow {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: #444;
+}
+
+.formActions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.btnSecondary {
+  background-color: transparent;
+  color: rgb(30, 30, 30);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnSecondary:hover {
+  border-color: rgb(30, 30, 30);
+}
+
+/* ==============================================================================
+   TAB 3: SAVED PIECES (WISHLIST)
+   ============================================================================== */
+.wishlistGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 32px 24px;
+}
+
+.wishlistCard {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.wishlistImageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  background-color: #f7f7f7;
+  overflow: hidden;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.wishlistImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.wishlistCard:hover .wishlistImage {
+  transform: scale(1.03);
+}
+
+.btnRemovePiece {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  z-index: 2;
+}
+
+.btnRemovePiece:hover {
+  background-color: #fff;
+}
+
+.wishlistCardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.pieceName {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  margin: 0;
+  color: rgb(30, 30, 30);
+}
+
+.piecePrice {
+  font-size: 12px;
   color: #666;
   margin: 0;
 }
 
-.profileInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.name {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 14px;
-  font-weight: 400;
-  margin: 0 0 5px 0;
-}
-
-.email {
-  font-family: var(--font-sans, "Inter", sans-serif);
-  font-size: 14px;
-  font-weight: 400;
-  margin: 0 0 30px 0;
-}
-
-.editBtn {
+.btnMoveToBag {
   width: 100%;
-  padding: 15px;
-  background: transparent;
-  border: 1px solid #ccc;
-  font-family: var(--font-sans, "Inter", sans-serif);
+  padding: 10px;
+  background-color: rgb(30, 30, 30);
+  color: #fff;
+  border: 1px solid rgb(30, 30, 30);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 500;
-  color: rgb(30, 30, 30);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
-.editBtn:hover {
+.btnMoveToBag:hover {
+  background-color: transparent;
+  color: rgb(30, 30, 30);
+}
+
+/* ==============================================================================
+   TAB 4: PROFILE & FIT
+   ============================================================================== */
+.profileContainer {
+  max-width: 650px;
+}
+
+.profileSection {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.profileSection:last-child {
+  border-bottom: none;
+}
+
+.profileSectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 20px 0;
+}
+
+.genderSelector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.genderBtn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.genderBtnActive {
   background: rgb(30, 30, 30);
   color: #fff;
   border-color: rgb(30, 30, 30);
 }
 
-.emptyMessage {
-  font-family: var(--font-sans, "Inter", sans-serif);
+/* Fit Selector Pills */
+.pillsRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.pillBtn {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pillBtnActive {
+  background: rgb(30, 30, 30);
+  color: #fff;
+  border-color: rgb(30, 30, 30);
+}
+
+/* Empty State */
+.emptyState {
+  padding: 80px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.emptyText {
+  font-size: 13px;
+  color: #8E9196;
+  max-width: 380px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.feedbackBanner {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 12px 16px;
   font-size: 12px;
-  font-weight: 400;
-  color: #666;
+  margin-bottom: 24px;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-  .wishlistItem {
-    flex: 0 0 calc(33.333% - 14px);
+  .innerWrapper {
+    padding: 0 20px;
   }
-}
 
-@media (max-width: 480px) {
-  .header {
-    padding: 16px;
+  .tabsBar {
+    gap: 24px;
   }
-  
-  .wishlistItem {
-    flex: 0 0 calc(50% - 10px);
+
+  .greetingTitle {
+    font-size: 24px;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .orderCard {
+    padding: 20px;
+  }
+
+  .orderCardBody {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .orderMetaRight {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 12px;
+  }
+
+  .wishlistGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 14px;
   }
 }

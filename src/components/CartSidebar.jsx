@@ -165,7 +165,7 @@ const CartSidebar = () => {
                     By proceeding, you agree to SOL's <a href="#" className={styles.termsLink}>Terms of Service</a> and <a href="#" className={styles.termsLink}>Privacy Policy</a>.
                   </p>
                   
-                  <button className={styles.viewCartBtn}>
+                  <button className={styles.viewCartBtn} onClick={handleCheckout}>
                     VIEW MY SHOPPING CART
                   </button>
                 </div>

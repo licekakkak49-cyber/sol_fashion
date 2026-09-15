@@ -9,13 +9,13 @@ const Footer = () => {
         <div className={styles.leftColumn}>
           <div className={styles.logo}>
             <img 
-              src="https://ttfdcqpzaxnxduvlhtgi.supabase.co/storage/v1/object/public/WAYD-gallery/Artboard%202.svg" 
-              alt="Moreyes Logo" 
+              src="/LOGO_SOL2.svg" 
+              alt="SOL Logo" 
               className={styles.logoImg}
             />
           </div>
           <div className={styles.copyright}>
-            <p>&copy; Moreyes 2026. All rights reserved.</p>
+            <p>&copy; SOL 2026. All rights reserved.</p>
             <p>Moreyes S.p.A. Via Optical 100, 10100 Bangkok</p>
             <p>TAX ID: 01234567890</p>
           </div>

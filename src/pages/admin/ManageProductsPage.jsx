@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Responsive, WidthProvider } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 import { useAdmin } from '../../context/AdminContext';
-import { Plus, X, UploadCloud, Search, Filter, Package, Edit2, Trash2, AlertTriangle, ArrowLeft, Briefcase, Shirt, Glasses, Watch, Activity, Settings, Hexagon, Eye, PanelTop, Tag, LayoutGrid, AlignJustify, SlidersHorizontal } from 'lucide-react';
+import { Plus, X, UploadCloud, Search, Filter, Package, Edit2, Trash2, AlertTriangle, ArrowLeft, Briefcase, Shirt, Glasses, Watch, Activity, Settings, Hexagon, Eye, PanelTop, Tag, LayoutGrid, AlignJustify, SlidersHorizontal, CheckCircle2 } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 import ImageCropper from '../../components/ImageCropper';
 import SetsManager from './components/SetsManager';
@@ -13,6 +15,7 @@ import ProductEditorDrawer from './components/ProductEditorDrawer';
 import { supabase } from '../../utils/supabaseClient';
 import InventoryList from './components/InventoryList';
 import CategoriesManagerModal from './components/CategoriesManagerModal';
+import ProductPickerModal from './components/ProductPickerModal';
 
 // Pill Selector for Light Mode
 const PillSelector = ({ label, options, selectedValue, onChange }) => (
@@ -118,11 +121,25 @@ const ManageProductsPage = () => {
     addCategory, 
     addSubCategory, 
     editCategory, 
-    editSubCategory 
+    editSubCategory,
+    reorderSets: adminReorderSets,
+    refreshData
   } = useAdmin();
 
   const [products, setProducts] = useState([]);
   const [sets, setSets] = useState([]);
+  
+  // Toast Notification State
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (message, type = 'success') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
   
   const fetchData = async () => {
     try {
@@ -139,7 +156,9 @@ const ManageProductsPage = () => {
         layoutSize: p.layout_size,
         colorVariants: p.color_variants,
         heelHeight: p.heel_height,
-        image: p.cover_image_url
+        image: p.cover_image_url,
+        status: p.status || 'active',
+        created_at: p.created_at || p.createdAt || null
       }));
       
       setProducts(mappedProducts);
@@ -150,7 +169,7 @@ const ManageProductsPage = () => {
         scheduledDate: s.scheduled_date
       })));
     } catch(e) {
-      console.error(e);
+      console.error("Fetch data error:", e);
     }
   };
   
@@ -159,28 +178,36 @@ const ManageProductsPage = () => {
   }, []);
 
   const addSet = async (newSet) => {
+    const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+      ? crypto.randomUUID() 
+      : 'set-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+
     const dbPayload = {
-      id: Date.now().toString(),
+      id: newSet.id || newId,
       name: newSet.name,
-      status: newSet.status,
-      items: newSet.items,
+      status: newSet.status || 'draft',
+      items: newSet.items || [],
       main_category: newSet.mainCategory,
-      sub_category: newSet.subCategory
+      sub_category: newSet.subCategory,
+      scheduled_date: newSet.scheduledDate || null
     };
-    
-    // Optimistic Update
+
     setSets(prev => [{
-      ...newSet, 
+      ...newSet,
       id: dbPayload.id,
       mainCategory: newSet.mainCategory,
-      subCategory: newSet.subCategory
+      subCategory: newSet.subCategory,
+      scheduledDate: newSet.scheduledDate || null
     }, ...prev]);
 
     const { error } = await supabase.from('sets').insert([dbPayload]);
     if (error) {
       console.error('Error adding set:', error);
-      alert('Failed to create set: ' + error.message);
+      showToast('Failed to create set: ' + error.message, 'error');
       fetchData(); // Rollback
+    } else {
+      showToast(`Set "${newSet.name}" created`, 'success');
+      fetchData();
     }
   };
 
@@ -191,6 +218,7 @@ const ManageProductsPage = () => {
     const dbUpdate = { ...updatedData };
     if (updatedData.mainCategory !== undefined) { dbUpdate.main_category = updatedData.mainCategory; delete dbUpdate.mainCategory; }
     if (updatedData.subCategory !== undefined) { dbUpdate.sub_category = updatedData.subCategory; delete dbUpdate.subCategory; }
+    if (updatedData.scheduledDate !== undefined) { dbUpdate.scheduled_date = updatedData.scheduledDate; delete dbUpdate.scheduledDate; }
     
     // Background DB update
     const { error } = await supabase.from('sets').update(dbUpdate).eq('id', setId);
@@ -214,15 +242,62 @@ const ManageProductsPage = () => {
 
     if (error) {
       console.error("Update set error:", error);
+      showToast('Failed to save set: ' + error.message, 'error');
       fetchData(); // Rollback if error
-    } else if (updatedData.status !== undefined) {
-      // Re-fetch to ensure product list updates properly
+    } else {
+      const currentSet = sets.find(s => s.id === setId);
+      const setName = updatedData.name || currentSet?.name || 'Look Set';
+      if (updatedData.status !== undefined) {
+        showToast(`Set "${setName}" updated to ${updatedData.status.toUpperCase()}`, 'success');
+      } else {
+        showToast(`Set "${setName}" updated`, 'success');
+      }
+      if (updatedData.status !== undefined) {
+        fetchData();
+      }
+    }
+  };
+
+  const reorderSets = async (setIdA, setIdB, timeA, timeB) => {
+    // 1. Optimistic UI update
+    setSets(prev => {
+      const idxA = prev.findIndex(s => s.id === setIdA);
+      const idxB = prev.findIndex(s => s.id === setIdB);
+      if (idxA === -1 || idxB === -1) return prev;
+
+      const newSets = [...prev];
+      newSets[idxA] = { ...newSets[idxA], created_at: timeA };
+      newSets[idxB] = { ...newSets[idxB], created_at: timeB };
+
+      return newSets.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+    });
+
+    // Update AdminContext state
+    adminReorderSets?.(setIdA, setIdB, timeA, timeB);
+
+    // 2. Persist to Supabase
+    try {
+      const [resA, resB] = await Promise.all([
+        supabase.from('sets').update({ created_at: timeA }).eq('id', setIdA),
+        supabase.from('sets').update({ created_at: timeB }).eq('id', setIdB)
+      ]);
+
+      if (resA.error || resB.error) {
+        console.error("Reorder sets error:", resA.error || resB.error);
+        showToast('Failed to save set order: ' + (resA.error?.message || resB.error?.message), 'error');
+        fetchData(); // Rollback
+      } else {
+        showToast('Set display order updated', 'success');
+        refreshData?.();
+      }
+    } catch (err) {
+      console.error("Reorder sets error:", err);
       fetchData();
     }
   };
 
   const deleteSet = async (setId) => {
-    if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเซ็ตนี้ รวมถึง 'สินค้าทั้งหมด' ที่อยู่ในเซ็ต? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
+    if (!window.confirm("Are you sure you want to delete this set and all products within it? This action cannot be undone.")) {
       return;
     }
 
@@ -237,24 +312,35 @@ const ManageProductsPage = () => {
       }
     }
 
-    await supabase.from('sets').delete().eq('id', setId);
+    const { error } = await supabase.from('sets').delete().eq('id', setId);
+    if (error) {
+      showToast('Failed to delete set: ' + error.message, 'error');
+    } else {
+      showToast('Set deleted', 'info');
+    }
     fetchData();
   };
 
-  const removeProductFromSet = async (setId, productId) => {
+  const removeProductFromSet = async (setId, productId, slotIndex = null) => {
     const draftId = `draft-${Date.now()}-${Math.random()}`;
     // 1. Optimistic UI update
     setSets(prev => prev.map(s => {
       if (s.id !== setId) return s;
-      const newItems = s.items.map(item => 
-        item.productId === productId ? { productId: draftId, layoutSize: item.layoutSize, isHidden: true } : item
-      );
+      const newItems = s.items.map((item, idx) => {
+        const isMatch = (slotIndex !== null && slotIndex !== undefined)
+          ? idx === slotIndex
+          : (item.productId === productId);
+        return isMatch ? { productId: draftId, layoutSize: item.layoutSize, isHidden: true } : item;
+      });
       
       // 2. Background DB update
       supabase.from('sets').update({ items: newItems }).eq('id', setId).then(({ error }) => {
         if (error) {
           console.error("removeProductFromSet error:", error);
+          showToast('Failed to remove product: ' + error.message, 'error');
           fetchData(); // Rollback
+        } else {
+          showToast('Product removed from set', 'info');
         }
       });
       
@@ -272,7 +358,10 @@ const ManageProductsPage = () => {
       supabase.from('sets').update({ items: newItems }).eq('id', setId).then(({ error }) => {
         if (error) {
           console.error("updateProductInSet error:", error);
+          showToast('Failed to update product: ' + error.message, 'error');
           fetchData(); // Rollback
+        } else {
+          showToast('Product updated in set', 'success');
         }
       });
       
@@ -280,11 +369,13 @@ const ManageProductsPage = () => {
     }));
   };
 
-  const changeProductOrderInSet = async (setId, productId, newIndex, updatedData = null) => {
+  const changeProductOrderInSet = async (setId, productId, newIndex, updatedData = null, slotIndex = null) => {
     // 1. Optimistic UI update
     setSets(prev => prev.map(s => {
       if (s.id !== setId) return s;
-      const currentIndex = s.items.findIndex(i => i.productId === productId);
+      const currentIndex = (slotIndex !== null && slotIndex !== undefined && slotIndex >= 0)
+        ? slotIndex
+        : s.items.findIndex((i, idx) => (i.slotId || `${i.productId}-${idx}`) === productId || i.productId === productId);
       if (currentIndex === -1) return s;
       const newItems = [...s.items];
       const [movedItem] = newItems.splice(currentIndex, 1);
@@ -295,7 +386,10 @@ const ManageProductsPage = () => {
       supabase.from('sets').update({ items: newItems }).eq('id', setId).then(({ error }) => {
         if (error) {
           console.error("changeProductOrderInSet error:", error);
+          showToast('Failed to save layout: ' + error.message, 'error');
           fetchData(); // Rollback
+        } else {
+          showToast('Layout updated', 'success');
         }
       });
       
@@ -306,11 +400,13 @@ const ManageProductsPage = () => {
   const toggleProductStatus = async (product) => {
     const newStatus = (product.status || 'draft').toLowerCase() === 'draft' ? 'active' : 'draft';
     await supabase.from('products').update({ status: newStatus }).eq('id', product.id);
+    showToast(`Product set to ${newStatus === 'active' ? 'PUBLISHED' : 'DRAFT'}`, 'success');
     fetchData(); // Refresh list
   };
 
   const deleteProduct = async (id) => {
     await supabase.from('products').delete().eq('id', id);
+    showToast('Product deleted', 'info');
     fetchData();
   };
 
@@ -339,10 +435,91 @@ const ManageProductsPage = () => {
     setIsAddingSet(false);
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial values from URL first, then localStorage fallback
+  const getInitialContext = () => {
+    const urlView = searchParams.get('view');
+    const urlCat = searchParams.get('cat');
+    const urlSub = searchParams.get('sub');
+
+    if (urlView || urlCat || urlSub) {
+      return {
+        view: urlView === 'list' ? 'list' : 'grid',
+        cat: urlCat || 'All',
+        sub: urlSub || 'All'
+      };
+    }
+
+    try {
+      const saved = localStorage.getItem('sol_admin_active_context');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          view: parsed.view === 'list' ? 'list' : 'grid',
+          cat: parsed.cat || 'All',
+          sub: parsed.sub || 'All'
+        };
+      }
+    } catch (e) {}
+
+    return { view: 'grid', cat: 'All', sub: 'All' };
+  };
+
+  const initialCtx = useRef(getInitialContext()).current;
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeMainCategory, setActiveMainCategory] = useState('Bags');
-  const [activeSubCategory, setActiveSubCategory] = useState('Tote Bags');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [activeMainCategory, setActiveMainCategory] = useState(initialCtx.cat);
+  const [activeSubCategory, setActiveSubCategory] = useState(initialCtx.sub);
+  const [viewMode, setViewMode] = useState(initialCtx.view);
+
+  // Sync state to URL search parameters and localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('sol_admin_active_context', JSON.stringify({
+        cat: activeMainCategory,
+        sub: activeSubCategory,
+        view: viewMode
+      }));
+    } catch (e) {}
+
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('view', viewMode);
+    if (activeMainCategory && activeMainCategory !== 'All') {
+      newParams.set('cat', activeMainCategory);
+    } else {
+      newParams.delete('cat');
+    }
+    if (activeSubCategory && activeSubCategory !== 'All') {
+      newParams.set('sub', activeSubCategory);
+    } else {
+      newParams.delete('sub');
+    }
+
+    if (newParams.toString() !== searchParams.toString()) {
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [activeMainCategory, activeSubCategory, viewMode, searchParams, setSearchParams]);
+
+  const handleSelectMainCategory = (cat) => {
+    setActiveMainCategory(cat);
+    if (cat === 'All') {
+      setActiveSubCategory('All');
+    } else {
+      const subs = categories[cat] || [];
+      if (viewMode === 'grid') {
+        // Smart select: find first subcategory with existing sets
+        const subWithSets = subs.find(s => (sets || []).some(item => 
+          (item.mainCategory === cat || item.main_category === cat) && 
+          (item.subCategory === s || item.sub_category === s)
+        ));
+        setActiveSubCategory(subWithSets || (subs.includes('Sets') ? 'Sets' : (subs[0] || 'All')));
+      } else {
+        const subWithProducts = subs.find(s => (products || []).some(p => p.mainCategory === cat && p.subCategory === s));
+        setActiveSubCategory(subWithProducts || subs[0] || 'All');
+      }
+    }
+  };
   
   // List Mode Filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -352,6 +529,14 @@ const ManageProductsPage = () => {
     statuses: [], // 'active', 'draft'
     sets: []
   });
+  const addSetTriggerRef = useRef(null);
+
+  const activeFilterCount = useMemo(() => {
+    return (listFilters.categories?.length || 0) +
+      (listFilters.stockLevels?.length || 0) +
+      (listFilters.statuses?.length || 0) +
+      (listFilters.sets?.length || 0);
+  }, [listFilters]);
 
   const toggleListFilter = (type, value) => {
     setListFilters(prev => {
@@ -400,6 +585,69 @@ const ManageProductsPage = () => {
     });
   };
 
+  // Product Picker Modal state (for styling Look Sets)
+  const [pickerConfig, setPickerConfig] = useState({
+    isOpen: false,
+    targetSlot: null,
+    targetSetId: null,
+    targetLayoutSize: 'small',
+    currentSetItemIds: []
+  });
+
+  const handleOpenPicker = ({ slot, setId, layoutSize, currentSetItemIds = [] }) => {
+    setPickerConfig({
+      isOpen: true,
+      targetSlot: slot,
+      targetSetId: setId,
+      targetLayoutSize: layoutSize || slot?.layoutSize || 'small',
+      currentSetItemIds
+    });
+  };
+
+  const handleSelectProductForSlot = async (selectedProduct) => {
+    if (!pickerConfig.targetSetId || !pickerConfig.targetSlot) return;
+
+    const targetSet = sets.find(s => s.id === pickerConfig.targetSetId);
+    if (!targetSet) return;
+
+    const slotIndex = pickerConfig.targetSlot.slotIndex;
+    const slotId = pickerConfig.targetSlot.id;
+    const rawProductId = pickerConfig.targetSlot.rawProductId;
+    const layoutSize = pickerConfig.targetLayoutSize || pickerConfig.targetSlot.layoutSize || 'small';
+
+    const updatedItems = (targetSet.items || []).map((item, idx) => {
+      const isMatch = (slotIndex !== null && slotIndex !== undefined)
+        ? idx === slotIndex
+        : (item.productId === slotId || (rawProductId && item.productId === rawProductId) || (item.slotId && item.slotId === slotId));
+      if (isMatch) {
+        return { 
+          ...item, 
+          productId: selectedProduct.id, 
+          layoutSize,
+          customCover: item.customCover || null
+        };
+      }
+      return item;
+    });
+
+    await updateSet(pickerConfig.targetSetId, { items: updatedItems });
+    showToast(`"${selectedProduct.name}" added to set`, 'success');
+  };
+
+  const handleCreateNewProductFromPicker = () => {
+    setEditorConfig({
+      isOpen: true,
+      initialData: { 
+        mainCategory: activeMainCategory !== 'All' ? activeMainCategory : '', 
+        subCategory: activeSubCategory !== 'All' ? activeSubCategory : '' 
+      },
+      targetSetId: pickerConfig.targetSetId,
+      targetSlotId: pickerConfig.targetSlot?.id,
+      targetSlotIndex: pickerConfig.targetSlot?.slotIndex,
+      targetRawProductId: pickerConfig.targetSlot?.rawProductId
+    });
+  };
+
   const handleFastUpdate = async (payload) => {
     if (!payload.id) return;
     try {
@@ -415,10 +663,11 @@ const ManageProductsPage = () => {
         .eq('id', payload.id);
         
       if (error) throw error;
+      showToast('Inventory updated', 'success');
       fetchData(); // Reload inventory list
     } catch (err) {
       console.error('Error fast updating product:', err);
-      alert('Failed to update stock. See console for details.');
+      showToast('Failed to update: ' + err.message, 'error');
     }
   };
 
@@ -450,6 +699,7 @@ const ManageProductsPage = () => {
       if (isPlaceholder || !payload.id) {
         // Insert new product
         dbPayload.id = Date.now().toString();
+        dbPayload.created_at = new Date().toISOString();
         const { data: newProduct, error } = await supabase
           .from('products')
           .insert([dbPayload])
@@ -459,15 +709,22 @@ const ManageProductsPage = () => {
         if (error) throw error;
         
         // If it was a placeholder in a set, update the set's JSON
-        if (editorConfig.targetSetId && isPlaceholder) {
+        const targetSlotId = editorConfig.targetSlotId || (isPlaceholder ? payload.id : null);
+        if (editorConfig.targetSetId && (targetSlotId || editorConfig.targetSlotIndex !== undefined)) {
           // We need to fetch the set, update the items JSON, and save back
-          const { data: set } = await supabase.from('sets').select('*').eq('id', editorConfig.targetSetId).single();
-          if (set) {
-            const newItems = set.items.map(item => 
-              item.productId === payload.id ? { ...item, productId: newProduct.id, isHidden: false } : item
-            );
-            await supabase.from('sets').update({ items: newItems }).eq('id', set.id);
+          const { data: setRecord } = await supabase.from('sets').select('*').eq('id', editorConfig.targetSetId).single();
+          if (setRecord) {
+            const newItems = (setRecord.items || []).map((item, idx) => {
+              const isMatch = (editorConfig.targetSlotIndex !== null && editorConfig.targetSlotIndex !== undefined)
+                ? idx === editorConfig.targetSlotIndex
+                : (item.productId === targetSlotId || (editorConfig.targetRawProductId && item.productId === editorConfig.targetRawProductId));
+              return isMatch ? { ...item, productId: newProduct.id, isHidden: false } : item;
+            });
+            await supabase.from('sets').update({ items: newItems }).eq('id', setRecord.id);
           }
+          showToast(`Product "${payload.name}" added to set`, 'success');
+        } else {
+          showToast(`Product "${payload.name}" created`, 'success');
         }
       } else {
         // Update existing
@@ -477,17 +734,14 @@ const ManageProductsPage = () => {
           .eq('id', payload.id);
           
         if (error) throw error;
+        showToast(`Product "${payload.name}" updated`, 'success');
       }
       
-      // We should ideally fetch the fresh data here or let real-time handle it.
-      // For now, we will call a refresh function if we build one, or just let the user know.
       console.log('Saved to Supabase successfully!');
       fetchData();
-      // Temporary hack: fallback to old context to keep UI updated until we refactor the fetch query
-      // (This will be removed in the next step when we fetch from Supabase)
     } catch (e) {
       console.error('Supabase Error:', e);
-      alert('Error saving to database. Check console.');
+      showToast('Error saving product: ' + e.message, 'error');
     }
   };
 
@@ -552,8 +806,12 @@ const ManageProductsPage = () => {
         
         // Statuses
         if (listFilters.statuses.length > 0) {
-          const pStatus = p.status || 'draft';
-          if (!listFilters.statuses.includes(pStatus)) return false;
+          const pStatus = (p.status || 'draft').toLowerCase();
+          const matches = listFilters.statuses.some(st => {
+            if (st === 'active' || st === 'published') return pStatus === 'active' || pStatus === 'published';
+            return pStatus === st.toLowerCase();
+          });
+          if (!matches) return false;
         }
 
         // Sets
@@ -856,93 +1114,155 @@ const ManageProductsPage = () => {
       
       {/* STICKY HEADER WRAPPER */}
       <div style={{ position: 'sticky', top: isMobile ? '-24px' : '-40px', paddingTop: isMobile ? '12px' : '20px', background: 'rgba(249, 250, 251, 0.85)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', zIndex: 10, margin: isMobile ? '-24px -12px 12px -16px' : '-40px -12px 16px -20px', paddingLeft: isMobile ? '16px' : '20px', paddingRight: '12px' }}>
-{/* HEADER SECTION */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMobile ? '16px' : '24px', gap: isMobile ? '12px' : '24px', width: '100%', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+      {/* HEADER SECTION - Strict 1 Row on Mobile */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMobile ? '12px' : '24px', gap: isMobile ? '8px' : '20px', width: '100%', flexWrap: 'nowrap' }}>
         
-        {/* Full-width Centered Search */}
-        <div style={{ flex: 1, maxWidth: '800px', position: 'relative', width: isMobile ? '100%' : 'auto' }}>
-          <Search size={18} color="#888" style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)' }} />
+        {/* Search Bar Input */}
+        <div style={{ flex: 1, maxWidth: '800px', position: 'relative', minWidth: 0 }}>
+          <Search size={isMobile ? 15 : 18} color="#888" style={{ position: 'absolute', left: isMobile ? '12px' : '20px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text" 
-            placeholder="Search by name or SKU..." 
+            placeholder={viewMode === 'grid' ? (isMobile ? "Search sets..." : "Search look sets...") : (isMobile ? "Search..." : "Search products by name or SKU...")} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ 
               width: '100%', 
-              padding: isMobile ? '10px 16px 10px 42px' : '14px 20px 14px 48px', 
-              paddingRight: viewMode === 'list' ? '48px' : '20px', 
+              padding: isMobile ? '8px 12px 8px 34px' : '14px 20px 14px 48px', 
+              paddingRight: searchQuery ? '36px' : (isMobile ? '12px' : '20px'), 
               border: 'none', 
               borderRadius: '100px', 
-              fontSize: isMobile ? '14px' : '15px', 
+              fontSize: isMobile ? '13px' : '15px', 
               outline: 'none', 
               background: '#F3F4F6', 
               color: '#111',
               transition: 'padding 0.2s'
             }}
           />
-          {viewMode === 'list' && (
-             <button 
-               onClick={() => setIsFilterOpen(!isFilterOpen)}
-               style={{ 
-                 position: 'absolute', 
-                 right: '8px', 
-                 top: '50%', 
-                 transform: 'translateY(-50%)',
-                 display: 'flex', 
-                 alignItems: 'center', 
-                 justifyContent: 'center',
-                 width: '32px',
-                 height: '32px',
-                 borderRadius: '50%', 
-                 border: 'none', 
-                 background: isFilterOpen ? '#e5e7eb' : 'transparent', 
-                 color: isFilterOpen ? '#111' : '#6b7280', 
-                 cursor: 'pointer', 
-                 transition: 'all 0.2s'
-               }}
-               title="Toggle Filters"
-             >
-               <SlidersHorizontal size={18} />
-             </button>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: isMobile ? '10px' : '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: '#e5e7eb',
+                border: 'none',
+                borderRadius: '50%',
+                width: isMobile ? '18px' : '22px',
+                height: isMobile ? '18px' : '22px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#4b5563',
+                padding: 0
+              }}
+              title="Clear search"
+            >
+              <X size={isMobile ? 10 : 13} />
+            </button>
           )}
         </div>
         
-        {/* View Mode Toggle */}
+        {/* Right Controls: View Switcher + Primary Action Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px', flexShrink: 0 }}>
+          {/* View Mode Toggle */}
+          <div style={{ display: 'flex', background: '#F3F4F6', padding: isMobile ? '3px' : '4px', borderRadius: '100px', gap: isMobile ? '2px' : '4px' }}>
+            <button 
+              type="button"
+              onClick={() => setViewMode('grid')}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: isMobile ? '6px 10px' : '10px 16px', border: 'none', borderRadius: '100px', cursor: 'pointer',
+                background: viewMode === 'grid' ? '#fff' : 'transparent',
+                color: viewMode === 'grid' ? '#111' : '#6b7280',
+                fontWeight: viewMode === 'grid' ? 600 : 500,
+                fontSize: isMobile ? '12px' : '13px',
+                boxShadow: viewMode === 'grid' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <LayoutGrid size={isMobile ? 14 : 16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Lookbook (Grid)</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => setViewMode('list')}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: isMobile ? '6px 10px' : '10px 16px', border: 'none', borderRadius: '100px', cursor: 'pointer',
+                background: viewMode === 'list' ? '#fff' : 'transparent',
+                color: viewMode === 'list' ? '#111' : '#6b7280',
+                fontWeight: viewMode === 'list' ? 600 : 500,
+                fontSize: isMobile ? '12px' : '13px',
+                boxShadow: viewMode === 'list' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <AlignJustify size={isMobile ? 14 : 16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Catalog (List)</span>
+            </button>
+          </div>
 
-        <div style={{ display: 'flex', background: '#F3F4F6', padding: '4px', borderRadius: '100px', gap: '4px' }}>
-          <button 
-            onClick={() => setViewMode('grid')}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: isMobile ? '8px 12px' : '10px 16px', border: 'none', borderRadius: '100px', cursor: 'pointer',
-              background: viewMode === 'grid' ? '#fff' : 'transparent',
-              color: viewMode === 'grid' ? '#111' : '#6b7280',
-              fontWeight: viewMode === 'grid' ? 600 : 500,
-              fontSize: '13px',
-              boxShadow: viewMode === 'grid' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all 0.2s'
-            }}
-          >
-            <LayoutGrid size={16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Layout</span>
-          </button>
-          <button 
-            onClick={() => setViewMode('list')}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: isMobile ? '8px 12px' : '10px 16px', border: 'none', borderRadius: '100px', cursor: 'pointer',
-              background: viewMode === 'list' ? '#fff' : 'transparent',
-              color: viewMode === 'list' ? '#111' : '#6b7280',
-              fontWeight: viewMode === 'list' ? 600 : 500,
-              fontSize: '13px',
-              boxShadow: viewMode === 'list' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all 0.2s'
-            }}
-          >
-            <AlignJustify size={16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>List</span>
-          </button>
-
+          {/* Primary Action Button */}
+          {viewMode === 'grid' ? (
+            <button 
+              type="button"
+              onClick={() => addSetTriggerRef.current?.()}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '6px',
+                padding: isMobile ? '0' : '10px 20px', 
+                width: isMobile ? '36px' : 'auto',
+                height: isMobile ? '36px' : 'auto',
+                border: 'none', 
+                borderRadius: '100px', 
+                cursor: 'pointer',
+                background: '#111',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '13px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+              title="New Look Set"
+            >
+              <Plus size={isMobile ? 18 : 16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>New Look Set</span>
+            </button>
+          ) : (
+            <button 
+              type="button"
+              onClick={handleAddNew}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '6px',
+                padding: isMobile ? '0' : '10px 20px', 
+                width: isMobile ? '36px' : 'auto',
+                height: isMobile ? '36px' : 'auto',
+                border: 'none', 
+                borderRadius: '100px', 
+                cursor: 'pointer',
+                background: '#111',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '13px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+              title="Add Product"
+            >
+              <Plus size={isMobile ? 18 : 16} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Add Product</span>
+            </button>
+          )}
         </div>
-
       </div>
 
       
@@ -951,27 +1271,71 @@ const ManageProductsPage = () => {
             {/* Main Categories Row */}
       <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: viewMode === 'list' ? 'none' : 'flex', alignItems: 'center', marginBottom: isMobile ? '12px' : '16px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
         <div style={{ display: 'flex', background: '#F3F4F6', padding: '4px', borderRadius: '100px', gap: '4px', whiteSpace: 'nowrap' }}>
-          {Object.keys(categories).map(cat => (
-            <button 
-              key={cat}
-              onClick={() => { setActiveMainCategory(cat); setActiveSubCategory(categories[cat]?.[0] || ''); }}
-              style={{
-                padding: isMobile ? '6px 14px' : '8px 20px',
-                border: 'none',
-                borderRadius: '100px',
-                background: activeMainCategory === cat ? '#fff' : 'transparent',
-                color: activeMainCategory === cat ? '#111' : '#666',
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: activeMainCategory === cat ? 600 : 500,
-                boxShadow: activeMainCategory === cat ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {cat}
-            </button>
-          ))}
+          <button 
+            onClick={() => handleSelectMainCategory('All')}
+            style={{
+              padding: isMobile ? '6px 14px' : '8px 20px',
+              border: 'none',
+              borderRadius: '100px',
+              background: activeMainCategory === 'All' ? '#fff' : 'transparent',
+              color: activeMainCategory === 'All' ? '#111' : '#666',
+              fontSize: isMobile ? '13px' : '14px',
+              fontWeight: activeMainCategory === 'All' ? 600 : 500,
+              boxShadow: activeMainCategory === 'All' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            All Look Sets
+            <span style={{ 
+              background: activeMainCategory === 'All' ? '#111' : '#e5e7eb',
+              color: activeMainCategory === 'All' ? '#fff' : '#4b5563',
+              padding: '1px 7px', borderRadius: '100px', fontSize: '11px', fontWeight: 600
+            }}>
+              {sets.length}
+            </span>
+          </button>
+          {Object.keys(categories).map(cat => {
+            const catSetCount = sets.filter(s => (s.mainCategory === cat || s.main_category === cat)).length;
+            const catProdCount = validProducts.filter(p => p.mainCategory === cat).length;
+            const count = viewMode === 'grid' ? catSetCount : catProdCount;
+            const hasItems = count > 0;
+            return (
+              <button 
+                key={cat}
+                onClick={() => handleSelectMainCategory(cat)}
+                style={{
+                  padding: isMobile ? '6px 14px' : '8px 20px',
+                  border: 'none',
+                  borderRadius: '100px',
+                  background: activeMainCategory === cat ? '#fff' : 'transparent',
+                  color: activeMainCategory === cat ? '#111' : '#666',
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: activeMainCategory === cat ? 600 : 500,
+                  boxShadow: activeMainCategory === cat ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {cat}
+                <span style={{ 
+                  background: activeMainCategory === cat ? '#111' : (hasItems ? '#e5e7eb' : 'transparent'),
+                  color: activeMainCategory === cat ? '#fff' : (hasItems ? '#4b5563' : '#9ca3af'),
+                  padding: '1px 7px', borderRadius: '100px', fontSize: '11px', fontWeight: 600
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
         <button 
           onClick={() => setIsCategoriesManagerOpen(true)}
@@ -994,42 +1358,57 @@ const ManageProductsPage = () => {
 
       {/* Sub Categories Row */}
       <div className={isMobile ? styles.hideScrollbar : ''} style={{ display: viewMode === 'list' ? 'none' : 'flex', gap: isMobile ? '16px' : '24px', marginBottom: isMobile ? '8px' : '16px', alignItems: 'center', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? '4px' : '0' }}>
+        {activeMainCategory === 'All' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: '#6b7280', padding: '4px 0' }}>
+            <span style={{ fontWeight: 600, color: '#111' }}>Showing all sets across all categories</span>
+            <span>•</span>
+            <span>Published: <strong style={{ color: '#10b981' }}>{sets.filter(s => s.status === 'published').length}</strong></span>
+            <span>•</span>
+            <span>Draft: <strong style={{ color: '#f59e0b' }}>{sets.filter(s => s.status === 'draft').length}</strong></span>
+          </div>
+        )}
         
-        
-        {activeMainCategory !== 'All' && categories[activeMainCategory] && categories[activeMainCategory].map(sub => (
-          <button
-            key={sub}
-            onClick={() => setActiveSubCategory(sub)}
-            style={{
-              padding: isMobile ? '0 0 8px 0' : '0 0 12px 0',
-              border: 'none',
-              background: 'transparent',
-              fontSize: isMobile ? '13px' : '14px',
-              fontWeight: activeSubCategory === sub ? 600 : 500,
-              color: activeSubCategory === sub ? '#111' : '#888',
-              borderBottom: activeSubCategory === sub ? '2px solid #111' : '2px solid transparent',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {sub}
-            <span style={{ 
-              background: activeSubCategory === sub ? '#f3f4f6' : 'transparent',
-              padding: '2px 8px', borderRadius: '100px', fontSize: '11px', fontWeight: 600
-            }}>
-              {validProducts.filter(p => p.mainCategory === activeMainCategory && p.subCategory === sub).length}
-            </span>
-          </button>
-        ))}
+        {activeMainCategory !== 'All' && categories[activeMainCategory] && categories[activeMainCategory].map(sub => {
+          const subSetCount = sets.filter(s => 
+            (s.mainCategory === activeMainCategory || s.main_category === activeMainCategory) && 
+            (s.subCategory === sub || s.sub_category === sub)
+          ).length;
+          const subProdCount = validProducts.filter(p => p.mainCategory === activeMainCategory && p.subCategory === sub).length;
+          const count = viewMode === 'grid' ? subSetCount : subProdCount;
+          const hasItems = count > 0;
+          return (
+            <button
+              key={sub}
+              onClick={() => setActiveSubCategory(sub)}
+              style={{
+                padding: isMobile ? '0 0 8px 0' : '0 0 12px 0',
+                border: 'none',
+                background: 'transparent',
+                fontSize: isMobile ? '13px' : '14px',
+                fontWeight: activeSubCategory === sub ? 600 : 500,
+                color: activeSubCategory === sub ? '#111' : (hasItems ? '#4b5563' : '#9ca3af'),
+                borderBottom: activeSubCategory === sub ? '2px solid #111' : '2px solid transparent',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {sub}
+              <span style={{ 
+                background: activeSubCategory === sub ? '#111' : (hasItems ? '#f3f4f6' : 'transparent'),
+                color: activeSubCategory === sub ? '#fff' : (hasItems ? '#374151' : '#9ca3af'),
+                padding: '2px 8px', borderRadius: '100px', fontSize: '11px', fontWeight: 600
+              }}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
 
-
-        
         <div style={{ flexGrow: 1 }}></div>
-
       </div>
       
       
@@ -1037,103 +1416,303 @@ const ManageProductsPage = () => {
             </div>
             {/* MEGA FILTER PANEL */}
       {viewMode === 'list' && isFilterOpen && (
-        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '16px', position: 'relative' }}>
-          
-          <button 
+        isMobile ? (
+          /* Mobile Filter Bottom Sheet */
+          <div 
+            className={styles.bottomSheetContainer}
             onClick={() => setIsFilterOpen(false)}
-            style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}
           >
-            <X size={20} />
-          </button>
-          
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '48px' }}>
-            
-            {/* Column 1: Category */}
-            <div style={{ flex: '1 1 200px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Categories</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {Object.keys(categories).map(cat => (
-                  <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={listFilters.categories.includes(cat)} 
-                      onChange={() => toggleListFilter('categories', cat)} 
-                      style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }}
-                    /> 
-                    {cat}
-                  </label>
-                ))}
+            <div 
+              className={styles.bottomSheetContent}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className={styles.bottomSheetHandle} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#111' }}>Catalog Filters</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#6b7280' }}>Filter products by category, stock, and status</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setIsFilterOpen(false)}
+                  style={{ border: 'none', background: '#f3f4f6', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <X size={16} color="#666" />
+                </button>
               </div>
-            </div>
 
-            {/* Column 2: Stock Level */}
-            <div style={{ flex: '1 1 200px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Stock Level</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                  <input type="checkbox" checked={listFilters.stockLevels.includes('in_stock')} onChange={() => toggleListFilter('stockLevels', 'in_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> In Stock
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                  <input type="checkbox" checked={listFilters.stockLevels.includes('low_stock')} onChange={() => toggleListFilter('stockLevels', 'low_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Low Stock (&lt; 10)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                  <input type="checkbox" checked={listFilters.stockLevels.includes('out_of_stock')} onChange={() => toggleListFilter('stockLevels', 'out_of_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Out of Stock
-                </label>
+              {/* Categories */}
+              <div style={{ marginBottom: '16px' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#111', fontWeight: 600 }}>Categories</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {Object.keys(categories).map(cat => {
+                    const isChecked = listFilters.categories.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleListFilter('categories', cat)}
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: '100px',
+                          border: isChecked ? '1px solid #111' : '1px solid #e5e7eb',
+                          background: isChecked ? '#111' : '#f9fafb',
+                          color: isChecked ? '#fff' : '#374151',
+                          fontSize: '13px',
+                          fontWeight: isChecked ? 600 : 500,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Column 3: Status */}
-            <div style={{ flex: '1 1 200px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Status</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                  <input type="checkbox" checked={listFilters.statuses.includes('active')} onChange={() => toggleListFilter('statuses', 'active')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Active
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                  <input type="checkbox" checked={listFilters.statuses.includes('draft')} onChange={() => toggleListFilter('statuses', 'draft')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Draft
-                </label>
+              {/* Stock Level */}
+              <div style={{ marginBottom: '16px' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#111', fontWeight: 600 }}>Stock Level</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {[
+                    { key: 'in_stock', label: 'In Stock' },
+                    { key: 'low_stock', label: 'Low Stock (< 10)' },
+                    { key: 'out_of_stock', label: 'Out of Stock' }
+                  ].map(opt => {
+                    const isChecked = listFilters.stockLevels.includes(opt.key);
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => toggleListFilter('stockLevels', opt.key)}
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: '100px',
+                          border: isChecked ? '1px solid #111' : '1px solid #e5e7eb',
+                          background: isChecked ? '#111' : '#f9fafb',
+                          color: isChecked ? '#fff' : '#374151',
+                          fontSize: '13px',
+                          fontWeight: isChecked ? 600 : 500,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Column 4: Look Sets */}
-            <div style={{ flex: '1 1 200px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Look Sets</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '200px', overflowY: 'auto' }}>
-                {sets.length === 0 && <span style={{ fontSize: '14px', color: '#888' }}>No sets available</span>}
-                {sets.map(s => (
-                  <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={listFilters.sets && listFilters.sets.includes(s.id)} 
-                      onChange={() => toggleListFilter('sets', s.id)} 
-                      style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }}
-                    /> 
-                    {s.name || 'Unnamed Set'}
-                  </label>
-                ))}
+              {/* Status */}
+              <div style={{ marginBottom: '16px' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#111', fontWeight: 600 }}>Status</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {[
+                    { key: 'active', label: 'Active / Published' },
+                    { key: 'draft', label: 'Draft' }
+                  ].map(opt => {
+                    const isChecked = listFilters.statuses.includes(opt.key);
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => toggleListFilter('statuses', opt.key)}
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: '100px',
+                          border: isChecked ? '1px solid #111' : '1px solid #e5e7eb',
+                          background: isChecked ? '#111' : '#f9fafb',
+                          color: isChecked ? '#fff' : '#374151',
+                          fontSize: '13px',
+                          fontWeight: isChecked ? 600 : 500,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Look Sets */}
+              {sets && sets.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#111', fontWeight: 600 }}>Look Sets</h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '140px', overflowY: 'auto' }}>
+                    {sets.map(s => {
+                      const isChecked = listFilters.sets && listFilters.sets.includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => toggleListFilter('sets', s.id)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '100px',
+                            border: isChecked ? '1px solid #111' : '1px solid #e5e7eb',
+                            background: isChecked ? '#111' : '#f9fafb',
+                            color: isChecked ? '#fff' : '#374151',
+                            fontSize: '12px',
+                            fontWeight: isChecked ? 600 : 500,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {s.name || 'Unnamed Set'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Actions */}
+              <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setListFilters({ categories: [], stockLevels: [], statuses: [], sets: [] })}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(false)}
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    background: '#111',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Apply {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+                </button>
               </div>
             </div>
-            
           </div>
-        </div>
+        ) : (
+          /* Desktop In-Page Mega Filter Panel */
+          <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '16px', position: 'relative' }}>
+            <button 
+              onClick={() => setIsFilterOpen(false)}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+            >
+              <X size={20} />
+            </button>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '48px' }}>
+              {/* Column 1: Category */}
+              <div style={{ flex: '1 1 200px' }}>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Categories</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {Object.keys(categories).map(cat => (
+                    <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={listFilters.categories.includes(cat)} 
+                        onChange={() => toggleListFilter('categories', cat)} 
+                        style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }}
+                      /> 
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Column 2: Stock Level */}
+              <div style={{ flex: '1 1 200px' }}>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Stock Level</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input type="checkbox" checked={listFilters.stockLevels.includes('in_stock')} onChange={() => toggleListFilter('stockLevels', 'in_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> In Stock
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input type="checkbox" checked={listFilters.stockLevels.includes('low_stock')} onChange={() => toggleListFilter('stockLevels', 'low_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Low Stock (&lt; 10)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input type="checkbox" checked={listFilters.stockLevels.includes('out_of_stock')} onChange={() => toggleListFilter('stockLevels', 'out_of_stock')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Out of Stock
+                  </label>
+                </div>
+              </div>
+
+              {/* Column 3: Status */}
+              <div style={{ flex: '1 1 200px' }}>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Status</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input type="checkbox" checked={listFilters.statuses.includes('active')} onChange={() => toggleListFilter('statuses', 'active')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Active
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                    <input type="checkbox" checked={listFilters.statuses.includes('draft')} onChange={() => toggleListFilter('statuses', 'draft')} style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }} /> Draft
+                  </label>
+                </div>
+              </div>
+
+              {/* Column 4: Look Sets */}
+              <div style={{ flex: '1 1 200px' }}>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Look Sets</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '200px', overflowY: 'auto' }}>
+                  {sets.length === 0 && <span style={{ fontSize: '14px', color: '#888' }}>No sets available</span>}
+                  {sets.map(s => (
+                    <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: '#4b5563' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={listFilters.sets && listFilters.sets.includes(s.id)} 
+                        onChange={() => toggleListFilter('sets', s.id)} 
+                        style={{ accentColor: '#111', width: '16px', height: '16px', cursor: 'pointer' }}
+                      /> 
+                      {s.name || 'Unnamed Set'}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       {viewMode === 'list' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px', minHeight: '32px' }}>
+        <div 
+          className={isMobile ? styles.hideScrollbar : ''}
+          style={{ 
+            display: 'flex', 
+            flexWrap: isMobile ? 'nowrap' : 'wrap', 
+            overflowX: isMobile ? 'auto' : 'visible',
+            gap: '8px', 
+            marginBottom: isMobile ? '12px' : '24px', 
+            minHeight: isMobile ? 'auto' : '32px',
+            paddingBottom: isMobile ? '4px' : '0'
+          }}
+        >
           {listFilters.categories.map(val => (
-            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151', flexShrink: 0 }}>
               Category: {val}
               <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('categories', val)} />
             </span>
           ))}
           {listFilters.stockLevels.map(val => (
-            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151', flexShrink: 0 }}>
               Stock: {val.replace('_', ' ')}
               <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('stockLevels', val)} />
             </span>
           ))}
           {listFilters.statuses.map(val => (
-            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+            <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151', flexShrink: 0 }}>
               Status: {val}
               <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('statuses', val)} />
             </span>
@@ -1141,14 +1720,14 @@ const ManageProductsPage = () => {
           {listFilters.sets && listFilters.sets.map(val => {
             const setName = sets.find(s => s.id === val)?.name || 'Unknown Set';
             return (
-              <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+              <span key={val} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f3f4f6', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: '#374151', flexShrink: 0 }}>
                 Set: {setName}
                 <X size={14} style={{ cursor: 'pointer', opacity: 0.5 }} onClick={() => removeListFilter('sets', val)} />
               </span>
             );
           })}
           {(listFilters.categories.length > 0 || listFilters.stockLevels.length > 0 || listFilters.statuses.length > 0 || (listFilters.sets && listFilters.sets.length > 0)) && (
-            <button onClick={() => setListFilters({ categories: [], stockLevels: [], statuses: [], sets: [] })} style={{ border: 'none', background: 'transparent', fontSize: '13px', color: '#6b7280', cursor: 'pointer', padding: '6px 8px' }}>
+            <button onClick={() => setListFilters({ categories: [], stockLevels: [], statuses: [], sets: [] })} style={{ border: 'none', background: 'transparent', fontSize: '13px', color: '#6b7280', cursor: 'pointer', padding: '6px 8px', flexShrink: 0 }}>
               Clear all
             </button>
           )}
@@ -1165,18 +1744,18 @@ const ManageProductsPage = () => {
             handleDelete={deleteProduct} 
             toggleProductStatus={toggleProductStatus}
             handleFastUpdate={handleFastUpdate}
+            onAddNew={handleAddNew}
+            isFilterOpen={isFilterOpen}
+            onToggleFilter={() => setIsFilterOpen(prev => !prev)}
+            activeFilterCount={activeFilterCount}
+            isMobile={isMobile}
           />
-        ) : !activeSubCategory || activeSubCategory === 'All' ? (
-          <div style={{ padding: '64px', textAlign: 'center', color: '#888' }}>
-            <Package size={48} strokeWidth={1} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#111', fontWeight: 500 }}>Select a Subcategory</h3>
-            <p style={{ margin: 0, fontSize: '14px' }}>Please select a subcategory (e.g., Tote Bags) to view or create Look Sets.</p>
-          </div>
         ) : (
           <SetsManager 
             handleEdit={handleEdit} 
             activeMainCategory={activeMainCategory}
-            activeSubCategory={activeSubCategory}
+            activeSubCategory={activeSubCategory || 'All'}
+            categories={categories}
             products={products}
             sets={sets}
             addSet={addSet}
@@ -1185,6 +1764,16 @@ const ManageProductsPage = () => {
             removeProductFromSet={removeProductFromSet}
             updateProductInSet={updateProductInSet}
             changeProductOrderInSet={changeProductOrderInSet}
+            reorderSets={reorderSets}
+            showToast={showToast}
+            searchQuery={searchQuery}
+            onOpenPicker={handleOpenPicker}
+            onRegisterAddSet={(fn) => { addSetTriggerRef.current = fn; }}
+            onSelectCategory={(main, sub) => {
+              if (main) setActiveMainCategory(main);
+              if (sub) setActiveSubCategory(sub);
+            }}
+            isMobile={isMobile}
           />
         )}
       </div>
@@ -1196,6 +1785,16 @@ const ManageProductsPage = () => {
         isOpen={isCategoriesManagerOpen} 
         onClose={() => setIsCategoriesManagerOpen(false)} 
       />
+      <ProductPickerModal 
+        isOpen={pickerConfig.isOpen}
+        onClose={() => setPickerConfig(prev => ({ ...prev, isOpen: false }))}
+        onSelectProduct={handleSelectProductForSlot}
+        onCreateNewProduct={handleCreateNewProductFromPicker}
+        currentSlot={pickerConfig.targetSlot}
+        products={products}
+        categories={categories}
+        currentSetItemIds={pickerConfig.currentSetItemIds}
+      />
       <ProductEditorDrawer 
         isOpen={editorConfig.isOpen}
         onClose={() => setEditorConfig({ ...editorConfig, isOpen: false })}
@@ -1206,6 +1805,64 @@ const ManageProductsPage = () => {
         config={{ defaultMainCategory: activeMainCategory, defaultSubCategory: activeSubCategory, targetSetId: editorConfig.targetSetId }}
       />
       
+      {/* Floating Toast Notification - Top Center & High Visibility */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -25, x: '-50%', scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: -20, x: '-50%', scale: 0.95 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            style={{
+              position: 'fixed',
+              top: '24px',
+              left: '50%',
+              zIndex: 999999,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 24px',
+              borderRadius: '9999px',
+              background: toast.type === 'error' ? '#ef4444' : (toast.type === 'info' ? '#1f2937' : '#09090b'),
+              color: '#ffffff',
+              border: toast.type === 'error' ? '1px solid #dc2626' : '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)',
+              fontSize: '13.5px',
+              fontWeight: 500,
+              letterSpacing: '0.01em',
+              pointerEvents: 'auto',
+              minWidth: '280px',
+              maxWidth: '90vw'
+            }}
+          >
+            {toast.type === 'error' ? (
+              <AlertTriangle size={19} color="#fca5a5" style={{ flexShrink: 0 }} />
+            ) : (
+              <CheckCircle2 size={19} color={toast.type === 'info' ? '#93c5fd' : '#4ade80'} style={{ flexShrink: 0 }} />
+            )}
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                width: '22px',
+                height: '22px',
+                marginLeft: '8px',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <X size={12} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
           
     </div>
   );

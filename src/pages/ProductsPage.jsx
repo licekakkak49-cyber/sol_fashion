@@ -250,56 +250,56 @@ const ProductsPage = ({ previewSets = null }) => {
        return false;
     });
 
+    // Ensure sets are ordered strictly by display order (created_at DESC / Set #1 on top)
+    activeSets.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+
     const groups = [];
-    let assignedProductIds = new Set();
+    const assignedProductIds = new Set();
     let displayProductCount = 0;
 
+    // 1. Collect all product IDs in active sets on this page upfront
     activeSets.forEach(set => {
-       const setItems = (set.items || []).map(setItem => {
-          // Look up in ALL products to ensure we show the WHOLE set, even if some parts aren't "New"
-          const product = (products || []).find(p => p.id === setItem.productId);
+      (set.items || []).forEach(item => {
+        if (item.productId && !String(item.productId).startsWith('draft-')) {
+          assignedProductIds.add(String(item.productId));
+        }
+      });
+    });
+
+    // 2. Build Lookbook Set groups
+    activeSets.forEach(set => {
+       const setItems = (set.items || []).map((setItem, idx) => {
+          const product = (products || []).find(p => String(p.id) === String(setItem.productId));
           if (product) {
-             return { ...product, layoutSize: setItem.layoutSize };
+             return { 
+               ...product, 
+               uniqueKey: `${product.id}-${set.id}-${idx}`,
+               realProductId: product.id,
+               image: setItem.customCover || product.image || product.coverImage,
+               layoutSize: setItem.layoutSize 
+             };
           }
           return null;
        }).filter(Boolean);
 
        if (setItems.length > 0) {
-          const visibleSetItems = [];
-          for (let item of setItems) {
-             if (displayProductCount < visibleCount) {
-                visibleSetItems.push(item);
-                assignedProductIds.add(item.id);
-                displayProductCount++;
-             }
-          }
-          
-          if (visibleSetItems.length > 0) {
-             groups.push({
-               type: 'set',
-               id: set.id,
-               rows: buildRows(visibleSetItems)
-             });
-          }
+          groups.push({
+            type: 'set',
+            id: set.id,
+            rows: buildRows(setItems)
+          });
+          displayProductCount += setItems.length;
        }
     });
 
-    // Gather ALL product IDs that belong to ANY set (published, draft, or filtered out)
-    const allAssignedProductIds = new Set();
-    (sets || []).forEach(s => {
-       (s.items || []).forEach(item => {
-          if (!item.isPlaceholder && item.productId) {
-             allAssignedProductIds.add(item.productId);
-          }
-       });
-    });
-
+    // 3. Display remaining published category products that are NOT in any active Look Set on this page
     const unassignedItems = [];
     for (let product of filteredProducts) {
-       // Only show products that are NOT in ANY set
-       if (!allAssignedProductIds.has(product.id) && displayProductCount < visibleCount) {
-          unassignedItems.push(product);
-          displayProductCount++;
+       if (!assignedProductIds.has(String(product.id))) {
+          if (displayProductCount < visibleCount) {
+             unassignedItems.push(product);
+             displayProductCount++;
+          }
        }
     }
 
@@ -488,11 +488,11 @@ const ProductsPage = ({ previewSets = null }) => {
                       const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
                       return (
                         <div 
-                          key={product.id} 
+                          key={product.uniqueKey || product.id} 
                           className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
                         >
                           <ProductCard 
-                            id={product.id}
+                            id={product.realProductId || product.id}
                             image={product.image}
                             hoverImage={product.hoverImage}
                             name={product.name}
@@ -517,20 +517,14 @@ const ProductsPage = ({ previewSets = null }) => {
         ))}
       </div>
 
-{!previewSets && (
-      <div className={styles.bottomSection}>
-        {visibleCount < filteredProducts.length && (
+      {!previewSets && visibleCount < filteredProducts.length && (
+        <div className={styles.bottomSection}>
           <div className={styles.loadMoreContainer}>
             <button className={styles.loadMoreBtn} onClick={handleLoadMore}>
               VIEW MORE
             </button>
           </div>
-        )}
-        <div className={styles.breadcrumbs}>
-          <span>Homepage — Women — </span>
-          <span className={styles.currentBreadcrumb}>Beachwear</span>
         </div>
-      </div>
       )}
     </div>
   );

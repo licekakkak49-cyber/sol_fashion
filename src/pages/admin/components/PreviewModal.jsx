@@ -1,79 +1,112 @@
-import React, { useState } from 'react';
-import { X, Monitor, Tablet, Smartphone } from 'lucide-react';
-import Nav from '../../../components/Nav';
-import Footer from '../../../components/Footer';
+import React, { useEffect } from 'react';
+import { X } from 'lucide-react';
 import ProductsPage from '../../ProductsPage';
 
 const PreviewModal = ({ sets, onClose }) => {
-  const [viewport, setViewport] = useState('100%');
+  // Allow Esc key to close preview
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Intercept any click inside preview to prevent navigation to other pages
+  const handlePreviewClickCapture = (e) => {
+    // If the click is on or within the close button, let it through
+    if (e.target.closest('.preview-close-btn')) {
+      return;
+    }
+
+    // Check if the clicked element is an anchor link or button inside the preview
+    const linkOrInteractive = e.target.closest('a, button');
+    if (linkOrInteractive) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column'
-    }}>
-      {/* Top Control Bar */}
-      <div style={{
-        height: '60px', background: '#111', color: '#fff', display: 'flex', 
-        alignItems: 'center', justifyContent: 'space-between', padding: '0 24px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontWeight: 600 }}>Live Preview</span>
-          <div style={{ display: 'flex', gap: '4px', background: '#333', padding: '4px', borderRadius: '8px' }}>
-            <button onClick={() => setViewport('100%')} style={{ background: viewport === '100%' ? '#555' : 'transparent', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Monitor size={16} /> Desktop
-            </button>
-            <button onClick={() => setViewport('768px')} style={{ background: viewport === '768px' ? '#555' : 'transparent', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Tablet size={16} /> Tablet
-            </button>
-            <button onClick={() => setViewport('375px')} style={{ background: viewport === '375px' ? '#555' : 'transparent', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Smartphone size={16} /> Mobile
-            </button>
-          </div>
-        </div>
-        <button onClick={onClose} style={{ background: 'transparent', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <X size={20} /> Close
-        </button>
-      </div>
-      
-      {/* Soft Top Banner */}
-      <div style={{
-        background: '#fef3c7',
-        color: '#92400e',
-        textAlign: 'center',
-        padding: '10px',
-        fontWeight: 500,
-        fontSize: '13px',
-        borderBottom: '1px solid #fde68a'
-      }}>
-        <span style={{ marginRight: '6px' }}>👁️</span>
-        Preview Mode — Showing only product grid. Changes are not live until published.
-      </div>
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: '#ffffff',
+        zIndex: 99999,
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}
+    >
+      <style>{`
+        /* Visual-only preview styles: prevent link cursor while preserving layout */
+        .preview-visual-container a {
+          cursor: default !important;
+          -webkit-user-drag: none;
+        }
+        .preview-visual-container button:not(.preview-close-btn) {
+          cursor: default !important;
+        }
+      `}</style>
 
-      {/* Iframe-like Container */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '24px 0', background: '#000' }}>
-        <div style={{ 
-          width: viewport, 
-          background: '#fff', 
-          height: '100%', 
+      {/* Minimal Floating Close Button */}
+      <button
+        onClick={onClose}
+        className="preview-close-btn"
+        style={{
+          position: 'fixed',
+          top: '20px',
+          right: '24px',
+          zIndex: 100000,
+          background: 'rgba(17, 17, 17, 0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          color: '#ffffff',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          borderRadius: '100px',
+          padding: '10px 20px',
+          fontSize: '13px',
+          fontWeight: 600,
+          letterSpacing: '0.02em',
+          cursor: 'pointer',
           display: 'flex',
-          flexDirection: 'column',
-          transition: 'width 0.3s ease',
-          boxShadow: '0 0 40px rgba(0,0,0,0.5)',
-          borderRadius: viewport === '100%' ? '0' : '12px',
-          overflow: 'hidden'
-        }}>
-          {/* Scrollable Content */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            
-            <div style={{ paddingTop: '40px', paddingBottom: '40px' }}>
-               <ProductsPage previewSets={sets} />
-            </div>
-            
-          </div>
-        </div>
-      </div>
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          transition: 'transform 0.2s ease, background 0.2s ease'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = '#000000';
+          e.currentTarget.style.transform = 'scale(1.03)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'rgba(17, 17, 17, 0.85)';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        title="Exit Preview (Esc)"
+      >
+        <X size={16} />
+        <span>Close Preview</span>
+      </button>
 
+      {/* Visual-only Responsive Content Container */}
+      <div 
+        className="preview-visual-container"
+        onClickCapture={handlePreviewClickCapture}
+        style={{
+          width: '100%',
+          minHeight: '100vh',
+          paddingTop: '20px',
+          paddingBottom: '60px'
+        }}
+      >
+        <ProductsPage previewSets={sets} />
+      </div>
     </div>
   );
 };

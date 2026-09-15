@@ -6,6 +6,7 @@ import ProductCard from '../components/ProductCard';
 import { useAdmin } from '../context/AdminContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/formatCurrency';
 import styles from './ProductDetailPage.module.css';
 import SizeGuideDrawer from '../components/SizeGuideDrawer';
 
@@ -80,7 +81,7 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
   const wishlistProduct = product || wishlistProductFound || {
     id: id || 'mock-product-id',
     name: 'Mori 02(BR)',
-    price: '฿ 10,180.00',
+    price: '$ 290.00',
     image: MOCK_IMAGES[0]
   };
 
@@ -219,7 +220,7 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
                 <h1 className={styles.title}>{product ? product.name : 'Mori 02(BR)'}</h1>
                 {product?.subtitle && <p className={styles.subtitle}>{product.subtitle}</p>}
                 <p className={styles.price}>
-                  {product ? product.price : '฿ 10,180.00'}
+                  {formatCurrency(product?.price || 290)}
                 </p>
               </div>
               <button className={styles.bookmarkBtn} onClick={handleBookmarkClick} aria-label="Save product">
@@ -429,13 +430,6 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
         </div>
       </div>
 
-      {/* Breadcrumbs Mockup */}
-      <div className={styles.bottomSection}>
-        <div className={styles.breadcrumbs}>
-          <span>Homepage — Women — </span>
-          <span className={styles.currentBreadcrumb}>Beachwear</span>
-        </div>
-      </div>
 
       {/* Mobile Size Drawer */}
       <AnimatePresence>

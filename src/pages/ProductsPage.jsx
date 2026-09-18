@@ -230,7 +230,6 @@ const ProductsPage = ({ previewSets = null }) => {
     const curatedViewAllLookbooks = adminCtx.curatedViewAllLookbooks || {};
     const isViewAllMode = (!activeCategory || activeCategory === 'View all') && mainParam && mainParam !== 'Explore' && mainParam !== 'New In';
     const curatedIdsForMain = (isViewAllMode && curatedViewAllLookbooks[mainParam]) || [];
-    const hasCuratedForViewAll = isViewAllMode && curatedIdsForMain.length > 0;
 
     const activeSets = (sets || []).filter(s => {
        // 1. Navigation & Category Pill Filtering
@@ -243,8 +242,10 @@ const ProductsPage = ({ previewSets = null }) => {
            // display Lookbooks marked as isNewIn belonging to that category
            if (!s.isNewIn) return false;
            if (mainParam && mainParam !== 'Explore' && s.mainCategory !== mainParam) return false;
-         } else if (hasCuratedForViewAll) {
-           // Curated Runway Stage for View All:
+         } else if (isViewAllMode) {
+           // Curated Runway Stage for View All (Strictly independent):
+           // Only display sets specifically curated for View All in this main category.
+           // If none are curated (curatedIdsForMain is empty), no sets are displayed in View All.
            if (s.mainCategory !== mainParam) return false;
            if (!curatedIdsForMain.includes(s.id)) return false;
          } else {
@@ -271,7 +272,7 @@ const ProductsPage = ({ previewSets = null }) => {
     // Ensure sets are ordered strictly:
     // If in Curated View All mode with curated IDs, sort by the curated order!
     // Otherwise, order by created_at DESC
-    if (hasCuratedForViewAll) {
+    if (isViewAllMode && curatedIdsForMain.length > 0) {
       activeSets.sort((a, b) => {
         const idxA = curatedIdsForMain.indexOf(a.id);
         const idxB = curatedIdsForMain.indexOf(b.id);
@@ -360,7 +361,7 @@ const ProductsPage = ({ previewSets = null }) => {
     }
 
     return groups;
-  }, [filteredProducts, sets, visibleCount, previewSets, mainParam, activeCategory]);
+  }, [filteredProducts, sets, visibleCount, previewSets, mainParam, activeCategory, adminCtx.curatedViewAllLookbooks]);
 
   const handleLoadMore = () => {
     setVisibleCount(prev => Math.min(prev + 16, filteredProducts.length));

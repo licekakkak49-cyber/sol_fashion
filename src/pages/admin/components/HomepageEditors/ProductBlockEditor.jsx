@@ -17,7 +17,8 @@ const ProductBlockEditor = ({ module, updateData }) => {
             ...prodData,
             image: prodData.cover_image_url,
             hoverImage: prodData.hover_image_url,
-            colors: (prodData.color_variants || []).map(v => v.hex).filter(Boolean)
+            colorVariants: prodData.color_variants || [],
+            colors: (prodData.color_variants || []).map(v => (v.swatchType === 'pattern' ? v.patternImage : v.hex) || v.hex || '#000000').filter(Boolean)
           });
         }
       }
@@ -40,7 +41,7 @@ const ProductBlockEditor = ({ module, updateData }) => {
           <div style={{ pointerEvents: 'none' }}>
             <ProductCard 
               id={product.id} image={product.image} hoverImage={product.hoverImage}
-              name={product.name} price={product.price} colors={product.colors} isLarge={false}
+              name={product.name} price={product.price} colors={product.colors} colorVariants={product.colorVariants} isLarge={false}
             />
           </div>
         ) : (

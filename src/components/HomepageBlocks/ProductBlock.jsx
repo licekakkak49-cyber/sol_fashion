@@ -14,7 +14,8 @@ const ProductBlock = ({ data }) => {
             ...prodData,
             image: prodData.cover_image_url,
             hoverImage: prodData.hover_image_url,
-            colors: (prodData.color_variants || []).map(v => v.hex).filter(Boolean)
+            colorVariants: prodData.color_variants || [],
+            colors: (prodData.color_variants || []).map(v => (v.swatchType === 'pattern' ? v.patternImage : v.hex) || v.hex || '#000000').filter(Boolean)
           });
         }
       }
@@ -37,6 +38,7 @@ const ProductBlock = ({ data }) => {
         name={product.name}
         price={product.price}
         colors={product.colors}
+        colorVariants={product.colorVariants}
         tags={['NEW']}
         isLarge={false}
         overlayMode={true}

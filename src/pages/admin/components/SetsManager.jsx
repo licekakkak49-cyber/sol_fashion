@@ -18,6 +18,7 @@ const SetAccordion = ({
   totalSets, 
   onMoveUp, 
   onMoveDown, 
+  onSelectOrder,
   isActiveSet,
   onMarkActive,
   onSelectCategory,
@@ -30,15 +31,32 @@ const SetAccordion = ({
   handleEdit, 
   showToast, 
   onOpenPicker,
+  onToggleCurateSetForViewAll,
+  isViewAllMode = false,
   isMobile = false
 }) => {
+  const adminCtx = useAdmin();
+  const categories = adminCtx?.categories || {};
+
   const [isOpen, setIsOpen] = useState(true); // Open by default
   const [rowHeight, setRowHeight] = useState(250);
   const [isPatternSheetOpen, setIsPatternSheetOpen] = useState(false);
   
   const [activePlaceholder, setActivePlaceholder] = useState(null);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  
+  // Category Move Modal State
+  const [isMoveCategoryOpen, setIsMoveCategoryOpen] = useState(false);
+  const [targetMainCat, setTargetMainCat] = useState(set.mainCategory || set.main_category || '');
+  const [targetSubCat, setTargetSubCat] = useState(set.subCategory || set.sub_category || '');
+
+  const handleOpenMoveCategory = (e) => {
+    e?.stopPropagation();
+    const currentMain = set.mainCategory || set.main_category || Object.keys(categories)[0] || '';
+    const currentSub = set.subCategory || set.sub_category || (categories[currentMain] && categories[currentMain][0]) || 'Lookbook';
+    setTargetMainCat(currentMain);
+    setTargetSubCat(currentSub);
+    setIsMoveCategoryOpen(true);
+  };
   
   // Instant visual saved feedback on this set card
   const [justSaved, setJustSaved] = useState(false);
@@ -304,10 +322,15 @@ const SetAccordion = ({
 
 
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'published': return '#10b981';
-      case 'scheduled': return '#f59e0b';
-      default: return '#6b7280';
+    switch((status || '').toLowerCase()) {
+      case 'published':
+      case 'live':
+      case 'active':
+        return '#10b981';
+      case 'scheduled':
+        return '#f59e0b';
+      default:
+        return '#6b7280';
     }
   };
 
@@ -463,9 +486,36 @@ const SetAccordion = ({
               }}
               onClick={e => e.stopPropagation()}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#111827', fontVariantNumeric: 'tabular-nums' }}>
-                #{index + 1}
-              </span>
+              <select
+                value={index}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  const newIdx = parseInt(e.target.value, 10);
+                  if (!isNaN(newIdx) && newIdx !== index) {
+                    onSelectOrder?.(newIdx);
+                  }
+                }}
+                onClick={e => e.stopPropagation()}
+                style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 700, 
+                  color: '#111827', 
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontVariantNumeric: 'tabular-nums',
+                  padding: '0 2px',
+                  borderRadius: '3px'
+                }}
+                title="Select rank"
+              >
+                {Array.from({ length: totalSets }, (_, i) => (
+                  <option key={i} value={i}>
+                    #{i + 1}
+                  </option>
+                ))}
+              </select>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <button
                   type="button"
@@ -527,7 +577,7 @@ const SetAccordion = ({
                     overflow: 'hidden', 
                     textOverflow: 'ellipsis', 
                     whiteSpace: 'nowrap',
-                    maxWidth: '120px'
+                    maxWidth: '100px'
                   }}
                   title={set.name}
                 >
@@ -540,6 +590,28 @@ const SetAccordion = ({
                 >
                   <Edit2 size={11} />
                 </button>
+                <button
+                  type="button"
+                  onClick={handleOpenMoveCategory}
+                  style={{
+                    background: '#f3f4f6',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                    padding: '1px 5px',
+                    fontSize: '9px',
+                    color: '#4b5563',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    maxWidth: '85px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={`Move category (Current: ${set.mainCategory || set.main_category} › ${set.subCategory || set.sub_category})`}
+                >
+                  {set.subCategory || set.sub_category || set.mainCategory || set.main_category} ✎
+                </button>
                 <span 
                   title={`Status: ${set.status}`}
                   style={{ 
@@ -550,6 +622,45 @@ const SetAccordion = ({
                     flexShrink: 0
                   }}
                 />
+                {set.isNewIn && (
+                  <span 
+                    title="Featured in New In"
+                    style={{ 
+                      fontSize: '9px', 
+                      fontWeight: 700, 
+                      color: '#dc2626', 
+                      background: '#fef2f2', 
+                      border: '1px solid #fecaca',
+                      padding: '1px 5px', 
+                      borderRadius: '4px',
+                      flexShrink: 0,
+                      letterSpacing: '0.02em'
+                    }}
+                  >
+                    NEW IN
+                  </span>
+                )}
+                {set.isViewAll && (
+                  <span 
+                    title="Curated for View All Showcase"
+                    style={{ 
+                      fontSize: '9px', 
+                      fontWeight: 700, 
+                      color: '#b45309', 
+                      background: '#fffbeb', 
+                      border: '1px solid #fde68a',
+                      padding: '1px 5px', 
+                      borderRadius: '4px',
+                      flexShrink: 0,
+                      letterSpacing: '0.02em',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}
+                  >
+                    ★ VIEW ALL
+                  </span>
+                )}
                 <span style={{ fontSize: '11px', color: '#9ca3af', flexShrink: 0 }}>
                   ({setProducts.length})
                 </span>
@@ -564,6 +675,69 @@ const SetAccordion = ({
                 Saved
               </span>
             )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUpdateSet(set.id, { isNewIn: !set.isNewIn });
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '4px 6px',
+                borderRadius: '6px',
+                border: set.isNewIn ? '1px solid #ef4444' : '1px solid #d1d5db',
+                background: set.isNewIn ? '#fef2f2' : '#ffffff',
+                color: set.isNewIn ? '#dc2626' : '#6b7280',
+                fontSize: '10px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                letterSpacing: '0.02em',
+                lineHeight: 1,
+                boxShadow: set.isNewIn ? '0 1px 2px rgba(220, 38, 38, 0.15)' : 'none'
+              }}
+              title={set.isNewIn ? "Remove from New In" : "Tag Lookbook as New In"}
+            >
+              <span style={{
+                width: '5px',
+                height: '5px',
+                borderRadius: '50%',
+                backgroundColor: set.isNewIn ? '#dc2626' : '#9ca3af'
+              }} />
+              NEW
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCurateSetForViewAll?.(set.mainCategory || set.main_category, set.id);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '4px 6px',
+                borderRadius: '6px',
+                border: set.isViewAll ? '1px solid #d97706' : '1px solid #d1d5db',
+                background: set.isViewAll ? '#fffbeb' : '#ffffff',
+                color: set.isViewAll ? '#b45309' : '#6b7280',
+                fontSize: '10px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                letterSpacing: '0.02em',
+                lineHeight: 1,
+                boxShadow: set.isViewAll ? '0 1px 2px rgba(217, 119, 6, 0.15)' : 'none'
+              }}
+              title={set.isViewAll ? "Remove from View All showcase" : "Curate this Lookbook for View All showcase"}
+            >
+              <span style={{
+                fontSize: '9px',
+                lineHeight: 1,
+                color: set.isViewAll ? '#d97706' : '#9ca3af'
+              }}>★</span>
+              VIEW ALL
+            </button>
             <select 
               value={set.status}
               onChange={(e) => handleUpdateSet(set.id, { status: e.target.value })}
@@ -625,17 +799,41 @@ const SetAccordion = ({
               }}
               onClick={e => e.stopPropagation()}
             >
-              <span style={{ 
-                fontSize: '12px', 
-                fontWeight: 700, 
-                color: '#111827', 
-                minWidth: '22px', 
-                textAlign: 'center',
-                userSelect: 'none',
-                fontVariantNumeric: 'tabular-nums'
-              }}>
-                #{index + 1}
-              </span>
+              <select
+                value={index}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  const newIdx = parseInt(e.target.value, 10);
+                  if (!isNaN(newIdx) && newIdx !== index) {
+                    onSelectOrder?.(newIdx);
+                  }
+                }}
+                onClick={e => e.stopPropagation()}
+                style={{ 
+                  fontSize: '12px', 
+                  fontWeight: 700, 
+                  color: '#111827', 
+                  minWidth: '28px', 
+                  textAlign: 'center',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontVariantNumeric: 'tabular-nums',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  transition: 'background 0.15s ease'
+                }}
+                title="Select rank"
+                onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {Array.from({ length: totalSets }, (_, i) => (
+                  <option key={i} value={i}>
+                    #{i + 1}
+                  </option>
+                ))}
+              </select>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <button
                   type="button"
@@ -755,29 +953,65 @@ const SetAccordion = ({
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {(set.mainCategory || set.main_category) && (
-                <span 
-                  onClick={(e) => {
-                    if (onSelectCategory) {
-                      e.stopPropagation();
-                      onSelectCategory(set.mainCategory || set.main_category, set.subCategory || set.sub_category || 'Sets');
-                    }
-                  }}
-                  title={onSelectCategory ? `Filter to ${set.mainCategory || set.main_category} › ${set.subCategory || set.sub_category}` : ''}
+                <button 
+                  type="button"
+                  onClick={handleOpenMoveCategory}
+                  title="Click to move this Lookbook to another category"
                   style={{ 
                     fontSize: '11px', 
                     padding: '3px 8px', 
                     borderRadius: '6px', 
                     background: '#f3f4f6', 
-                    color: '#4b5563', 
-                    fontWeight: 500,
-                    border: '1px solid #e5e7eb',
-                    cursor: onSelectCategory ? 'pointer' : 'default',
-                    transition: 'background 0.15s ease'
+                    color: '#374151', 
+                    fontWeight: 600,
+                    border: '1px solid #d1d5db',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.15s ease'
                   }}
-                  onMouseEnter={e => { if (onSelectCategory) e.currentTarget.style.background = '#e5e7eb'; }}
-                  onMouseLeave={e => { if (onSelectCategory) e.currentTarget.style.background = '#f3f4f6'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#e5e7eb'; e.currentTarget.style.borderColor = '#9ca3af'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.borderColor = '#d1d5db'; }}
                 >
-                  {set.mainCategory || set.main_category} &rsaquo; {set.subCategory || set.sub_category || 'Sets'}
+                  <span>{set.mainCategory || set.main_category} &rsaquo; {set.subCategory || set.sub_category || 'Sets'}</span>
+                  <span style={{ fontSize: '10px', color: '#6b7280' }}>✎ Move</span>
+                </button>
+              )}
+              {set.isNewIn && (
+                <span style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  background: '#fef2f2',
+                  color: '#dc2626',
+                  fontWeight: 700,
+                  border: '1px solid #fecaca',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  letterSpacing: '0.03em'
+                }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#dc2626' }} />
+                  NEW IN
+                </span>
+              )}
+              {set.isViewAll && (
+                <span style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  background: '#fffbeb',
+                  color: '#b45309',
+                  fontWeight: 700,
+                  border: '1px solid #fde68a',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  letterSpacing: '0.03em'
+                }}>
+                  <span style={{ fontSize: '10px', color: '#d97706' }}>★</span>
+                  VIEW ALL
                 </span>
               )}
               <span style={{ 
@@ -821,6 +1055,72 @@ const SetAccordion = ({
                 Saved
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUpdateSet(set.id, { isNewIn: !set.isNewIn });
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: set.isNewIn ? '1px solid #ef4444' : '1px solid #d1d5db',
+                background: set.isNewIn ? '#fef2f2' : '#ffffff',
+                color: set.isNewIn ? '#dc2626' : '#6b7280',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                letterSpacing: '0.03em',
+                boxShadow: set.isNewIn ? '0 1px 3px rgba(220, 38, 38, 0.15)' : 'none'
+              }}
+              title={set.isNewIn ? "Remove from New In page" : "Feature this Lookbook in New In page"}
+            >
+              <span style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: set.isNewIn ? '#dc2626' : '#9ca3af',
+                boxShadow: set.isNewIn ? '0 0 6px rgba(220, 38, 38, 0.5)' : 'none'
+              }} />
+              NEW IN
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCurateSetForViewAll?.(set.mainCategory || set.main_category, set.id);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: set.isViewAll ? '1px solid #d97706' : '1px solid #d1d5db',
+                background: set.isViewAll ? '#fffbeb' : '#ffffff',
+                color: set.isViewAll ? '#b45309' : '#6b7280',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                letterSpacing: '0.03em',
+                boxShadow: set.isViewAll ? '0 1px 3px rgba(217, 119, 6, 0.15)' : 'none'
+              }}
+              title={set.isViewAll ? "Remove from View All showcase" : "Curate this Lookbook for View All showcase"}
+            >
+              <span style={{
+                fontSize: '11px',
+                lineHeight: 1,
+                color: set.isViewAll ? '#d97706' : '#9ca3af'
+              }}>★</span>
+              VIEW ALL
+            </button>
 
             <select 
               value={set.status}
@@ -1217,6 +1517,152 @@ const SetAccordion = ({
         isLarge={coverModalConfig.product?.layoutSize === 'large'}
       />
 
+      {/* Category Move Confirmation Modal */}
+      {isMoveCategoryOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.45)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={(e) => { e.stopPropagation(); setIsMoveCategoryOpen(false); }}
+        >
+          <div 
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '440px',
+              padding: '24px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              position: 'relative'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111' }}>
+                Move Lookbook Category
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setIsMoveCategoryOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: '4px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#6b7280', marginTop: 0, marginBottom: '20px', lineHeight: 1.5 }}>
+              Move lookbook <strong>"{set.name}"</strong> from current category: <br/>
+              <span style={{ display: 'inline-block', marginTop: '6px', padding: '3px 8px', background: '#f3f4f6', borderRadius: '4px', color: '#374151', fontSize: '12px', fontWeight: 600 }}>
+                {set.mainCategory || set.main_category} &rsaquo; {set.subCategory || set.sub_category || 'Sets'}
+              </span>
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                  Destination Main Category
+                </label>
+                <select
+                  value={targetMainCat}
+                  onChange={(e) => {
+                    const newMain = e.target.value;
+                    setTargetMainCat(newMain);
+                    const firstSub = (categories[newMain] && categories[newMain][0]) || 'Lookbook';
+                    setTargetSubCat(firstSub);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    background: '#fff',
+                    color: '#111',
+                    outline: 'none'
+                  }}
+                >
+                  {Object.keys(categories).map(main => (
+                    <option key={main} value={main}>{main}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                  Destination Sub Category
+                </label>
+                <select
+                  value={targetSubCat}
+                  onChange={(e) => setTargetSubCat(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    background: '#fff',
+                    color: '#111',
+                    outline: 'none'
+                  }}
+                >
+                  {(categories[targetMainCat] || []).map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setIsMoveCategoryOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  background: '#fff',
+                  color: '#374151',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!targetMainCat || !targetSubCat) return;
+                  handleUpdateSet(set.id, { mainCategory: targetMainCat, subCategory: targetSubCat });
+                  showToast?.(`Lookbook moved to "${targetMainCat} › ${targetSubCat}" successfully`, 'success');
+                  setIsMoveCategoryOpen(false);
+                }}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#111827',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
@@ -1235,6 +1681,10 @@ export default function SetsManager({
   updateProductInSet, 
   changeProductOrderInSet,
   reorderSets,
+  batchReorderSets,
+  curatedViewAllLookbooks = {},
+  onToggleCurateSetForViewAll,
+  onReorderViewAllSets,
   showToast,
   searchQuery = "",
   onOpenPicker,
@@ -1353,15 +1803,25 @@ export default function SetsManager({
 
   const displayedSets = useMemo(() => {
     let list = (sets || []).filter(s => {
-      // 1. Main category filter
-      if (activeMainCategory && activeMainCategory !== 'All' && activeMainCategory !== 'New In') {
-        const sMain = s.mainCategory || s.main_category;
-        if (sMain !== activeMainCategory) return false;
-      }
-      // 2. Sub category filter
-      if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'View all' && activeSubCategory !== 'New In') {
-        const sSub = s.subCategory || s.sub_category;
-        if (sSub !== activeSubCategory) return false;
+      // 1. Category and New In filter
+      if (activeMainCategory === 'New In' || activeSubCategory === 'New In') {
+        if (!s.isNewIn) return false;
+      } else if (activeSubCategory === 'View all') {
+        if (activeMainCategory && activeMainCategory !== 'All') {
+          const sMain = s.mainCategory || s.main_category;
+          if (sMain !== activeMainCategory) return false;
+        }
+        const curatedList = (curatedViewAllLookbooks && curatedViewAllLookbooks[activeMainCategory]) || [];
+        if (!curatedList.includes(s.id)) return false;
+      } else {
+        if (activeMainCategory && activeMainCategory !== 'All') {
+          const sMain = s.mainCategory || s.main_category;
+          if (sMain !== activeMainCategory) return false;
+        }
+        if (activeSubCategory && activeSubCategory !== 'All') {
+          const sSub = s.subCategory || s.sub_category;
+          if (sSub !== activeSubCategory) return false;
+        }
       }
       // 3. Status filter
       if (statusFilter !== 'all') {
@@ -1386,6 +1846,17 @@ export default function SetsManager({
       return true;
     });
 
+    if (activeSubCategory === 'View all' && sortBy === 'order') {
+      const curatedList = (curatedViewAllLookbooks && curatedViewAllLookbooks[activeMainCategory]) || [];
+      return list.sort((a, b) => {
+        const idxA = curatedList.indexOf(a.id);
+        const idxB = curatedList.indexOf(b.id);
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+    }
+
     return list.sort((a, b) => {
       if (sortBy === 'order' || sortBy === 'newest') {
         return new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0);
@@ -1400,51 +1871,60 @@ export default function SetsManager({
       }
       return 0;
     });
-  }, [sets, activeMainCategory, activeSubCategory, statusFilter, searchQuery, sortBy, products]);
+  }, [sets, activeMainCategory, activeSubCategory, statusFilter, searchQuery, sortBy, products, curatedViewAllLookbooks]);
 
-  const handleMoveSet = (index, direction) => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= displayedSets.length) return;
+  const handleReorderToIndex = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= displayedSets.length || toIndex >= displayedSets.length) return;
 
-    const currentSet = displayedSets[index];
-    const targetSet = displayedSets[targetIndex];
+    const currentSet = displayedSets[fromIndex];
+    const targetSet = displayedSets[toIndex];
+    if (!currentSet || !targetSet) return;
 
-    const tCurrent = currentSet.created_at ? new Date(currentSet.created_at).getTime() : Date.now();
-    const tTarget = targetSet.created_at ? new Date(targetSet.created_at).getTime() : Date.now();
-
-    let newTimeCurrent, newTimeTarget;
-
-    if (direction === 'up') {
-      if (tCurrent <= tTarget) {
-        newTimeCurrent = new Date(tTarget + 1000).toISOString();
-        newTimeTarget = new Date(tTarget).toISOString();
-      } else {
-        newTimeCurrent = new Date(tTarget).toISOString();
-        newTimeTarget = new Date(tCurrent).toISOString();
-        if (new Date(newTimeCurrent).getTime() <= new Date(newTimeTarget).getTime()) {
-          newTimeCurrent = new Date(new Date(newTimeTarget).getTime() + 1000).toISOString();
-        }
-      }
-    } else {
-      if (tCurrent >= tTarget) {
-        newTimeCurrent = new Date(tTarget - 1000).toISOString();
-        newTimeTarget = new Date(tTarget).toISOString();
-      } else {
-        newTimeCurrent = new Date(tTarget).toISOString();
-        newTimeTarget = new Date(tCurrent).toISOString();
-        if (new Date(newTimeCurrent).getTime() >= new Date(newTimeTarget).getTime()) {
-          newTimeCurrent = new Date(new Date(newTimeTarget).getTime() - 1000).toISOString();
-        }
-      }
+    if (activeSubCategory === 'View all') {
+      const currentList = [...((curatedViewAllLookbooks && curatedViewAllLookbooks[activeMainCategory]) || [])];
+      const fromCuratedIdx = currentList.indexOf(currentSet.id);
+      if (fromCuratedIdx === -1) return;
+      currentList.splice(fromCuratedIdx, 1);
+      currentList.splice(toIndex, 0, currentSet.id);
+      onReorderViewAllSets?.(activeMainCategory, currentList);
+      return;
     }
+
+    // Reorder relative to the master sets list
+    const allSets = [...sets];
+    const fromGlobalIdx = allSets.findIndex(s => s.id === currentSet.id);
+    const toGlobalIdx = allSets.findIndex(s => s.id === targetSet.id);
+
+    if (fromGlobalIdx !== -1 && toGlobalIdx !== -1) {
+      const [moved] = allSets.splice(fromGlobalIdx, 1);
+      allSets.splice(toGlobalIdx, 0, moved);
+    }
+
+    // Assign strictly descending timestamps
+    const nowMs = Date.now();
+    const updates = allSets.map((s, idx) => ({
+      id: s.id,
+      created_at: new Date(nowMs - idx * 60000).toISOString()
+    }));
 
     if (sortBy !== 'order') {
       setSortBy('order');
     }
 
-    if (reorderSets) {
-      reorderSets(currentSet.id, targetSet.id, newTimeCurrent, newTimeTarget);
+    if (batchReorderSets) {
+      batchReorderSets(updates);
+    } else if (reorderSets) {
+      const tTarget = targetSet.created_at ? new Date(targetSet.created_at).getTime() : nowMs;
+      const newTimeCurrent = toIndex < fromIndex 
+        ? new Date(tTarget + 1000).toISOString() 
+        : new Date(tTarget - 1000).toISOString();
+      reorderSets(currentSet.id, targetSet.id, newTimeCurrent, targetSet.created_at);
     }
+  };
+
+  const handleMoveSet = (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    handleReorderToIndex(index, targetIndex);
   };
 
   return (
@@ -1530,10 +2010,18 @@ export default function SetsManager({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '20px', fontWeight: 600, margin: '0 0 4px 0' }}>
-              {activeMainCategory === 'All' ? 'All Look Sets Hub' : `${activeMainCategory} › ${activeSubCategory}`}
+              {activeMainCategory === 'All' 
+                ? 'All Look Sets Hub' 
+                : activeSubCategory === 'View all'
+                  ? `${activeMainCategory} › View All (Curated Showcase)`
+                  : `${activeMainCategory} › ${activeSubCategory}`}
             </h2>
             <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
-              {activeMainCategory === 'All' ? `Managing all campaign look sets (${displayedSets.length} sets)` : `Managing look sets under ${activeSubCategory}`}
+              {activeMainCategory === 'All' 
+                ? `Managing all campaign look sets (${displayedSets.length} sets)` 
+                : activeSubCategory === 'View all'
+                  ? `Curated showcase for ${activeMainCategory} runway (${displayedSets.length} sets)`
+                  : `Managing look sets under ${activeSubCategory}`}
             </p>
           </div>
 
@@ -1652,6 +2140,43 @@ export default function SetsManager({
               <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#111' }}>No matching sets found</h3>
               <p style={{ margin: 0, fontSize: '14px' }}>Try adjusting your search query or status filter.</p>
             </div>
+          ) : activeSubCategory === 'View all' ? (
+            <div style={{ textAlign: 'center', padding: '50px 24px', background: '#fffbeb', borderRadius: '12px', border: '1px dashed #fde68a' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px', color: '#d97706' }}>★</div>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '17px', color: '#92400e', fontWeight: 700 }}>
+                No lookbooks curated for View All yet
+              </h3>
+              <p style={{ margin: '0 auto 20px auto', fontSize: '13px', color: '#b45309', maxWidth: '440px', lineHeight: 1.6 }}>
+                View All is your curated runway showcase. Browse other subcategories in <strong>{activeMainCategory}</strong> and click the <strong>★ VIEW ALL</strong> button on any lookbook to feature it here.
+              </p>
+              {otherSubsWithSets.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {otherSubsWithSets.map(item => (
+                    <button
+                      key={item.sub}
+                      type="button"
+                      onClick={() => onSelectCategory?.(activeMainCategory, item.sub)}
+                      style={{
+                        padding: '7px 16px',
+                        background: '#fff',
+                        border: '1px solid #fde68a',
+                        borderRadius: '100px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#92400e',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(217, 119, 6, 0.08)',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#d97706'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#fde68a'; }}
+                    >
+                      Browse {item.sub} ({item.count}) &rarr;
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : activeMainCategory !== 'All' ? (
             <div style={{ textAlign: 'center', padding: '50px 24px', background: '#f9fafb', borderRadius: '12px', border: '1px dashed #e2e8f0' }}>
               <Layout size={40} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
@@ -1746,6 +2271,7 @@ export default function SetsManager({
               isMobile={isMobile}
               onMoveUp={() => { markSetActive(set.id); handleMoveSet(index, 'up'); }}
               onMoveDown={() => { markSetActive(set.id); handleMoveSet(index, 'down'); }}
+              onSelectOrder={(toIdx) => { markSetActive(set.id); handleReorderToIndex(index, toIdx); }}
               isActiveSet={set.id === lastActiveSetId}
               onMarkActive={() => markSetActive(set.id)}
               onSelectCategory={onSelectCategory}
@@ -1758,6 +2284,8 @@ export default function SetsManager({
               handleEdit={handleEdit} 
               showToast={showToast}
               onOpenPicker={onOpenPicker}
+              onToggleCurateSetForViewAll={onToggleCurateSetForViewAll}
+              isViewAllMode={activeSubCategory === 'View all'}
             />
           ))
         )}

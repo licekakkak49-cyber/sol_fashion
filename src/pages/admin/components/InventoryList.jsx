@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Edit2, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Package, ChevronDown, ChevronUp, AlertCircle, Save, X, Box, Clock, SlidersHorizontal } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Package, ChevronDown, ChevronUp, AlertCircle, Save, X, Box, Clock, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
 const SORT_OPTIONS = [
   { key: 'created_at', direction: 'desc', label: 'Newest' },
@@ -42,6 +42,10 @@ const getProductTimestamp = (p) => {
     const t = new Date(p.created_at).getTime();
     if (!isNaN(t)) return t;
   }
+  if (p.uploadDate) {
+    const t = new Date(p.uploadDate).getTime();
+    if (!isNaN(t)) return t;
+  }
   if (p.createdAt) {
     const t = new Date(p.createdAt).getTime();
     if (!isNaN(t)) return t;
@@ -67,7 +71,9 @@ export default function InventoryList({
   isFilterOpen,
   onToggleFilter,
   activeFilterCount = 0,
-  isMobile: isMobileProp = false
+  isMobile: isMobileProp = false,
+  onRefresh,
+  isSyncing = false
 }) {
   const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
   useEffect(() => {
@@ -540,7 +546,34 @@ export default function InventoryList({
             </div>
 
             {/* Right Controls: Filters & Dedicated Sort Dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {onRefresh && (
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  disabled={isSyncing}
+                  title="Sync products with database"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    background: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '100px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#374151',
+                    cursor: isSyncing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                    opacity: isSyncing ? 0.7 : 1
+                  }}
+                >
+                  <RefreshCw size={13} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+                  <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
+                </button>
+              )}
               {onToggleFilter && (
                 <button
                   type="button"
@@ -746,10 +779,30 @@ export default function InventoryList({
                             <div style={{ fontWeight: 500, color: '#111', fontSize: '14px' }}>{product.name || 'Unnamed Product'}</div>
                             {(() => {
                               const mainV = (product.colorVariants || []).find(v => v.isMain);
-                              if (mainV) return <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f3f4f6', color: '#4b5563', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600 }}><div style={{ width: 12, height: 12, borderRadius: '2px', background: mainV.hex || '#000', border: '1px solid #e5e7eb' }} /> {mainV.name || 'Original'}</div>;
+                              if (mainV) {
+                                const isPattern = mainV.swatchType === 'pattern' && mainV.patternImage;
+                                return (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f3f4f6', color: '#4b5563', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600 }}>
+                                    <div style={{ 
+                                      width: 12, 
+                                      height: 12, 
+                                      borderRadius: '2px', 
+                                      background: isPattern ? `url(${mainV.patternImage}) center / cover no-repeat` : (mainV.hex || '#000'), 
+                                      border: '1px solid #e5e7eb',
+                                      flexShrink: 0
+                                    }} /> 
+                                    {mainV.name || (isPattern ? 'Pattern' : 'Original')}
+                                  </div>
+                                );
+                              }
                               return null;
                             })()}
                             {hasMissing && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600 }}><AlertCircle size={10} /> Missing Sizes</div>}
+                            {product.layoutSize === 'large' && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', background: '#111', color: '#fff' }}>
+                                2x2
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                             ID: {String(product.id).substring(0, 8)}
@@ -871,8 +924,15 @@ export default function InventoryList({
                             {product.colorVariants.map((v, vIdx) => (
                               <div key={vIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                                 <div style={{ width: '120px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500 }}>
-                                  <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: v.hex || '#000', border: '1px solid #e5e7eb' }} />
-                                  {v.name || 'Original'}
+                                  <div style={{ 
+                                    width: '16px', 
+                                    height: '16px', 
+                                    borderRadius: '4px', 
+                                    background: (v.swatchType === 'pattern' && v.patternImage) ? `url(${v.patternImage}) center / cover no-repeat` : (v.hex || '#000'), 
+                                    border: '1px solid #e5e7eb',
+                                    flexShrink: 0 
+                                  }} />
+                                  {v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: 1 }}>
                                   {v.stock ? Object.entries(v.stock).map(([size, qty]) => (
@@ -967,6 +1027,11 @@ export default function InventoryList({
                         {hasMissing && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#fee2e2', color: '#dc2626', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 600 }}>
                             <AlertCircle size={9} /> Missing
+                          </span>
+                        )}
+                        {product.layoutSize === 'large' && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', background: '#111', color: '#fff' }}>
+                            2x2
                           </span>
                         )}
                       </div>
@@ -1140,8 +1205,15 @@ export default function InventoryList({
                       {product.colorVariants.map((v, vIdx) => (
                         <div key={vIdx} style={{ marginBottom: vIdx < product.colorVariants.length - 1 ? '10px' : 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
-                            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: v.hex || '#000', border: '1px solid #d1d5db' }} />
-                            {v.name || 'Original'}
+                            <div style={{ 
+                              width: '12px', 
+                              height: '12px', 
+                              borderRadius: '3px', 
+                              background: (v.swatchType === 'pattern' && v.patternImage) ? `url(${v.patternImage}) center / cover no-repeat` : (v.hex || '#000'), 
+                              border: '1px solid #d1d5db',
+                              flexShrink: 0 
+                            }} />
+                            {v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {v.stock ? Object.entries(v.stock).map(([size, qty]) => (
@@ -1258,8 +1330,15 @@ export default function InventoryList({
                   {restockModalData.colorVariants.map((v, vIdx) => (
                     <div key={vIdx}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '14px', fontWeight: 600 }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: v.hex || '#000', border: '1px solid #e5e7eb' }} />
-                        {v.name || 'Original'}
+                        <div style={{ 
+                          width: '16px', 
+                          height: '16px', 
+                          borderRadius: '4px', 
+                          background: (v.swatchType === 'pattern' && v.patternImage) ? `url(${v.patternImage}) center / cover no-repeat` : (v.hex || '#000'), 
+                          border: '1px solid #e5e7eb',
+                          flexShrink: 0 
+                        }} />
+                        {v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                         {v.stock && Object.keys(v.stock).length > 0 ? (

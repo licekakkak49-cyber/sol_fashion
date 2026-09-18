@@ -60,10 +60,12 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
 
   const [activeVariant, setActiveVariant] = useState(null);
 
+  const productVariants = product?.colorVariants || product?.color_variants || [];
+
   useEffect(() => {
-    if (product?.colorVariants?.length > 0) {
-      const mainVar = product.colorVariants.find(v => v.isMain);
-      setActiveVariant(mainVar || product.colorVariants[0]);
+    if (productVariants.length > 0) {
+      const mainVar = productVariants.find(v => v.isMain);
+      setActiveVariant(mainVar || productVariants[0]);
     }
   }, [product]);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
@@ -229,24 +231,34 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
             </div>
 
             {/* Color Swatches */}
-            {product?.color_variants && product.color_variants.length > 0 && (
+            {productVariants.length > 0 && (
               <div className={styles.colorSection}>
                 <div className={styles.colorHeader}>
                   <div className={styles.swatches}>
-                    {/* Default Product Color (if we want to show it) or just loop variants */}
-                    {/* For simplicity, we just loop the variants */}
-                    {product.color_variants.map((variant, idx) => (
-                      <button 
-                        key={idx}
-                        onClick={() => setActiveVariant(activeVariant === variant ? null : variant)}
-                        className={`${styles.swatchWrapper} ${activeVariant === variant ? styles.activeSwatch : ''}`}
-                        title={variant.name}
-                      >
-                        <div className={styles.swatch} style={{ background: variant.hex, border: variant.hex.toLowerCase() === '#ffffff' ? '1px solid #ddd' : 'none' }} />
-                      </button>
-                    ))}
+                    {productVariants.map((variant, idx) => {
+                      const isPattern = variant.swatchType === 'pattern' && variant.patternImage;
+                      const isWhite = !isPattern && variant.hex?.toLowerCase() === '#ffffff';
+                      return (
+                        <button 
+                          key={variant.id || idx}
+                          onClick={() => setActiveVariant(activeVariant === variant ? null : variant)}
+                          className={`${styles.swatchWrapper} ${activeVariant === variant ? styles.activeSwatch : ''}`}
+                          title={variant.name || (isPattern ? 'Fabric Pattern' : variant.hex)}
+                        >
+                          <div 
+                            className={styles.swatch} 
+                            style={{ 
+                              background: isPattern ? `url(${variant.patternImage}) center / cover no-repeat` : (variant.hex || '#000000'), 
+                              border: isWhite ? '1px solid #ddd' : '1px solid rgb(30, 30, 30)' 
+                            }} 
+                          />
+                        </button>
+                      );
+                    })}
                   </div>
-                  <span className={styles.colorLabel}>{activeVariant ? activeVariant.name : 'Select a color'}</span>
+                  <span className={styles.colorLabel}>
+                    {activeVariant ? (activeVariant.name || (activeVariant.swatchType === 'pattern' ? 'Fabric Pattern' : 'Color')) : 'Select a variant'}
+                  </span>
                 </div>
                 <div className={styles.sectionDivider}></div>
               </div>

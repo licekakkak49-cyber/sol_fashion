@@ -238,6 +238,14 @@
   gap: 6px;
 }
 
+.standardProductGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: 6px;
+  width: 100%;
+}
+
 .macroRow {
   display: flex;
   gap: 6px;
@@ -434,6 +442,15 @@
   .macroRow {
     flex-direction: column;
     gap: 4px;
+  }
+  .standardProductGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    gap: 4px;
+  }
+  .largeCard {
+    grid-column: span 2;
+    grid-row: auto;
   }
   .block {
     grid-template-columns: repeat(2, minmax(0, 1fr));

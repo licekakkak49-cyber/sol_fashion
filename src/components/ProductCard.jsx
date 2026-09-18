@@ -187,21 +187,40 @@ const ProductCard = ({ id, image, hoverImage, name, price, tags = [], colors = [
             <div className={styles.info}>
               <div className={styles.nameRow}>
                 <h3 className={styles.name}>{name}</h3>
-                {colors && colors.length > 0 && (
-                  <div className={styles.colorsInlineContainer}>
-                    {colors.map((c, i) => (
-                      <div 
-                        key={i} 
-                        onClick={(e) => { e.preventDefault(); setActiveVariantIdx(activeVariantIdx === i ? -1 : i); }}
-                        className={`${styles.colorSquare} ${(activeVariantIdx === i || (activeVariantIdx === -1 && c === selectedColor)) ? styles.selectedColor : ''}`} 
-                        style={{ backgroundColor: c, cursor: 'pointer' }}
-                      />
-                    ))}
-                    {extraColorsCount > 0 && (
-                      <span className={styles.extraColors}>+{extraColorsCount}</span>
-                    )}
-                  </div>
-                )}
+                {(() => {
+                  const displayVariants = (colorVariants && colorVariants.length > 0)
+                    ? colorVariants
+                    : (colors && colors.length > 0)
+                      ? colors.map(c => ({ hex: c }))
+                      : [];
+                  if (!displayVariants.length) return null;
+                  return (
+                    <div className={styles.colorsInlineContainer}>
+                      {displayVariants.map((v, i) => {
+                        const isPattern = v.swatchType === 'pattern' && v.patternImage;
+                        const isSelected = (activeVariantIdx === i || (activeVariantIdx === -1 && v.hex === selectedColor));
+                        return (
+                          <div 
+                            key={i} 
+                            onClick={(e) => { e.preventDefault(); setActiveVariantIdx(activeVariantIdx === i ? -1 : i); }}
+                            className={`${styles.colorSquare} ${isSelected ? styles.selectedColor : ''}`} 
+                            style={{ 
+                              backgroundColor: isPattern ? 'transparent' : (v.hex || '#000'),
+                              backgroundImage: isPattern ? `url(${v.patternImage})` : 'none',
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              cursor: 'pointer' 
+                            }}
+                            title={v.name || (isPattern ? 'Fabric Pattern' : v.hex)}
+                          />
+                        );
+                      })}
+                      {extraColorsCount > 0 && (
+                        <span className={styles.extraColors}>+{extraColorsCount}</span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className={styles.priceRow}>
                 <p className={styles.price}>

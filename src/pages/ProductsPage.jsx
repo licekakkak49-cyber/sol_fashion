@@ -54,9 +54,13 @@ const ProductsPage = ({ previewSets = null }) => {
       if (!previewSets && pStatus === 'draft') return false;
 
       // 1. Navigation & Category Pill Filtering
-      if (mainParam === 'New In' || activeCategory === 'New In') {
+      if (mainParam === 'New In') {
         const hasNew = product.tags && (product.tags.includes('new') || product.tags.includes('New In'));
         if (!hasNew) return false;
+      } else if (activeCategory === 'New In') {
+        const hasNew = product.tags && (product.tags.includes('new') || product.tags.includes('New In'));
+        if (!hasNew) return false;
+        if (mainParam && mainParam !== 'Explore' && product.mainCategory !== mainParam) return false;
       } else if (mainParam && mainParam !== 'Explore') {
         if (product.mainCategory !== mainParam) return false;
       }
@@ -151,9 +155,9 @@ const ProductsPage = ({ previewSets = null }) => {
           getLayoutSize(items[i+3]) === 'small'
         ) {
           rows.push({
-            type: 'standard',
+            type: 'wide',
             blocks: [
-              { type: 'standard', items: [items[i], items[i+1], items[i+2], items[i+3]] }
+              { type: 'wide', items: [items[i], items[i+1], items[i+2], items[i+3]] }
             ]
           });
           i += 4;
@@ -223,35 +227,61 @@ const ProductsPage = ({ previewSets = null }) => {
     };
 
     const now = new Date();
+    const curatedViewAllLookbooks = adminCtx.curatedViewAllLookbooks || {};
+    const isViewAllMode = (!activeCategory || activeCategory === 'View all') && mainParam && mainParam !== 'Explore' && mainParam !== 'New In';
+    const curatedIdsForMain = (isViewAllMode && curatedViewAllLookbooks[mainParam]) || [];
+    const hasCuratedForViewAll = isViewAllMode && curatedIdsForMain.length > 0;
+
     const activeSets = (sets || []).filter(s => {
        // 1. Navigation & Category Pill Filtering
        if (!previewSets) {
-         if (mainParam === 'New In' || activeCategory === 'New In') {
-            const hasNewProd = (s.items || []).some(setItem => {
-               const p = (products || []).find(prod => prod.id === setItem.productId);
-               return p && p.tags && (p.tags.includes('new') || p.tags.includes('New In'));
-            });
-            if (!hasNewProd) return false;
-         } else if (mainParam && mainParam !== 'Explore') {
+         if (mainParam === 'New In') {
+           // Top-level New In: display Lookbooks marked as isNewIn
+           if (!s.isNewIn) return false;
+         } else if (activeCategory === 'New In') {
+           // Sub-category New In (e.g. Ready to Wear > New In):
+           // display Lookbooks marked as isNewIn belonging to that category
+           if (!s.isNewIn) return false;
+           if (mainParam && mainParam !== 'Explore' && s.mainCategory !== mainParam) return false;
+         } else if (hasCuratedForViewAll) {
+           // Curated Runway Stage for View All:
            if (s.mainCategory !== mainParam) return false;
-         }
-         
-         if (activeCategory && activeCategory !== 'View all' && activeCategory !== 'New In') {
-           if (s.subCategory !== activeCategory) return false;
+           if (!curatedIdsForMain.includes(s.id)) return false;
+         } else {
+           if (mainParam && mainParam !== 'Explore') {
+             if (s.mainCategory !== mainParam) return false;
+           }
+           
+           if (activeCategory && activeCategory !== 'View all') {
+             if (s.subCategory !== activeCategory) return false;
+           }
          }
        }
        
        // 2. Status check
        if (previewSets) return true;
-       if (s.status === 'published') return true;
-       if (s.status === 'scheduled' && s.scheduledDate) {
+       const setStatus = (s.status || 'draft').toLowerCase();
+       if (setStatus === 'published' || setStatus === 'live' || setStatus === 'active') return true;
+       if (setStatus === 'scheduled' && s.scheduledDate) {
           return new Date(s.scheduledDate) <= now;
        }
        return false;
     });
 
-    // Ensure sets are ordered strictly by display order (created_at DESC / Set #1 on top)
-    activeSets.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+    // Ensure sets are ordered strictly:
+    // If in Curated View All mode with curated IDs, sort by the curated order!
+    // Otherwise, order by created_at DESC
+    if (hasCuratedForViewAll) {
+      activeSets.sort((a, b) => {
+        const idxA = curatedIdsForMain.indexOf(a.id);
+        const idxB = curatedIdsForMain.indexOf(b.id);
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+    } else {
+      activeSets.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+    }
 
     const groups = [];
     const assignedProductIds = new Set();
@@ -271,6 +301,16 @@ const ProductsPage = ({ previewSets = null }) => {
        const setItems = (set.items || []).map((setItem, idx) => {
           const product = (products || []).find(p => String(p.id) === String(setItem.productId));
           if (product) {
+             const isDraft = (product.status || 'draft').toLowerCase() === 'draft';
+             if (!previewSets && isDraft) {
+                return {
+                   id: `placeholder-${set.id}-${idx}`,
+                   uniqueKey: `placeholder-${set.id}-${idx}`,
+                   isPlaceholder: true,
+                   layoutSize: setItem.layoutSize || 'small'
+                };
+             }
+
              return { 
                ...product, 
                uniqueKey: `${product.id}-${set.id}-${idx}`,
@@ -279,16 +319,24 @@ const ProductsPage = ({ previewSets = null }) => {
                layoutSize: setItem.layoutSize 
              };
           }
+          if (setItem.isPlaceholder || (setItem.productId && String(setItem.productId).startsWith('draft-'))) {
+             return {
+                id: `placeholder-${set.id}-${idx}`,
+                uniqueKey: `placeholder-${set.id}-${idx}`,
+                isPlaceholder: true,
+                layoutSize: setItem.layoutSize || 'small'
+             };
+          }
           return null;
        }).filter(Boolean);
 
-       if (setItems.length > 0) {
+       if (setItems.some(item => !item.isPlaceholder)) {
           groups.push({
             type: 'set',
             id: set.id,
             rows: buildRows(setItems)
           });
-          displayProductCount += setItems.length;
+          displayProductCount += setItems.filter(item => !item.isPlaceholder).length;
        }
     });
 
@@ -307,7 +355,7 @@ const ProductsPage = ({ previewSets = null }) => {
        groups.push({
           type: 'unassigned',
           id: 'unassigned',
-          rows: buildRows(unassignedItems)
+          items: unassignedItems
        });
     }
 
@@ -473,46 +521,80 @@ const ProductsPage = ({ previewSets = null }) => {
         </>
       )}
 
-      {/* Product Grid based on Bin-Packing Algorithm grouped by Sets */}
+      {/* Product Grid */}
       <div className={styles.productGridContainer}>
         {displayGroups.map(group => (
           <React.Fragment key={group.id}>
-            {group.rows.map((row, rowIndex) => (
-              <div key={`row-${group.id}-${rowIndex}`} className={styles.macroRow}>
-                {row.blocks.map((block, blockIndex) => {
-                  const isLargeBlock = block.items.length === 1 && (block.items[0].layoutSize === 'large' || block.items[0].isLarge);
-                  const blockClass = row.type === 'wide' ? styles.wideBlock : (isLargeBlock ? styles.largeBlock : styles.block);
+            {group.type === 'unassigned' ? (
+              <div className={styles.standardProductGrid}>
+                {group.items.map((product) => {
+                  const isLarge = product.layoutSize === 'large' || product.isLarge;
                   return (
-                    <div key={`block-${group.id}-${rowIndex}-${blockIndex}`} className={blockClass}>
-                      {block.items.map((product) => {
-                      const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
-                      return (
-                        <div 
-                          key={product.uniqueKey || product.id} 
-                          className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
-                        >
-                          <ProductCard 
-                            id={product.realProductId || product.id}
-                            image={product.image}
-                            hoverImage={product.hoverImage}
-                            name={product.name}
-                            price={product.price}
-                            tags={product.tags}
-                            colors={product.colors}
-                            colorVariants={product.colorVariants}
-                            selectedColor={product.selectedColor}
-                            extraColorsCount={product.extraColorsCount}
-                            isLarge={layoutSize === 'large'}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
+                    <div key={product.id} className={isLarge ? styles.largeCard : styles.standardCard}>
+                      <ProductCard 
+                        id={product.id}
+                        image={product.image}
+                        hoverImage={product.hoverImage}
+                        name={product.name}
+                        price={product.price}
+                        tags={product.tags}
+                        colors={product.colors}
+                        colorVariants={product.colorVariants}
+                        selectedColor={product.selectedColor}
+                        extraColorsCount={product.extraColorsCount}
+                        isLarge={isLarge}
+                      />
+                    </div>
+                  );
                 })}
-                {row.type === 'standard' && row.blocks.length === 1 && <div className={styles.blockPlaceholder}></div>}
               </div>
-            ))}
+            ) : (
+              group.rows.map((row, rowIndex) => (
+                <div key={`row-${group.id}-${rowIndex}`} className={styles.macroRow}>
+                  {row.blocks.map((block, blockIndex) => {
+                    const isLargeBlock = block.items.length === 1 && (block.items[0].layoutSize === 'large' || block.items[0].isLarge);
+                    const blockClass = row.type === 'wide' ? styles.wideBlock : (isLargeBlock ? styles.largeBlock : styles.block);
+                    return (
+                      <div key={`block-${group.id}-${rowIndex}-${blockIndex}`} className={blockClass}>
+                        {block.items.map((product) => {
+                          const layoutSize = product.layoutSize || (product.isLarge ? 'large' : 'small');
+                          if (product.isPlaceholder) {
+                            return (
+                              <div 
+                                key={product.uniqueKey || product.id} 
+                                className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
+                                style={{ visibility: 'hidden', minHeight: '1px' }}
+                              />
+                            );
+                          }
+                          return (
+                            <div 
+                              key={product.uniqueKey || product.id} 
+                              className={layoutSize === 'large' ? styles.largeCard : styles.standardCard}
+                            >
+                              <ProductCard 
+                                id={product.realProductId || product.id}
+                                image={product.image}
+                                hoverImage={product.hoverImage}
+                                name={product.name}
+                                price={product.price}
+                                tags={product.tags}
+                                colors={product.colors}
+                                colorVariants={product.colorVariants}
+                                selectedColor={product.selectedColor}
+                                extraColorsCount={product.extraColorsCount}
+                                isLarge={layoutSize === 'large'}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                  {row.type === 'standard' && row.blocks.length === 1 && <div className={styles.blockPlaceholder}></div>}
+                </div>
+              ))
+            )}
           </React.Fragment>
         ))}
       </div>

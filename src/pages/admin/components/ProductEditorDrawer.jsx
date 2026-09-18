@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, UploadCloud, Check, Plus, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { X, UploadCloud, Check, Plus, AlertTriangle, Image as ImageIcon, Grid } from 'lucide-react';
 import ImageCropper from '../../../components/ImageCropper';
 import { uploadImageToSupabase } from '../../../utils/supabaseStorage';
 
@@ -56,6 +56,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
   const [formData, setFormData] = useState({
     name: '', subtitle: '', brandId: '', price: '', sku: '', stock: '', description: '',
     status: 'active',
+    layoutSize: 'small',
     mainCategory: '', subCategory: '', size: '', fit: '', material: '', modelInfo: '', careInstructions: '',
     dimLength: '', dimHeight: '', dimWidth: '', strapDrop: '', hardware: '', heelHeight: '', highlight: [],
     coverImage: '', hoverImage: '', galleryImages: [], colorVariants: []
@@ -64,6 +65,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
   const [cropState, setCropState] = useState({ src: null, target: null }); // target: 'cover' | 'hover'
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStep, setUploadStep] = useState(''); // 'uploading' | 'saving'
   
   const fileInputRefCover = useRef(null);
   const fileInputRefHover = useRef(null);
@@ -88,6 +90,8 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
           id: Date.now(),
           name: 'Original',
           hex: '#000000',
+          swatchType: 'color',
+          patternImage: null,
           isMain: true,
           stock: {},
           images: [coverImg, hoverImg, ...gallImgs].filter(Boolean)
@@ -96,7 +100,12 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         variants = variants.map(v => {
           if (!v.images && v.image) v.images = [v.image];
           if (!v.images) v.images = [];
-          return v;
+          return {
+            ...v,
+            swatchType: v.swatchType || (v.patternImage ? 'pattern' : 'color'),
+            patternImage: v.patternImage || null,
+            hex: v.hex || '#000000'
+          };
         });
       }
 
@@ -107,8 +116,16 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         price: initialData.price || '',
         stock: initialData.stock || '',
         status: (initialData.status || 'active').toLowerCase() === 'draft' ? 'draft' : 'active',
+        layoutSize: initialData.layoutSize || initialData.layout_size || 'small',
         mainCategory: initialData.mainCategory || (config?.defaultMainCategory || ''),
         subCategory: initialData.subCategory || (config?.defaultSubCategory || ''),
+        material: initialData.material || '',
+        sku: initialData.sku || '',
+        brandId: initialData.brandId || '',
+        size: initialData.size || '',
+        fit: initialData.fit || '',
+        hardware: initialData.hardware || '',
+        heelHeight: initialData.heelHeight || initialData.heel_height || '',
         highlight: Array.isArray(initialData.tags) ? initialData.tags : (Array.isArray(initialData.highlight) ? initialData.highlight : []),
         colorVariants: variants
       });
@@ -158,25 +175,44 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
     const hasCover = mainVariant && mainVariant.images && mainVariant.images.length > 0;
     if (!hasCover) return setError('⚠️ Cover Image for the Main Color is required.');
 
+    for (let i = 0; i < (formData.colorVariants || []).length; i++) {
+      const v = formData.colorVariants[i];
+      if (v.swatchType === 'pattern' && !v.patternImage) {
+        return setError(`⚠️ Please upload a Fabric Pattern image for variant #${i + 1} (${v.name || 'Unnamed'}).`);
+      }
+    }
+
     setIsUploading(true);
+    setUploadStep('uploading');
     setError('');
     
     try {
+      // Parallel upload of variant images and fabric pattern swatches
+      const uploadedVariants = await Promise.all((formData.colorVariants || []).map(async (variant) => {
+        const [uploadedImages, uploadedPattern] = await Promise.all([
+          Promise.all((variant.images || []).map(async (img) => {
+            if (img && img.startsWith('data:image')) {
+              return await uploadImageToSupabase(img, 'variants');
+            }
+            return img;
+          })),
+          (async () => {
+            let patternUrl = variant.patternImage || null;
+            if (patternUrl && patternUrl.startsWith('data:image')) {
+              return await uploadImageToSupabase(patternUrl, 'patterns');
+            }
+            return patternUrl;
+          })()
+        ]);
 
-
-      // Upload variant images
-      const uploadedVariants = [];
-      for (const variant of (formData.colorVariants || [])) {
-        const uploadedImages = [];
-        for (const img of (variant.images || [])) {
-          if (img.startsWith('data:image')) {
-            uploadedImages.push(await uploadImageToSupabase(img, 'variants'));
-          } else {
-            uploadedImages.push(img);
-          }
-        }
-        uploadedVariants.push({ ...variant, images: uploadedImages });
-      }
+        return {
+          ...variant,
+          images: uploadedImages,
+          patternImage: uploadedPattern,
+          swatchType: variant.swatchType || (uploadedPattern ? 'pattern' : 'color'),
+          hex: variant.hex || '#000000'
+        };
+      }));
 
       // Extract main images for legacy compatibility
       let finalCoverUrl = '';
@@ -211,13 +247,15 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         id: initialData?.id
       };
 
+      setUploadStep('saving');
       await onSave(payload, config);
       onClose();
     } catch (err) {
       console.error(err);
-      setError('⚠️ Failed to upload images to Supabase. Make sure you have set up the project correctly.');
+      setError('⚠️ Failed to save product. Please check your network connection and try again.');
     } finally {
       setIsUploading(false);
+      setUploadStep('');
     }
   };
 
@@ -247,12 +285,12 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
           {/* Color Variants Section */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>Color Variants</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>Color & Pattern Variants</h3>
               <button 
-                onClick={() => handleChange('colorVariants', [...(formData.colorVariants || []), { id: Date.now(), name: '', hex: '#000000', images: [], isMain: (formData.colorVariants || []).length === 0, stock: {} }])}
+                onClick={() => handleChange('colorVariants', [...(formData.colorVariants || []), { id: Date.now(), name: '', hex: '#000000', swatchType: 'color', patternImage: null, images: [], isMain: (formData.colorVariants || []).length === 0, stock: {} }])}
                 style={{ background: '#111', color: '#fff', border: 'none', borderRadius: '100px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                <Plus size={14} /> Add Color
+                <Plus size={14} /> Add Variant
               </button>
             </div>
             
@@ -269,31 +307,188 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
                         Remove
                       </button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+
+                    {/* Variant Name & Swatch Type Toggle */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px', alignItems: 'end' }}>
                       <div>
-                        <label style={labelStyle}>Color Name</label>
-                        <input type="text" value={variant.name} onChange={(e) => {
-                          const newV = [...formData.colorVariants];
-                          newV[idx].name = e.target.value;
-                          handleChange('colorVariants', newV);
-                        }} style={inputStyle} placeholder="e.g. Midnight Blue" />
+                        <label style={labelStyle}>Variant Name</label>
+                        <input 
+                          type="text" 
+                          value={variant.name} 
+                          onChange={(e) => {
+                            const newV = [...formData.colorVariants];
+                            newV[idx].name = e.target.value;
+                            handleChange('colorVariants', newV);
+                          }} 
+                          style={inputStyle} 
+                          placeholder={variant.swatchType === 'pattern' ? 'e.g. Floral Print, Tartan Plaid' : 'e.g. Midnight Blue, Chalk White'} 
+                        />
                       </div>
                       <div>
-                        <label style={labelStyle}>Hex Code</label>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <input type="color" value={variant.hex} onChange={(e) => {
-                            const newV = [...formData.colorVariants];
-                            newV[idx].hex = e.target.value;
-                            handleChange('colorVariants', newV);
-                          }} style={{ width: '36px', height: '36px', padding: 0, border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
-                          <input type="text" value={variant.hex} onChange={(e) => {
-                            const newV = [...formData.colorVariants];
-                            newV[idx].hex = e.target.value;
-                            handleChange('colorVariants', newV);
-                          }} style={{ ...inputStyle, flex: 1 }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ ...labelStyle, marginBottom: 0 }}>Swatch Type</label>
+                        </div>
+                        <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '10px', padding: '3px', gap: '4px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newV = [...formData.colorVariants];
+                              newV[idx].swatchType = 'color';
+                              handleChange('colorVariants', newV);
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '7px 10px',
+                              borderRadius: '7px',
+                              border: 'none',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              background: variant.swatchType !== 'pattern' ? '#111' : 'transparent',
+                              color: variant.swatchType !== 'pattern' ? '#fff' : '#666',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: variant.hex || '#000', display: 'inline-block', border: '1px solid rgba(255,255,255,0.6)' }} />
+                            Solid Color
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newV = [...formData.colorVariants];
+                              newV[idx].swatchType = 'pattern';
+                              handleChange('colorVariants', newV);
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '7px 10px',
+                              borderRadius: '7px',
+                              border: 'none',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              background: variant.swatchType === 'pattern' ? '#111' : 'transparent',
+                              color: variant.swatchType === 'pattern' ? '#fff' : '#666',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <Grid size={13} />
+                            Fabric Pattern
+                          </button>
                         </div>
                       </div>
                     </div>
+
+                    {/* Mutually Exclusive Swatch Content: Solid Color vs Fabric Pattern */}
+                    {variant.swatchType === 'pattern' ? (
+                      <div style={{ marginBottom: '16px', background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: '12px', padding: '14px' }}>
+                        <label style={{ ...labelStyle, marginBottom: '8px' }}>Fabric Pattern Swatch (1:1 Ratio)</label>
+                        {variant.patternImage ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={{ position: 'relative', width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #111', flexShrink: 0, boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+                              <img src={variant.patternImage} alt="Fabric Pattern" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 600, color: '#111' }}>Fabric Pattern Swatch Selected</div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <label 
+                                  htmlFor={`pattern-upload-${idx}`} 
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#111', color: '#fff', fontSize: '11px', fontWeight: 600, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                  <UploadCloud size={12} /> Replace Pattern
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newV = [...formData.colorVariants];
+                                    newV[idx].patternImage = null;
+                                    handleChange('colorVariants', newV);
+                                  }}
+                                  style={{ background: '#fee2e2', color: '#dc2626', border: 'none', fontSize: '11px', fontWeight: 600, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              id={`pattern-upload-${idx}`} 
+                              style={{ display: 'none' }} 
+                              onChange={(e) => handleFileChange(e, `pattern-${idx}`)} 
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <label 
+                              htmlFor={`pattern-upload-${idx}`} 
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '8px', 
+                                padding: '16px', 
+                                background: '#fff', 
+                                border: '1px dashed #cbd5e1', 
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                transition: 'border-color 0.2s'
+                              }}
+                            >
+                              <UploadCloud size={18} color="#6366f1" />
+                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                                Upload Fabric Pattern Image (Crop 1:1)
+                              </span>
+                            </label>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              id={`pattern-upload-${idx}`} 
+                              style={{ display: 'none' }} 
+                              onChange={(e) => handleFileChange(e, `pattern-${idx}`)} 
+                            />
+                            <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>
+                              Upload a real photo of the fabric or textile. You can crop a 1:1 square swatch for customer display.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={labelStyle}>Hex Code</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input 
+                            type="color" 
+                            value={variant.hex || '#000000'} 
+                            onChange={(e) => {
+                              const newV = [...formData.colorVariants];
+                              newV[idx].hex = e.target.value;
+                              handleChange('colorVariants', newV);
+                            }} 
+                            style={{ width: '40px', height: '40px', padding: 0, border: 'none', borderRadius: '8px', cursor: 'pointer' }} 
+                          />
+                          <input 
+                            type="text" 
+                            value={variant.hex || ''} 
+                            onChange={(e) => {
+                              const newV = [...formData.colorVariants];
+                              newV[idx].hex = e.target.value;
+                              handleChange('colorVariants', newV);
+                            }} 
+                            style={{ ...inputStyle, flex: 1 }} 
+                            placeholder="#000000"
+                          />
+                        </div>
+                      </div>
+                    )}
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start', marginBottom: '16px' }}>
                       <div style={{ flex: '1 1 auto', minWidth: '320px' }}>
@@ -433,6 +628,54 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
                   </button>
                 </div>
               </div>
+
+              <div>
+                <label style={labelStyle}>Card Size (Grid Layout)</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('layoutSize', 'small')}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: (!formData.layoutSize || formData.layoutSize === 'small') ? '1.5px solid #111' : '1px solid #e5e7eb',
+                      background: (!formData.layoutSize || formData.layoutSize === 'small') ? '#111' : '#fff',
+                      color: (!formData.layoutSize || formData.layoutSize === 'small') ? '#fff' : '#6b7280',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    1x1 Standard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('layoutSize', 'large')}
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: formData.layoutSize === 'large' ? '1.5px solid #111' : '1px solid #e5e7eb',
+                      background: formData.layoutSize === 'large' ? '#111' : '#fff',
+                      color: formData.layoutSize === 'large' ? '#fff' : '#6b7280',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    ★ 2x2 Spotlight
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -497,14 +740,46 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         {/* Footer */}
         <div style={{ padding: '24px', borderTop: '1px solid #eaeaea', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: '#fff' }}>
           <button onClick={onClose} style={{ padding: '12px 24px', borderRadius: '100px', background: 'transparent', color: '#666', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-          <button onClick={handleSave} disabled={isUploading} style={{ padding: '12px 32px', borderRadius: '100px', background: '#111', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>{isUploading ? 'Saving...' : 'Save Product'}</button>
+          <button 
+            onClick={handleSave} 
+            disabled={isUploading} 
+            style={{ 
+              padding: '12px 32px', 
+              borderRadius: '100px', 
+              background: '#111', 
+              color: '#fff', 
+              border: 'none', 
+              cursor: isUploading ? 'not-allowed' : 'pointer', 
+              fontWeight: 600,
+              opacity: isUploading ? 0.85 : 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {isUploading && (
+              <span style={{ 
+                display: 'inline-block', 
+                width: 13, 
+                height: 13, 
+                border: '2px solid rgba(255,255,255,0.3)', 
+                borderTopColor: '#fff', 
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite'
+              }} />
+            )}
+            {isUploading 
+              ? (uploadStep === 'uploading' ? 'Uploading Images...' : 'Saving Product...') 
+              : 'Save Product'}
+          </button>
         </div>
       </div>
 
       {cropState.src && (
         <ImageCropper 
+          key={cropState.target}
           imageSrc={cropState.src} 
-          aspectRatio={3/4}
+          aspectRatio={cropState.target?.startsWith('pattern-') ? 1 : 3/4}
           allowAspectChange={cropState.target === 'gallery'}
           showFocusBox={false}
           onCropComplete={(croppedBase64) => {
@@ -513,6 +788,12 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
               const newVariants = [...(formData.colorVariants || [])];
               if (!newVariants[vIndex].images) newVariants[vIndex].images = [];
               newVariants[vIndex].images.push(croppedBase64);
+              handleChange('colorVariants', newVariants);
+            } else if (cropState.target.startsWith('pattern-')) {
+              const vIndex = parseInt(cropState.target.split('-')[1], 10);
+              const newVariants = [...(formData.colorVariants || [])];
+              newVariants[vIndex].patternImage = croppedBase64;
+              newVariants[vIndex].swatchType = 'pattern';
               handleChange('colorVariants', newVariants);
             }
             setCropState({ src: null, target: null });

@@ -12,6 +12,23 @@ export const AdminProvider = ({ children }) => {
   const [brands, setBrands] = useState([]);
   
   const [sets, setSets] = useState([]);
+  const [newInLookbookIds, setNewInLookbookIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sol_new_in_lookbooks');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [curatedViewAllLookbooks, setCuratedViewAllLookbooks] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sol_curated_view_all_lookbooks');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
 
   const [homepageCollections, setHomepageCollections] = useState(() => {
     try {
@@ -222,20 +239,61 @@ export const AdminProvider = ({ children }) => {
           layoutSize: p.layout_size,
           heelHeight: p.heel_height,
           subtitle: p.subtitle || '',
+          material: p.material || '',
+          sku: p.sku || '',
+          brandId: p.brand_id || '',
           colorVariants: p.color_variants || [],
-          colors: (p.color_variants || []).map(v => v.hex).filter(Boolean)
+          colors: (p.color_variants || []).map(v => (v.swatchType === 'pattern' ? v.patternImage : v.hex) || v.hex || '#000000').filter(Boolean)
         })));
       }
 
-      // Fetch Sets
+      // Fetch Sets & New In & Curated View All Lookbook settings
+      let activeNewInIds = newInLookbookIds;
+      try {
+        const { data: newInSetting } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('key_name', 'new_in_lookbooks')
+          .single();
+        if (newInSetting && Array.isArray(newInSetting.setting_value)) {
+          activeNewInIds = newInSetting.setting_value;
+          setNewInLookbookIds(activeNewInIds);
+          localStorage.setItem('sol_new_in_lookbooks', JSON.stringify(activeNewInIds));
+        }
+      } catch (err) {
+        console.warn("Could not fetch new_in_lookbooks, using fallback:", err);
+      }
+
+      let activeCuratedViewAll = curatedViewAllLookbooks;
+      try {
+        const { data: curatedSetting } = await supabase
+          .from('store_settings')
+          .select('setting_value')
+          .eq('key_name', 'curated_view_all_lookbooks')
+          .single();
+        if (curatedSetting && typeof curatedSetting.setting_value === 'object' && curatedSetting.setting_value !== null) {
+          activeCuratedViewAll = curatedSetting.setting_value;
+          setCuratedViewAllLookbooks(activeCuratedViewAll);
+          localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(activeCuratedViewAll));
+        }
+      } catch (err) {
+        console.warn("Could not fetch curated_view_all_lookbooks, using fallback:", err);
+      }
+
       const { data: setsData } = await supabase.from('sets').select('*').order('created_at', { ascending: false });
       if (setsData && setsData.length > 0) {
-        setSets(setsData.map(s => ({
-          ...s,
-          mainCategory: s.main_category,
-          subCategory: s.sub_category,
-          scheduledDate: s.scheduled_date
-        })));
+        setSets(setsData.map(s => {
+          const sMain = s.main_category;
+          const curatedList = activeCuratedViewAll[sMain] || [];
+          return {
+            ...s,
+            mainCategory: s.main_category,
+            subCategory: s.sub_category,
+            scheduledDate: s.scheduled_date,
+            isNewIn: activeNewInIds.includes(s.id),
+            isViewAll: curatedList.includes(s.id)
+          };
+        }));
       }
 
 
@@ -418,6 +476,60 @@ export const AdminProvider = ({ children }) => {
 
   const updateSet = (id, updatedData) => {
     setSets(prev => prev.map(s => s.id === id ? { ...s, ...updatedData } : s));
+
+    if (updatedData.isNewIn !== undefined) {
+      const nextIds = updatedData.isNewIn
+        ? Array.from(new Set([...newInLookbookIds, id]))
+        : newInLookbookIds.filter(setId => setId !== id);
+      setNewInLookbookIds(nextIds);
+      localStorage.setItem('sol_new_in_lookbooks', JSON.stringify(nextIds));
+      supabase.from('store_settings').upsert({
+        key_name: 'new_in_lookbooks',
+        setting_value: nextIds
+      }).then(({ error }) => {
+        if (error) console.error("Error updating new_in_lookbooks:", error);
+      });
+    }
+
+    if (updatedData.isViewAll !== undefined) {
+      const setObj = sets.find(s => s.id === id);
+      const targetMain = updatedData.mainCategory || setObj?.mainCategory || setObj?.main_category;
+      if (targetMain) {
+        const currentList = curatedViewAllLookbooks[targetMain] || [];
+        const nextList = updatedData.isViewAll
+          ? Array.from(new Set([...currentList, id]))
+          : currentList.filter(setId => setId !== id);
+        const nextCuratedObj = {
+          ...curatedViewAllLookbooks,
+          [targetMain]: nextList
+        };
+        setCuratedViewAllLookbooks(nextCuratedObj);
+        localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+        supabase.from('store_settings').upsert({
+          key_name: 'curated_view_all_lookbooks',
+          setting_value: nextCuratedObj
+        }).then(({ error }) => {
+          if (error) console.error("Error updating curated_view_all_lookbooks:", error);
+        });
+      }
+    }
+
+    if (updatedData.mainCategory !== undefined) {
+      const setObj = sets.find(s => s.id === id);
+      const oldMain = setObj?.mainCategory || setObj?.main_category;
+      if (oldMain && oldMain !== updatedData.mainCategory && (curatedViewAllLookbooks[oldMain] || []).includes(id)) {
+        const nextCuratedObj = {
+          ...curatedViewAllLookbooks,
+          [oldMain]: (curatedViewAllLookbooks[oldMain] || []).filter(setId => setId !== id)
+        };
+        setCuratedViewAllLookbooks(nextCuratedObj);
+        localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+        supabase.from('store_settings').upsert({
+          key_name: 'curated_view_all_lookbooks',
+          setting_value: nextCuratedObj
+        });
+      }
+    }
     
     const dbUpdate = {};
     if (updatedData.name !== undefined) dbUpdate.name = updatedData.name;
@@ -452,9 +564,85 @@ export const AdminProvider = ({ children }) => {
 
   const deleteSet = (id) => {
     setSets(prev => prev.filter(s => s.id !== id));
+    if (newInLookbookIds.includes(id)) {
+      const nextIds = newInLookbookIds.filter(setId => setId !== id);
+      setNewInLookbookIds(nextIds);
+      localStorage.setItem('sol_new_in_lookbooks', JSON.stringify(nextIds));
+      supabase.from('store_settings').upsert({
+        key_name: 'new_in_lookbooks',
+        setting_value: nextIds
+      });
+    }
+
+    let changedCurated = false;
+    const updatedCurated = { ...curatedViewAllLookbooks };
+    Object.keys(updatedCurated).forEach(cat => {
+      if ((updatedCurated[cat] || []).includes(id)) {
+        updatedCurated[cat] = updatedCurated[cat].filter(setId => setId !== id);
+        changedCurated = true;
+      }
+    });
+    if (changedCurated) {
+      setCuratedViewAllLookbooks(updatedCurated);
+      localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(updatedCurated));
+      supabase.from('store_settings').upsert({
+        key_name: 'curated_view_all_lookbooks',
+        setting_value: updatedCurated
+      });
+    }
+
     supabase.from('sets').delete().eq('id', id).then(({ error }) => {
       if (error) console.error("Error deleting set:", error);
     });
+  };
+
+  const toggleCurateSetForViewAll = async (mainCategory, setId) => {
+    if (!mainCategory || !setId) return;
+    const currentList = curatedViewAllLookbooks[mainCategory] || [];
+    const isCurated = currentList.includes(setId);
+    const nextList = isCurated
+      ? currentList.filter(id => id !== setId)
+      : [...currentList, setId];
+
+    const nextCuratedObj = {
+      ...curatedViewAllLookbooks,
+      [mainCategory]: nextList
+    };
+
+    setCuratedViewAllLookbooks(nextCuratedObj);
+    localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+    
+    // Update local set state
+    setSets(prev => prev.map(s => s.id === setId ? { ...s, isViewAll: !isCurated } : s));
+
+    try {
+      await supabase.from('store_settings').upsert({
+        key_name: 'curated_view_all_lookbooks',
+        setting_value: nextCuratedObj
+      });
+    } catch (err) {
+      console.error("Error updating curated_view_all_lookbooks in store_settings:", err);
+    }
+    return !isCurated;
+  };
+
+  const reorderViewAllSets = async (mainCategory, newOrderedIds) => {
+    if (!mainCategory || !Array.isArray(newOrderedIds)) return;
+    const nextCuratedObj = {
+      ...curatedViewAllLookbooks,
+      [mainCategory]: newOrderedIds
+    };
+    setCuratedViewAllLookbooks(nextCuratedObj);
+    localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+
+    try {
+      await supabase.from('store_settings').upsert({
+        key_name: 'curated_view_all_lookbooks',
+        setting_value: nextCuratedObj
+      });
+    } catch (err) {
+      console.error("Error updating curated_view_all_lookbooks order:", err);
+    }
   };
 
   const addProductToSet = (setId, productId, layoutSize = 'small') => {
@@ -967,6 +1155,10 @@ export const AdminProvider = ({ children }) => {
     brands,
     products,
     sets,
+    newInLookbookIds,
+    curatedViewAllLookbooks,
+    toggleCurateSetForViewAll,
+    reorderViewAllSets,
     contentArticles,
     homepageModules,
     homepageGridItems,

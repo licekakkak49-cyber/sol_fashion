@@ -122,12 +122,24 @@ const ManageProductsPage = () => {
     addSubCategory, 
     editCategory, 
     editSubCategory,
+    updateSet: adminUpdateSet,
     reorderSets: adminReorderSets,
-    refreshData
+    refreshData,
+    curatedViewAllLookbooks: ctxCuratedViewAllLookbooks,
+    toggleCurateSetForViewAll: adminToggleCurateSetForViewAll,
+    reorderViewAllSets: adminReorderViewAllSets
   } = useAdmin();
 
   const [products, setProducts] = useState([]);
   const [sets, setSets] = useState([]);
+  const [curatedViewAllLookbooks, setCuratedViewAllLookbooks] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sol_curated_view_all_lookbooks');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
   
   // Toast Notification State
   const [toast, setToast] = useState(null);
@@ -141,35 +153,89 @@ const ManageProductsPage = () => {
     }, 4000);
   };
   
-  const fetchData = async () => {
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const fetchData = async (showLoading = false) => {
+    if (showLoading) setIsSyncing(true);
     try {
-      const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      const { data: sData } = await supabase.from('sets').select('*').order('created_at', { ascending: false });
+      const [
+        { data: pData, error: pError },
+        { data: sData, error: sError },
+        { data: newInSetting },
+        { data: curatedSetting }
+      ] = await Promise.all([
+        supabase.from('products').select('*').order('created_at', { ascending: false }),
+        supabase.from('sets').select('*').order('created_at', { ascending: false }),
+        supabase.from('store_settings').select('setting_value').eq('key_name', 'new_in_lookbooks').maybeSingle(),
+        supabase.from('store_settings').select('setting_value').eq('key_name', 'curated_view_all_lookbooks').maybeSingle()
+      ]);
+
+      if (pError) console.error("Error fetching products:", pError);
+      if (sError) console.error("Error fetching sets:", sError);
+
+      let newInLookbookIds = [];
+      try {
+        const saved = localStorage.getItem('sol_new_in_lookbooks');
+        if (saved) newInLookbookIds = JSON.parse(saved);
+      } catch(e) {}
+
+      if (newInSetting && Array.isArray(newInSetting.setting_value)) {
+        newInLookbookIds = newInSetting.setting_value;
+        localStorage.setItem('sol_new_in_lookbooks', JSON.stringify(newInLookbookIds));
+      }
+
+      let activeCuratedViewAll = {};
+      try {
+        const saved = localStorage.getItem('sol_curated_view_all_lookbooks');
+        if (saved) activeCuratedViewAll = JSON.parse(saved);
+      } catch(e) {}
+
+      if (curatedSetting && typeof curatedSetting.setting_value === 'object' && curatedSetting.setting_value !== null) {
+        activeCuratedViewAll = curatedSetting.setting_value;
+        setCuratedViewAllLookbooks(activeCuratedViewAll);
+        localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(activeCuratedViewAll));
+      }
+
+      if (pData) {
+        const mappedProducts = pData.map(p => ({
+          ...p,
+          mainCategory: p.main_category,
+          subCategory: p.sub_category,
+          coverImage: p.cover_image_url,
+          hoverImage: p.hover_image_url,
+          galleryImages: p.gallery_images_urls,
+          layoutSize: p.layout_size,
+          colorVariants: p.color_variants,
+          heelHeight: p.heel_height,
+          material: p.material || '',
+          sku: p.sku || '',
+          brandId: p.brand_id || '',
+          image: p.cover_image_url,
+          status: p.status || 'active',
+          created_at: p.created_at || p.createdAt || null,
+          uploadDate: p.created_at || p.createdAt || null
+        }));
+        setProducts(mappedProducts);
+      }
       
-      const mappedProducts = (pData || []).map(p => ({
-        ...p,
-        mainCategory: p.main_category,
-        subCategory: p.sub_category,
-        coverImage: p.cover_image_url,
-        hoverImage: p.hover_image_url,
-        galleryImages: p.gallery_images_urls,
-        layoutSize: p.layout_size,
-        colorVariants: p.color_variants,
-        heelHeight: p.heel_height,
-        image: p.cover_image_url,
-        status: p.status || 'active',
-        created_at: p.created_at || p.createdAt || null
-      }));
-      
-      setProducts(mappedProducts);
-      setSets((sData || []).map(s => ({
-        ...s,
-        mainCategory: s.main_category,
-        subCategory: s.sub_category,
-        scheduledDate: s.scheduled_date
-      })));
+      if (sData) {
+        setSets(sData.map(s => {
+          const sMain = s.main_category;
+          const curatedList = activeCuratedViewAll[sMain] || [];
+          return {
+            ...s,
+            mainCategory: s.main_category,
+            subCategory: s.sub_category,
+            scheduledDate: s.scheduled_date,
+            isNewIn: (newInLookbookIds || []).includes(s.id),
+            isViewAll: curatedList.includes(s.id)
+          };
+        }));
+      }
     } catch(e) {
       console.error("Fetch data error:", e);
+    } finally {
+      setIsSyncing(false);
     }
   };
   
@@ -197,7 +263,8 @@ const ManageProductsPage = () => {
       id: dbPayload.id,
       mainCategory: newSet.mainCategory,
       subCategory: newSet.subCategory,
-      scheduledDate: newSet.scheduledDate || null
+      scheduledDate: newSet.scheduledDate || null,
+      isNewIn: false
     }, ...prev]);
 
     const { error } = await supabase.from('sets').insert([dbPayload]);
@@ -212,49 +279,154 @@ const ManageProductsPage = () => {
   };
 
   const updateSet = async (setId, updatedData) => {
-    // Optimistic UI update
+    // Optimistic UI update in local state
     setSets(prev => prev.map(s => s.id === setId ? { ...s, ...updatedData } : s));
     
+    // Optimistic UI update in AdminContext
+    adminUpdateSet?.(setId, updatedData);
+
+    // Handle isNewIn persistence in store_settings & localStorage
+    if (updatedData.isNewIn !== undefined) {
+      let savedIds = [];
+      try {
+        const saved = localStorage.getItem('sol_new_in_lookbooks');
+        if (saved) savedIds = JSON.parse(saved);
+      } catch(e) {}
+      
+      const nextIds = updatedData.isNewIn
+        ? Array.from(new Set([...savedIds, setId]))
+        : savedIds.filter(id => id !== setId);
+      
+      localStorage.setItem('sol_new_in_lookbooks', JSON.stringify(nextIds));
+      supabase.from('store_settings').upsert({
+        key_name: 'new_in_lookbooks',
+        setting_value: nextIds
+      }).then(({ error }) => {
+        if (error) console.error("Error syncing new_in_lookbooks:", error);
+      });
+    }
+
+    // Handle isViewAll persistence in store_settings & localStorage
+    if (updatedData.isViewAll !== undefined) {
+      const currentSet = sets.find(s => s.id === setId);
+      const targetMain = updatedData.mainCategory || currentSet?.mainCategory;
+      if (targetMain) {
+        const currentList = curatedViewAllLookbooks[targetMain] || [];
+        const nextList = updatedData.isViewAll
+          ? Array.from(new Set([...currentList, setId]))
+          : currentList.filter(id => id !== setId);
+        const nextCuratedObj = {
+          ...curatedViewAllLookbooks,
+          [targetMain]: nextList
+        };
+        setCuratedViewAllLookbooks(nextCuratedObj);
+        localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+        supabase.from('store_settings').upsert({
+          key_name: 'curated_view_all_lookbooks',
+          setting_value: nextCuratedObj
+        }).then(({ error }) => {
+          if (error) console.error("Error syncing curated_view_all_lookbooks:", error);
+        });
+      }
+    }
+
+    if (updatedData.mainCategory !== undefined) {
+      const currentSet = sets.find(s => s.id === setId);
+      const oldMain = currentSet?.mainCategory;
+      if (oldMain && oldMain !== updatedData.mainCategory && (curatedViewAllLookbooks[oldMain] || []).includes(setId)) {
+        const nextCuratedObj = {
+          ...curatedViewAllLookbooks,
+          [oldMain]: (curatedViewAllLookbooks[oldMain] || []).filter(id => id !== setId)
+        };
+        setCuratedViewAllLookbooks(nextCuratedObj);
+        localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+        supabase.from('store_settings').upsert({
+          key_name: 'curated_view_all_lookbooks',
+          setting_value: nextCuratedObj
+        });
+      }
+    }
+
     const dbUpdate = { ...updatedData };
+    delete dbUpdate.isNewIn; // Crucial: sets table does not have is_new_in column
+    delete dbUpdate.isViewAll; // Crucial: sets table does not have is_view_all column
     if (updatedData.mainCategory !== undefined) { dbUpdate.main_category = updatedData.mainCategory; delete dbUpdate.mainCategory; }
     if (updatedData.subCategory !== undefined) { dbUpdate.sub_category = updatedData.subCategory; delete dbUpdate.subCategory; }
     if (updatedData.scheduledDate !== undefined) { dbUpdate.scheduled_date = updatedData.scheduledDate; delete dbUpdate.scheduledDate; }
     
     // Background DB update
-    const { error } = await supabase.from('sets').update(dbUpdate).eq('id', setId);
-    
-    // Cascade status to all products in the set
-    if (updatedData.status !== undefined) {
-      const setToUpdate = sets.find(s => s.id === setId);
-      if (setToUpdate && setToUpdate.items) {
-        const productIds = setToUpdate.items
-          .filter(item => !item.isPlaceholder && item.productId)
-          .map(item => item.productId);
-          
-        if (productIds.length > 0) {
-          const newProductStatus = updatedData.status === 'published' ? 'active' : 'draft';
-          await supabase.from('products').update({ status: newProductStatus }).in('id', productIds);
-          // Optimistically update products state
-          setProducts(prev => prev.map(p => productIds.includes(p.id) ? { ...p, status: newProductStatus } : p));
+    if (Object.keys(dbUpdate).length > 0) {
+      const { error } = await supabase.from('sets').update(dbUpdate).eq('id', setId);
+
+      if (error) {
+        console.error("Update set error:", error);
+        showToast('Failed to save lookbook: ' + error.message, 'error');
+        fetchData(); // Rollback if error
+      } else {
+        const currentSet = sets.find(s => s.id === setId);
+        const setName = updatedData.name || currentSet?.name || 'Lookbook';
+        if (updatedData.status !== undefined) {
+          showToast(`Lookbook "${setName}" updated to ${updatedData.status.toUpperCase()}`, 'success');
+        } else if (updatedData.mainCategory !== undefined || updatedData.subCategory !== undefined) {
+          showToast(`Lookbook "${setName}" moved to ${updatedData.mainCategory || currentSet?.mainCategory} › ${updatedData.subCategory || currentSet?.subCategory}`, 'success');
+        } else {
+          showToast(`Lookbook "${setName}" updated`, 'success');
+        }
+        refreshData?.();
+        if (updatedData.status !== undefined) {
+          fetchData();
         }
       }
-    }
-
-    if (error) {
-      console.error("Update set error:", error);
-      showToast('Failed to save set: ' + error.message, 'error');
-      fetchData(); // Rollback if error
-    } else {
+    } else if (updatedData.isNewIn !== undefined) {
       const currentSet = sets.find(s => s.id === setId);
-      const setName = updatedData.name || currentSet?.name || 'Look Set';
-      if (updatedData.status !== undefined) {
-        showToast(`Set "${setName}" updated to ${updatedData.status.toUpperCase()}`, 'success');
-      } else {
-        showToast(`Set "${setName}" updated`, 'success');
-      }
-      if (updatedData.status !== undefined) {
-        fetchData();
-      }
+      const setName = currentSet?.name || 'Lookbook';
+      showToast(updatedData.isNewIn ? `Lookbook "${setName}" tagged as NEW IN` : `Lookbook "${setName}" removed from NEW IN`, 'success');
+      refreshData?.();
+    } else if (updatedData.isViewAll !== undefined) {
+      const currentSet = sets.find(s => s.id === setId);
+      const setName = currentSet?.name || 'Lookbook';
+      showToast(updatedData.isViewAll ? `Lookbook "${setName}" added to View All showcase` : `Lookbook "${setName}" removed from View All showcase`, 'success');
+      refreshData?.();
+    }
+  };
+
+  const batchReorderSets = async (updates) => {
+    if (!updates || updates.length === 0) return;
+
+    // 1. Optimistic UI update in local state
+    setSets(prev => {
+      const updateMap = new Map(updates.map(u => [u.id, u.created_at]));
+      const newSets = prev.map(s => updateMap.has(s.id) ? { ...s, created_at: updateMap.get(s.id) } : s);
+      return newSets.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+    });
+
+    // 2. Sync to AdminContext
+    updates.forEach(u => {
+      adminUpdateSet?.(u.id, { created_at: u.created_at });
+    });
+
+    // 3. Persist to store_settings for instant ordering cache
+    const orderedIds = updates.map(u => u.id);
+    localStorage.setItem('sol_lookbook_order', JSON.stringify(orderedIds));
+    supabase.from('store_settings').upsert({
+      key_name: 'lookbook_order',
+      setting_value: orderedIds
+    }).then(({ error }) => {
+      if (error) console.error("Error saving lookbook_order:", error);
+    });
+
+    // 4. Persist each set's created_at in Supabase
+    try {
+      const promises = updates.map(u =>
+        supabase.from('sets').update({ created_at: u.created_at }).eq('id', u.id)
+      );
+      await Promise.all(promises);
+      showToast('Lookbook order updated', 'success');
+      refreshData?.();
+    } catch (err) {
+      console.error("Batch reorder sets error:", err);
+      showToast('Failed to save display order', 'error');
+      fetchData();
     }
   };
 
@@ -297,28 +469,111 @@ const ManageProductsPage = () => {
   };
 
   const deleteSet = async (setId) => {
-    if (!window.confirm("Are you sure you want to delete this set and all products within it? This action cannot be undone.")) {
+    if (!window.confirm("Are you sure you want to delete this Lookbook set? (All products inside will remain safely in your catalog).")) {
       return;
     }
 
-    const setToDelete = sets.find(s => s.id === setId);
-    if (setToDelete && setToDelete.items) {
-      const productIdsToDelete = setToDelete.items
-        .filter(item => !item.isPlaceholder && item.productId)
-        .map(item => item.productId);
-      
-      if (productIdsToDelete.length > 0) {
-        await supabase.from('products').delete().in('id', productIdsToDelete);
+    // Clean up from new_in_lookbooks if present
+    let savedIds = [];
+    try {
+      const saved = localStorage.getItem('sol_new_in_lookbooks');
+      if (saved) savedIds = JSON.parse(saved);
+    } catch(e) {}
+    if (savedIds.includes(setId)) {
+      const nextIds = savedIds.filter(id => id !== setId);
+      localStorage.setItem('sol_new_in_lookbooks', JSON.stringify(nextIds));
+      supabase.from('store_settings').upsert({
+        key_name: 'new_in_lookbooks',
+        setting_value: nextIds
+      }).then(({ error }) => {
+        if (error) console.error("Error updating new_in_lookbooks on delete:", error);
+      });
+    }
+
+    // Clean up from curated_view_all_lookbooks if present
+    let changedCurated = false;
+    const updatedCurated = { ...curatedViewAllLookbooks };
+    Object.keys(updatedCurated).forEach(cat => {
+      if ((updatedCurated[cat] || []).includes(setId)) {
+        updatedCurated[cat] = updatedCurated[cat].filter(id => id !== setId);
+        changedCurated = true;
       }
+    });
+    if (changedCurated) {
+      setCuratedViewAllLookbooks(updatedCurated);
+      localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(updatedCurated));
+      supabase.from('store_settings').upsert({
+        key_name: 'curated_view_all_lookbooks',
+        setting_value: updatedCurated
+      }).then(({ error }) => {
+        if (error) console.error("Error updating curated_view_all_lookbooks on delete:", error);
+      });
     }
 
     const { error } = await supabase.from('sets').delete().eq('id', setId);
     if (error) {
       showToast('Failed to delete set: ' + error.message, 'error');
     } else {
-      showToast('Set deleted', 'info');
+      showToast('Lookbook set deleted', 'info');
     }
     fetchData();
+  };
+
+  const toggleCurateSetForViewAll = async (mainCat, setId) => {
+    if (!mainCat || !setId) return;
+    const currentList = curatedViewAllLookbooks[mainCat] || [];
+    const isCurated = currentList.includes(setId);
+    const nextList = isCurated
+      ? currentList.filter(id => id !== setId)
+      : [...currentList, setId];
+
+    const nextCuratedObj = {
+      ...curatedViewAllLookbooks,
+      [mainCat]: nextList
+    };
+
+    setCuratedViewAllLookbooks(nextCuratedObj);
+    localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+
+    setSets(prev => prev.map(s => s.id === setId ? { ...s, isViewAll: !isCurated } : s));
+    adminUpdateSet?.(setId, { isViewAll: !isCurated, mainCategory: mainCat });
+
+    supabase.from('store_settings').upsert({
+      key_name: 'curated_view_all_lookbooks',
+      setting_value: nextCuratedObj
+    }).then(({ error }) => {
+      if (error) console.error("Error updating curated_view_all_lookbooks:", error);
+    });
+
+    const currentSet = sets.find(s => s.id === setId);
+    const setName = currentSet?.name || 'Lookbook';
+    showToast(
+      !isCurated 
+        ? `Lookbook "${setName}" added to View All showcase` 
+        : `Lookbook "${setName}" removed from View All showcase`,
+      'success'
+    );
+  };
+
+  const reorderViewAllSets = async (mainCat, newOrderedIds) => {
+    if (!mainCat || !Array.isArray(newOrderedIds)) return;
+    const nextCuratedObj = {
+      ...curatedViewAllLookbooks,
+      [mainCat]: newOrderedIds
+    };
+    setCuratedViewAllLookbooks(nextCuratedObj);
+    localStorage.setItem('sol_curated_view_all_lookbooks', JSON.stringify(nextCuratedObj));
+
+    adminReorderViewAllSets?.(mainCat, newOrderedIds);
+
+    supabase.from('store_settings').upsert({
+      key_name: 'curated_view_all_lookbooks',
+      setting_value: nextCuratedObj
+    }).then(({ error }) => {
+      if (error) console.error("Error updating curated_view_all_lookbooks order:", error);
+    });
+
+    showToast('View All showcase order updated', 'success');
   };
 
   const removeProductFromSet = async (setId, productId, slotIndex = null) => {
@@ -399,15 +654,34 @@ const ManageProductsPage = () => {
   
   const toggleProductStatus = async (product) => {
     const newStatus = (product.status || 'draft').toLowerCase() === 'draft' ? 'active' : 'draft';
-    await supabase.from('products').update({ status: newStatus }).eq('id', product.id);
+    // Optimistic UI update
+    setProducts(prev => (prev || []).map(p => p.id === product.id ? { ...p, status: newStatus } : p));
     showToast(`Product set to ${newStatus === 'active' ? 'PUBLISHED' : 'DRAFT'}`, 'success');
-    fetchData(); // Refresh list
+    try {
+      const { error } = await supabase.from('products').update({ status: newStatus }).eq('id', product.id);
+      if (error) throw error;
+      fetchData();
+    } catch(err) {
+      console.error('Error toggling status:', err);
+      showToast('Failed to update status', 'error');
+      fetchData(); // Rollback
+    }
   };
 
   const deleteProduct = async (id) => {
-    await supabase.from('products').delete().eq('id', id);
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    // Optimistic UI update
+    setProducts(prev => (prev || []).filter(p => p.id !== id));
     showToast('Product deleted', 'info');
-    fetchData();
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch(e) {
+      console.error('Delete product error:', e);
+      showToast('Failed to delete product: ' + e.message, 'error');
+      fetchData(); // Rollback
+    }
   };
 
   
@@ -657,6 +931,15 @@ const ManageProductsPage = () => {
         color_variants: payload.colorVariants
       };
       
+      // Optimistic UI update
+      setProducts(prev => (prev || []).map(p => p.id === payload.id ? { 
+        ...p, 
+        stock: payload.stock, 
+        status: payload.status, 
+        colorVariants: payload.colorVariants,
+        color_variants: payload.colorVariants 
+      } : p));
+
       const { error } = await supabase
         .from('products')
         .update(dbPayload)
@@ -664,10 +947,11 @@ const ManageProductsPage = () => {
         
       if (error) throw error;
       showToast('Inventory updated', 'success');
-      fetchData(); // Reload inventory list
+      fetchData(); // Background sync
     } catch (err) {
       console.error('Error fast updating product:', err);
       showToast('Failed to update: ' + err.message, 'error');
+      fetchData(); // Rollback
     }
   };
 
@@ -691,6 +975,9 @@ const ManageProductsPage = () => {
       fit: payload.fit,
       hardware: payload.hardware,
       heel_height: payload.heelHeight,
+      material: payload.material || null,
+      sku: payload.sku || null,
+      brand_id: payload.brandId || null,
       tags: payload.highlight || [],
       color_variants: payload.colorVariants || []
     };
@@ -707,6 +994,27 @@ const ManageProductsPage = () => {
           .single();
           
         if (error) throw error;
+        
+        // Optimistic UI update: prepend newly created product to state immediately!
+        const optimisticNew = {
+          ...newProduct,
+          mainCategory: newProduct.main_category,
+          subCategory: newProduct.sub_category,
+          coverImage: newProduct.cover_image_url,
+          hoverImage: newProduct.hover_image_url,
+          galleryImages: newProduct.gallery_images_urls || [],
+          layoutSize: newProduct.layout_size,
+          colorVariants: newProduct.color_variants || [],
+          heelHeight: newProduct.heel_height,
+          material: newProduct.material || '',
+          sku: newProduct.sku || '',
+          brandId: newProduct.brand_id || '',
+          image: newProduct.cover_image_url,
+          status: newProduct.status || 'active',
+          created_at: newProduct.created_at,
+          uploadDate: newProduct.created_at
+        };
+        setProducts(prev => [optimisticNew, ...(prev || []).filter(p => p.id !== optimisticNew.id)]);
         
         // If it was a placeholder in a set, update the set's JSON
         const targetSlotId = editorConfig.targetSlotId || (isPlaceholder ? payload.id : null);
@@ -728,20 +1036,45 @@ const ManageProductsPage = () => {
         }
       } else {
         // Update existing
-        const { error } = await supabase
+        const { data: updatedData, error } = await supabase
           .from('products')
           .update(dbPayload)
-          .eq('id', payload.id);
+          .eq('id', payload.id)
+          .select()
+          .single();
           
         if (error) throw error;
+        
+        // Optimistic UI update: replace existing product in state immediately!
+        const src = updatedData || { ...dbPayload, id: payload.id };
+        const optimisticUpdated = {
+          ...src,
+          mainCategory: src.main_category,
+          subCategory: src.sub_category,
+          coverImage: src.cover_image_url,
+          hoverImage: src.hover_image_url,
+          galleryImages: src.gallery_images_urls || [],
+          layoutSize: src.layout_size,
+          colorVariants: src.color_variants || [],
+          heelHeight: src.heel_height,
+          material: src.material || '',
+          sku: src.sku || '',
+          brandId: src.brand_id || '',
+          image: src.cover_image_url,
+          status: src.status || 'active',
+          created_at: src.created_at || payload.created_at,
+          uploadDate: src.created_at || payload.created_at
+        };
+        setProducts(prev => (prev || []).map(p => p.id === payload.id ? optimisticUpdated : p));
         showToast(`Product "${payload.name}" updated`, 'success');
       }
       
       console.log('Saved to Supabase successfully!');
-      fetchData();
+      fetchData(); // Background sync without blocking
     } catch (e) {
       console.error('Supabase Error:', e);
       showToast('Error saving product: ' + e.message, 'error');
+      fetchData(); // Rollback if needed
     }
   };
 
@@ -774,7 +1107,7 @@ const ManageProductsPage = () => {
         
         // Category Filters
         if (activeMainCategory !== 'All' && p.mainCategory !== activeMainCategory) return false;
-        if (activeSubCategory !== 'All' && p.subCategory !== activeSubCategory) return false;
+        if (activeSubCategory !== 'All' && activeSubCategory !== 'View all' && p.subCategory !== activeSubCategory) return false;
 
         // Dropdown Filters
         if (filterBrand !== 'All' && p.brandId !== filterBrand) return false;
@@ -824,11 +1157,29 @@ const ManageProductsPage = () => {
       return true;
     });
 
+    const getTimestamp = (item) => {
+      if (item.created_at) {
+        const t = new Date(item.created_at).getTime();
+        if (!isNaN(t)) return t;
+      }
+      if (item.uploadDate) {
+        const t = new Date(item.uploadDate).getTime();
+        if (!isNaN(t)) return t;
+      }
+      if (item.createdAt) {
+        const t = new Date(item.createdAt).getTime();
+        if (!isNaN(t)) return t;
+      }
+      const num = Number(item.id);
+      if (!isNaN(num) && num > 1600000000000) return num;
+      return 0;
+    };
+
     return filtered.sort((a, b) => {
       if (sortBy === 'Newest') {
-        return new Date(b.uploadDate || 0) - new Date(a.uploadDate || 0);
+        return getTimestamp(b) - getTimestamp(a);
       } else if (sortBy === 'Oldest') {
-        return new Date(a.uploadDate || 0) - new Date(b.uploadDate || 0);
+        return getTimestamp(a) - getTimestamp(b);
       } else if (sortBy === 'Name A-Z') {
         return (a.name || '').localeCompare(b.name || '');
       } else if (sortBy === 'Name Z-A') {
@@ -836,7 +1187,7 @@ const ManageProductsPage = () => {
       }
       return 0;
     });
-  }, [validProducts, searchQuery, activeTab, filterBrand, filterGender, filterHighlight, sortBy]);
+  }, [validProducts, searchQuery, activeTab, activeMainCategory, activeSubCategory, filterBrand, filterGender, filterHighlight, sortBy, viewMode, listFilters, sets]);
 
   const getInitialBreakpoint = () => {
     if (typeof window === 'undefined') return 'lg';
@@ -1368,6 +1719,47 @@ const ManageProductsPage = () => {
           </div>
         )}
         
+        {activeMainCategory !== 'All' && (
+          (() => {
+            const curatedIds = curatedViewAllLookbooks[activeMainCategory] || [];
+            const viewAllSetCount = curatedIds.length;
+            const viewAllProdCount = validProducts.filter(p => p.mainCategory === activeMainCategory).length;
+            const count = viewMode === 'grid' ? viewAllSetCount : viewAllProdCount;
+            const hasItems = count > 0;
+            const isSelected = activeSubCategory === 'View all';
+            return (
+              <button
+                key="view-all"
+                onClick={() => setActiveSubCategory('View all')}
+                style={{
+                  padding: isMobile ? '0 0 8px 0' : '0 0 12px 0',
+                  border: 'none',
+                  background: 'transparent',
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: isSelected ? 600 : 500,
+                  color: isSelected ? '#111' : (hasItems ? '#4b5563' : '#9ca3af'),
+                  borderBottom: isSelected ? '2px solid #111' : '2px solid transparent',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                View all
+                <span style={{ 
+                  background: isSelected ? '#111' : (hasItems ? '#f3f4f6' : 'transparent'),
+                  color: isSelected ? '#fff' : (hasItems ? '#374151' : '#9ca3af'),
+                  padding: '2px 8px', borderRadius: '100px', fontSize: '11px', fontWeight: 600
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })()
+        )}
+        
         {activeMainCategory !== 'All' && categories[activeMainCategory] && categories[activeMainCategory].map(sub => {
           const subSetCount = sets.filter(s => 
             (s.mainCategory === activeMainCategory || s.main_category === activeMainCategory) && 
@@ -1749,6 +2141,8 @@ const ManageProductsPage = () => {
             onToggleFilter={() => setIsFilterOpen(prev => !prev)}
             activeFilterCount={activeFilterCount}
             isMobile={isMobile}
+            onRefresh={() => fetchData(true)}
+            isSyncing={isSyncing}
           />
         ) : (
           <SetsManager 
@@ -1765,6 +2159,10 @@ const ManageProductsPage = () => {
             updateProductInSet={updateProductInSet}
             changeProductOrderInSet={changeProductOrderInSet}
             reorderSets={reorderSets}
+            batchReorderSets={batchReorderSets}
+            curatedViewAllLookbooks={curatedViewAllLookbooks}
+            onToggleCurateSetForViewAll={toggleCurateSetForViewAll}
+            onReorderViewAllSets={reorderViewAllSets}
             showToast={showToast}
             searchQuery={searchQuery}
             onOpenPicker={handleOpenPicker}

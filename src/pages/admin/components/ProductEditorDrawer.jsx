@@ -89,6 +89,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         variants = [{
           id: Date.now(),
           name: 'Original',
+          sku: initialData.sku || '',
           hex: '#000000',
           swatchType: 'color',
           patternImage: null,
@@ -102,6 +103,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
           if (!v.images) v.images = [];
           return {
             ...v,
+            sku: v.sku || '',
             swatchType: v.swatchType || (v.patternImage ? 'pattern' : 'color'),
             patternImage: v.patternImage || null,
             hex: v.hex || '#000000'
@@ -207,6 +209,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
 
         return {
           ...variant,
+          sku: variant.sku ? String(variant.sku).trim() : '',
           images: uploadedImages,
           patternImage: uploadedPattern,
           swatchType: variant.swatchType || (uploadedPattern ? 'pattern' : 'color'),
@@ -244,7 +247,9 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
         status: formData.status || 'active',
         image: finalCoverUrl,
         images: [finalCoverUrl, finalHoverUrl, ...finalGalleryUrls].filter(Boolean), // For legacy support
-        id: initialData?.id
+        id: initialData?.id,
+        realProductId: initialData?.realProductId,
+        isPlaceholder: initialData?.isPlaceholder
       };
 
       setUploadStep('saving');
@@ -287,7 +292,7 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>Color & Pattern Variants</h3>
               <button 
-                onClick={() => handleChange('colorVariants', [...(formData.colorVariants || []), { id: Date.now(), name: '', hex: '#000000', swatchType: 'color', patternImage: null, images: [], isMain: (formData.colorVariants || []).length === 0, stock: {} }])}
+                onClick={() => handleChange('colorVariants', [...(formData.colorVariants || []), { id: Date.now(), name: '', sku: '', hex: '#000000', swatchType: 'color', patternImage: null, images: [], isMain: (formData.colorVariants || []).length === 0, stock: {} }])}
                 style={{ background: '#111', color: '#fff', border: 'none', borderRadius: '100px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 <Plus size={14} /> Add Variant
@@ -308,8 +313,8 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
                       </button>
                     </div>
 
-                    {/* Variant Name & Swatch Type Toggle */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px', alignItems: 'end' }}>
+                    {/* Variant Name, SKU & Swatch Type Toggle */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px', marginBottom: '14px', alignItems: 'end' }}>
                       <div>
                         <label style={labelStyle}>Variant Name</label>
                         <input 
@@ -321,7 +326,23 @@ export default function ProductEditorDrawer({ isOpen, onClose, onSave, initialDa
                             handleChange('colorVariants', newV);
                           }} 
                           style={inputStyle} 
-                          placeholder={variant.swatchType === 'pattern' ? 'e.g. Floral Print, Tartan Plaid' : 'e.g. Midnight Blue, Chalk White'} 
+                          placeholder={variant.swatchType === 'pattern' ? 'e.g. Floral Print' : 'e.g. Midnight Blue'} 
+                        />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ ...labelStyle, marginBottom: 0 }}>Variant SKU</label>
+                        </div>
+                        <input 
+                          type="text" 
+                          value={variant.sku || ''} 
+                          onChange={(e) => {
+                            const newV = [...formData.colorVariants];
+                            newV[idx].sku = e.target.value;
+                            handleChange('colorVariants', newV);
+                          }} 
+                          style={inputStyle} 
+                          placeholder={formData.sku ? `${formData.sku}-${(variant.name || 'VAR').substring(0, 3).toUpperCase()}` : 'e.g. DR-01-BLK'} 
                         />
                       </div>
                       <div>

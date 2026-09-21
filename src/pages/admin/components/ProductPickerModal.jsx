@@ -65,7 +65,8 @@ const ProductPickerModal = ({
         const name = String(p.name || '').toLowerCase();
         const sku = String(p.sku || '').toLowerCase();
         const brand = String(p.brand || '').toLowerCase();
-        if (!name.includes(q) && !sku.includes(q) && !brand.includes(q)) {
+        const matchVariantSku = (p.colorVariants || p.color_variants || []).some(v => v.sku && String(v.sku).toLowerCase().includes(q));
+        if (!name.includes(q) && !sku.includes(q) && !brand.includes(q) && !matchVariantSku) {
           return false;
         }
       }

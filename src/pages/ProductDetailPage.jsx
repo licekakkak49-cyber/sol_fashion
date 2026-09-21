@@ -258,6 +258,7 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
                   </div>
                   <span className={styles.colorLabel}>
                     {activeVariant ? (activeVariant.name || (activeVariant.swatchType === 'pattern' ? 'Fabric Pattern' : 'Color')) : 'Select a variant'}
+                    {activeVariant?.sku && <span style={{ marginLeft: '8px', color: '#9ca3af', fontSize: '11px', fontFamily: 'monospace' }}>({activeVariant.sku})</span>}
                   </span>
                 </div>
                 <div className={styles.sectionDivider}></div>
@@ -322,7 +323,11 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
                   setSizeError(true);
                   return;
                 }
-                addToCart(product || wishlistProduct, selectedSize);
+                addToCart({
+                  ...(product || wishlistProduct),
+                  selectedVariant: activeVariant,
+                  sku: activeVariant?.sku || product?.sku
+                }, selectedSize);
                 openCart();
               }}
             >
@@ -352,6 +357,11 @@ return () => window.removeEventListener('resize', handleSimilarScroll);
                       <p style={{ whiteSpace: 'pre-wrap' }}>
                         {product?.description || 'No details provided.'}
                       </p>
+                      {(activeVariant?.sku || product?.sku) && (
+                        <p style={{ marginTop: '14px', fontSize: '12px', color: '#6b7280', letterSpacing: '0.05em' }}>
+                          SKU: <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#111' }}>{activeVariant?.sku || product?.sku}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

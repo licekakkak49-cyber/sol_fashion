@@ -923,16 +923,23 @@ export default function InventoryList({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {product.colorVariants.map((v, vIdx) => (
                               <div key={vIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{ width: '120px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500 }}>
+                                <div style={{ minWidth: '160px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500 }}>
                                   <div style={{ 
-                                    width: '16px', 
-                                    height: '16px', 
+                                    width: '18px', 
+                                    height: '18px', 
                                     borderRadius: '4px', 
                                     background: (v.swatchType === 'pattern' && v.patternImage) ? `url(${v.patternImage}) center / cover no-repeat` : (v.hex || '#000'), 
                                     border: '1px solid #e5e7eb',
                                     flexShrink: 0 
                                   }} />
-                                  {v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}
+                                  <div>
+                                    <div>{v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}</div>
+                                    {v.sku && (
+                                      <div style={{ fontSize: '11px', color: '#6b7280', fontFamily: 'monospace', fontWeight: 400 }}>
+                                        SKU: {v.sku}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: 1 }}>
                                   {v.stock ? Object.entries(v.stock).map(([size, qty]) => (
@@ -1213,7 +1220,14 @@ export default function InventoryList({
                               border: '1px solid #d1d5db',
                               flexShrink: 0 
                             }} />
-                            {v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}
+                            <div>
+                              <span>{v.name || (v.swatchType === 'pattern' ? 'Pattern' : 'Original')}</span>
+                              {v.sku && (
+                                <span style={{ marginLeft: '6px', fontSize: '10px', color: '#6b7280', fontWeight: 'normal', fontFamily: 'monospace' }}>
+                                  ({v.sku})
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {v.stock ? Object.entries(v.stock).map(([size, qty]) => (

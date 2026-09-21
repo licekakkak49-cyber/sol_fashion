@@ -103,8 +103,10 @@ const CartSidebar = () => {
                             <span className={styles.itemPrice}>{formatPrice(item.price)}</span>
                           </div>
                           <div className={styles.itemMeta}>
-                            {/* We don't have color in product object right now, hardcoding mock color if needed, or omit */}
-                            <p className={styles.metaText}>Dark Brown</p> 
+                            {item.selectedVariant?.name ? (
+                              <p className={styles.metaText}>{item.selectedVariant.name}</p>
+                            ) : null}
+                            {item.sku && <p className={styles.metaText} style={{ fontFamily: 'monospace', fontSize: '11px' }}>SKU: {item.sku}</p>}
                             {item.size && <p className={styles.metaText}>Size {item.size}</p>}
                           </div>
 

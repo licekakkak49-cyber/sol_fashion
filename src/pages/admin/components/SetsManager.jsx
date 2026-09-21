@@ -1362,7 +1362,11 @@ const SetAccordion = ({
                         )}
                         <button 
                           className={styles.overlayActionBtn}
-                          onClick={(e) => { e.stopPropagation(); handleEdit(product, set.id); }}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const productToEdit = product.realProductId ? { ...product, id: product.realProductId } : product;
+                            handleEdit(productToEdit, set.id); 
+                          }}
                           title="Edit"
                         >
                           <Edit2 size={13} className={styles.overlayEditBtn} />
@@ -1839,7 +1843,8 @@ export default function SetsManager({
           if (!p) return false;
           const pName = String(p.name || '').toLowerCase();
           const pSku = String(p.sku || '').toLowerCase();
-          return pName.includes(q) || pSku.includes(q);
+          const matchVariantSku = (p.colorVariants || p.color_variants || []).some(v => v.sku && String(v.sku).toLowerCase().includes(q));
+          return pName.includes(q) || pSku.includes(q) || matchVariantSku;
         });
         if (!sName.includes(q) && !sMain.includes(q) && !sSub.includes(q) && !matchItem) return false;
       }

@@ -852,9 +852,10 @@ const ManageProductsPage = () => {
   };
 
   const handleEdit = (product, setId = null) => {
+    const realProduct = product?.realProductId ? { ...product, id: product.realProductId } : product;
     setEditorConfig({
       isOpen: true,
-      initialData: product,
+      initialData: realProduct,
       targetSetId: setId
     });
   };
@@ -956,7 +957,22 @@ const ManageProductsPage = () => {
   };
 
   const handleSaveProduct = async (payload) => {
-    const isPlaceholder = payload.id && payload.id.startsWith('draft-');
+    // 1. Resolve true target ID (handle case where slot ID was passed or realProductId is provided)
+    let targetId = payload.realProductId || payload.id;
+
+    // Check if targetId is a compound slot ID (e.g. "12345-0")
+    if (targetId && typeof targetId === 'string' && targetId.includes('-') && !targetId.startsWith('draft-')) {
+      const matched = (products || []).find(p => p.id === targetId || p.id === targetId.split('-')[0]);
+      if (matched && matched.id && !matched.id.startsWith('draft-')) {
+        targetId = matched.id;
+      }
+    }
+
+    const isPlaceholder = !targetId || 
+      String(targetId).startsWith('draft-') || 
+      String(targetId).startsWith('placeholder-') || 
+      String(targetId).startsWith('slot-') ||
+      Boolean(payload.isPlaceholder);
     
     const dbPayload = {
       name: payload.name,
@@ -983,17 +999,18 @@ const ManageProductsPage = () => {
     };
     
     try {
-      if (isPlaceholder || !payload.id) {
+      if (isPlaceholder || !targetId) {
         // Insert new product
-        dbPayload.id = Date.now().toString();
+        const newId = Date.now().toString();
+        dbPayload.id = newId;
         dbPayload.created_at = new Date().toISOString();
-        const { data: newProduct, error } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('products')
           .insert([dbPayload])
-          .select()
-          .single();
+          .select();
           
-        if (error) throw error;
+        if (insertError) throw insertError;
+        const newProduct = (insertData && insertData[0]) || { ...dbPayload, id: newId };
         
         // Optimistic UI update: prepend newly created product to state immediately!
         const optimisticNew = {
@@ -1019,8 +1036,9 @@ const ManageProductsPage = () => {
         // If it was a placeholder in a set, update the set's JSON
         const targetSlotId = editorConfig.targetSlotId || (isPlaceholder ? payload.id : null);
         if (editorConfig.targetSetId && (targetSlotId || editorConfig.targetSlotIndex !== undefined)) {
-          // We need to fetch the set, update the items JSON, and save back
-          const { data: setRecord } = await supabase.from('sets').select('*').eq('id', editorConfig.targetSetId).single();
+          // Safely fetch set without .single()
+          const { data: setRecords } = await supabase.from('sets').select('*').eq('id', editorConfig.targetSetId);
+          const setRecord = setRecords && setRecords[0];
           if (setRecord) {
             const newItems = (setRecord.items || []).map((item, idx) => {
               const isMatch = (editorConfig.targetSlotIndex !== null && editorConfig.targetSlotIndex !== undefined)
@@ -1035,18 +1053,33 @@ const ManageProductsPage = () => {
           showToast(`Product "${payload.name}" created`, 'success');
         }
       } else {
-        // Update existing
-        const { data: updatedData, error } = await supabase
+        // Update existing product without .single()
+        const { data: updateData, error: updateError } = await supabase
           .from('products')
           .update(dbPayload)
-          .eq('id', payload.id)
-          .select()
-          .single();
+          .eq('id', targetId)
+          .select();
           
-        if (error) throw error;
+        if (updateError) throw updateError;
+        
+        let updatedData = updateData && updateData[0];
+        
+        // Safety Fallback: If row doesn't exist in Supabase yet, insert it!
+        if (!updatedData) {
+          console.warn(`Product ID ${targetId} not found in DB for update, creating row...`);
+          const { data: fallbackInsert, error: fallbackErr } = await supabase
+            .from('products')
+            .insert([{ ...dbPayload, id: targetId, created_at: new Date().toISOString() }])
+            .select();
+          if (!fallbackErr && fallbackInsert && fallbackInsert[0]) {
+            updatedData = fallbackInsert[0];
+          } else {
+            updatedData = { ...dbPayload, id: targetId };
+          }
+        }
         
         // Optimistic UI update: replace existing product in state immediately!
-        const src = updatedData || { ...dbPayload, id: payload.id };
+        const src = updatedData || { ...dbPayload, id: targetId };
         const optimisticUpdated = {
           ...src,
           mainCategory: src.main_category,
@@ -1065,7 +1098,7 @@ const ManageProductsPage = () => {
           created_at: src.created_at || payload.created_at,
           uploadDate: src.created_at || payload.created_at
         };
-        setProducts(prev => (prev || []).map(p => p.id === payload.id ? optimisticUpdated : p));
+        setProducts(prev => (prev || []).map(p => (p.id === targetId || p.id === payload.id) ? optimisticUpdated : p));
         showToast(`Product "${payload.name}" updated`, 'success');
       }
       
@@ -1093,7 +1126,9 @@ const ManageProductsPage = () => {
         
         const matchName = safeName.toLowerCase().includes(query);
         const matchSku = safeSku.toLowerCase().includes(query);
-        if (!matchName && !matchSku) return false;
+        const matchVariantSku = (p.colorVariants || p.color_variants || []).some(v => v.sku && String(v.sku).toLowerCase().includes(query));
+        const matchVariantName = (p.colorVariants || p.color_variants || []).some(v => v.name && String(v.name).toLowerCase().includes(query));
+        if (!matchName && !matchSku && !matchVariantSku && !matchVariantName) return false;
       }
 
       const stockNum = parseInt(p.stock) || 0;
